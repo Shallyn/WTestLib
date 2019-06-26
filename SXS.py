@@ -113,7 +113,7 @@ class SXSObject(object):
         return self._SXSnum
 
 class SXSparameters(SXSObject):
-    def __init__(self, SXSnum, table, f_ini = 0, Mtotal = 16, D = 100, verbose = False):
+    def __init__(self, SXSnum, table, f_ini = 0, Mtotal = 16, D = 100, verbose = False, ishertz = False):
         if verbose:
             sys.stderr.write(f'{LOG}:Initialize SXSObject...\n')
         super(SXSparameters, self).__init__(SXSnum, table, verbose = verbose)
@@ -122,6 +122,7 @@ class SXSparameters(SXSObject):
         self._D = D
         self._Mtotal = Mtotal
         self._f_ini = f_ini
+        self._ishertz = ishertz
     
     @property
     def D(self):
@@ -144,7 +145,10 @@ class SXSparameters(SXSObject):
         if self._f_ini == 0:
             return self.Sf_ini * dim_t(self._Mtotal)
         else:
-            return self._f_ini
+            if self._ishertz:
+                return self._f_ini
+            else:
+                return self._f_ini * dim_t(self._Mtotal)
         
     @property
     def f_ini_dimless(self):
@@ -157,10 +161,10 @@ class SXSh22(SXSparameters, h22base):
     #     SXSparameters.__new__(cls, SXSnum, table, f_ini, Mtotal, D, verbose = verbose)
     
     def __init__(self, SXSnum, srcloc = DEFAULT_SRCLOC, table = DEFAULT_TABLE , 
-                 f_ini = 0, srate = 16384, Mtotal = 16, D = 100, verbose = False):
+                 f_ini = 0, srate = 16384, Mtotal = 16, D = 100, verbose = False, ishertz = False):
         if verbose:
             sys.stderr.write(f'{LOG}:Initialize SXSparameters...\n')
-        SXSparameters.__init__(self, SXSnum, table, f_ini, Mtotal, D, verbose = verbose)
+        SXSparameters.__init__(self, SXSnum, table, f_ini, Mtotal, D, verbose = verbose, ishertz = ishertz)
         if verbose:
             sys.stderr.write(f'{LOG}:Initialize SXSparameters...Done\n')
             sys.stderr.write(f'{LOG}:Loading SXS template from srcloc...')

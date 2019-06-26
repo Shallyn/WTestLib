@@ -168,6 +168,7 @@ def parseargs(argv):
     parser.add_option('--prefix', type = 'str', default = '.', help = 'dir for results saving.')
     parser.add_option('--plot', action = 'store_true', help = 'If added, will plot sa results and waveform.')
     parser.add_option('--verbose', action = 'store_true', help = 'If added, will print verbose message.')
+    parser.add_option('--hertz', action = 'store_true', help = 'If added, will use dimension Hz for fini.')
     args = parser.parse_args(argv)
     return args
 

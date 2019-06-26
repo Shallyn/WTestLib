@@ -20,6 +20,8 @@ def main(argv = None):
     exe = args.executable
     prefix = Path(args.prefix)
     isplot = args.plot
+    fini = args.fini
+    ishertz = args.hertz
     
     savedir = prefix / approx
     verbose = args.verbose
@@ -43,7 +45,7 @@ def main(argv = None):
         if not Sprefix.exists():
             Sprefix.mkdir()
         
-        s = SXSh22(SXSnum, verbose = verbose)
+        s = SXSh22(SXSnum, f_ini = fini, verbose = verbose, ishertz = ishertz)
         ge = s.construct_generator(approx, exe)
         ret = ge.get_overlap(jobtag = jobtag)
         

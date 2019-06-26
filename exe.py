@@ -25,14 +25,14 @@ def main(argv = None):
     maxecc = args.maxecc
     table = args.table
     srcloc = args.srcloc
-    
+        
     savedir = prefix / approx
     verbose = args.verbose
     if verbose is None:
         verbose = False
     # Mkdir for data saving
     if not savedir.exists():
-        savedir.mkdir()
+        savedir.mkdir(parents=True)
     
     
     # Setting ErrorMsg filename.

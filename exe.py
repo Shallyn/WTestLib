@@ -22,6 +22,7 @@ def main(argv = None):
     isplot = args.plot
     fini = args.fini
     ishertz = args.hertz
+    maxecc = args.maxecc
     
     savedir = prefix / approx
     verbose = args.verbose
@@ -47,7 +48,7 @@ def main(argv = None):
         
         s = SXSh22(SXSnum, f_ini = fini, verbose = verbose, ishertz = ishertz)
         ge = s.construct_generator(approx, exe)
-        ret = ge.get_overlap(jobtag = jobtag)
+        ret = ge.get_overlap(jobtag = jobtag, maxecc = maxecc)
         
 
         if isplot:
@@ -58,7 +59,7 @@ def main(argv = None):
             ret.plot_waveform_fit(fig_waveform)
             
         # Setting saving files
-        file_SA_scan = Sprefix / 'SA_scan.csv'
+        file_SA_scan = Sprefix / 'SA_scan.txt'
         file_waveform = Sprefix / 'waveform_fit.txt'
         
         ret.save_fit(fresults)

@@ -169,6 +169,7 @@ def parseargs(argv):
     parser.add_option('--plot', action = 'store_true', help = 'If added, will plot sa results and waveform.')
     parser.add_option('--verbose', action = 'store_true', help = 'If added, will print verbose message.')
     parser.add_option('--hertz', action = 'store_true', help = 'If added, will use dimension Hz for fini.')
+    parser.add_option('--maxecc', type = 'float', default = 0, help = 'If zero, will automatically set ecc search range.')
     args = parser.parse_args(argv)
     return args
 
@@ -204,8 +205,9 @@ def cmd_stdout_cev(CMD, name_out, timeout = 60):
 def plot_compare_attach_any(LIST, 
                             tstart = None,
                             figsize=(18, 6),
-                            savefig = None,
-                            Nlth_end = 8):
+                            savefig = 'savefig.jpg',
+                            Nlth_end = 8,
+                            savedpi = 200):
     # LIST [wfdict_1, wfdict_2, ...]
     # wfdict: 'name'
     #         'x'
@@ -296,9 +298,7 @@ def plot_compare_attach_any(LIST,
     ax2.set_ylim(rg_h)
     ax2.set_yticks([])
     if savefig != False:
-        if not isinstance(savefig, str):
-            savefig = 'savefig.jpg'
-        plt.savefig(savefig, dpi = 200)
+        plt.savefig(savefig, dpi = savedpi)
 
 def plot_marker(x, y, 
                 figsize = None,

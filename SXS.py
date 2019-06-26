@@ -256,7 +256,7 @@ class SXSCompGenerator(Generator):
         h22_wf = h22base(t, hr, hi, self._core._srate)
         return h22_wf
     
-    def get_overlap(self, jobtag = 'test', **kwargs):
+    def get_overlap(self, jobtag = 'test', maxecc = 0, **kwargs):
         if self._verbose:
             sys.stderr.write(f'{LOG}:Checking ecc is allowed or not.\n')
         if not self.allow_ecc:
@@ -268,7 +268,7 @@ class SXSCompGenerator(Generator):
         else:
             if self._verbose:
                 sys.stderr.write(f'{LOG}:ecc is allowed in approx: {self._approx}, now run self-adaptivor.\n')
-            wraper = self.__core_scan_ecc_overlap(jobtag = jobtag, **kwargs)
+            wraper = self.__core_scan_ecc_overlap(jobtag = jobtag, maxecc = maxecc, **kwargs)
         if self._verbose:
             sys.stderr.write(f'{LOG}:Calculation complete, construct result processor.\n')
         return CompResults(self, wraper, self._verbose, jobtag = jobtag)
@@ -312,11 +312,11 @@ class SXSCompGenerator(Generator):
         return tc, phic, Oxt_abs[idx], tmove, CEV.SUCCESS.value
     
     def __core_scan_ecc_overlap(self, estep = 0.01, maxitr = None, verbose = False,
-                                prec_x = 1e-6, prec_y = 1e-6, jobtag = 'test'):
+                                prec_x = 1e-6, prec_y = 1e-6, jobtag = 'test', maxecc = 0):
         # Parse ecc
         if self._verbose:
             sys.stderr.write(f'{LOG}:Parsing ecc...')
-        ecc_range = parse_ecc(self._core.ecc)
+        ecc_range = parse_ecc(self._core.ecc, maxecc = maxecc)
         if self._verbose:
             sys.stderr.write('Done: Ecc Range: {}\n'.format(ecc_range))
             sys.stderr.write(f'{LOG}:Construct self-adaptivor...')
@@ -374,10 +374,7 @@ class CompResults(object):
         if self.CEV_STATE_fit is not CEV.SUCCESS:
             sys.stderr.write(f'{WARNING}:State is not success, skip waveform plotting.\n')
         else:
-            if not isinstance(fname, str):
-                filename = 'waveform_fit.png'
-            else:
-                filename = fname
+            filename = fname
             if self._verbose:
                 sys.stderr.write(f'{LOG}:Plotting waveform, name as {filename}\n')
 
@@ -419,7 +416,7 @@ class CompResults(object):
             FITplot['linewidth'] = FIT_linewidth
     
             
-            plot_compare_attach_any([SXSplot, FITplot], savefig = filename, **kwargs)
+            plot_compare_attach_any([SXSplot, FITplot], savefig = filename, tstart=0, **kwargs)
         
     
     def plot_results(self, fname, **kwargs):
@@ -613,7 +610,9 @@ def h22_alignment(wfA, wfB):
         
     return wfA, wfB, tmove
 
-def parse_ecc(ecc):
+def parse_ecc(ecc, maxecc):
+    if maxecc > 0:
+        return [0, maxecc]
     if type(ecc) is str:
         try:
             xecc = float(ecc[1:])

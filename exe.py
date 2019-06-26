@@ -23,6 +23,8 @@ def main(argv = None):
     fini = args.fini
     ishertz = args.hertz
     maxecc = args.maxecc
+    table = args.table
+    srcloc = args.srcloc
     
     savedir = prefix / approx
     verbose = args.verbose
@@ -46,7 +48,11 @@ def main(argv = None):
         if not Sprefix.exists():
             Sprefix.mkdir()
         
-        s = SXSh22(SXSnum, f_ini = fini, verbose = verbose, ishertz = ishertz)
+        s = SXSh22(SXSnum, f_ini = fini, 
+                   table = table,
+                   srcloc = srcloc,
+                   verbose = verbose, 
+                   ishertz = ishertz)
         ge = s.construct_generator(approx, exe)
         ret = ge.get_overlap(jobtag = jobtag, maxecc = maxecc)
         

@@ -159,6 +159,8 @@ def parseargs(argv):
     # --approx: Code version
     # --SXS: Template for comparision
     # --prefix: dir for saving
+    from .SXS import DEFAULT_TABLE
+    from .SXS import DEFAULT_SRCLOC
     parser = OptionParser(description='Waveform Comparation With SXS')
     parser.add_option('--executable', type = 'str', default = 'lalsim-inspiral', help = 'Exe command')
     parser.add_option('--jobtag', type = 'str', default = 'test', help = 'Jobtag for the code run')
@@ -170,6 +172,8 @@ def parseargs(argv):
     parser.add_option('--verbose', action = 'store_true', help = 'If added, will print verbose message.')
     parser.add_option('--hertz', action = 'store_true', help = 'If added, will use dimension Hz for fini.')
     parser.add_option('--maxecc', type = 'float', default = 0, help = 'If zero, will automatically set ecc search range.')
+    parser.add_option('--table', type = 'str', default = str(DEFAULT_TABLE), help = 'Path of SXS table.')
+    parser.add_option('--srcloc', type = 'str', default = str(DEFAULT_SRCLOC), help = 'Path of SXS waveform data.')
     args = parser.parse_args(argv)
     return args
 

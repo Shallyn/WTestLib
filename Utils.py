@@ -166,7 +166,7 @@ def parseargs(argv):
     parser.add_option('--jobtag', type = 'str', default = 'test', help = 'Jobtag for the code run')
     parser.add_option('--approx', type = 'str', default = 'SEOBNRv1', help = 'Version of the code')
     parser.add_option('--fini', type = 'float', default = 0, help = 'Initial orbital frequency')
-    parser.add_option('--SXS', type = 'str', action = 'append', default = ['0001'], help = 'SXS template for comparision')
+    parser.add_option('--SXS', type = 'str', action = 'append', default = [], help = 'SXS template for comparision')
     parser.add_option('--prefix', type = 'str', default = '.', help = 'dir for results saving.')
     parser.add_option('--plot', action = 'store_true', help = 'If added, will plot sa results and waveform.')
     parser.add_option('--verbose', action = 'store_true', help = 'If added, will print verbose message.')

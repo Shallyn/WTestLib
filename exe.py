@@ -15,6 +15,8 @@ from pathlib import Path
 def main(argv = None):
     args, empty = parseargs(argv)
     SXSnum_list = args.SXS
+    if len(SXSnum_list) == 0:
+        SXSnum_list.append('0001')
     approx = args.approx
     jobtag = args.jobtag
     exe = args.executable
@@ -40,6 +42,7 @@ def main(argv = None):
     errmsg = []
     # Setting Results savimg filename.
     fresults = savedir / f'results_{jobtag}.csv'
+
     save_namecol(fresults)
     
     for SXSnum in SXSnum_list:

@@ -475,8 +475,6 @@ class CompResults(object):
             filename = '.'.join(fsplit[:-1])
             filename += f'_{self._jobtag}.{suffix}'
         
-        file = codecs.open(filename, 'wb', "gbk")
-        writer = csv.writer(file)
         data = [[self.generator.SXS.SXSnum,
                 self.generator.approx,
                 self.generator.SXS.q,
@@ -493,6 +491,9 @@ class CompResults(object):
                 self.max_FF,
                 self.ecc_fit,
                 self.CEV_STATE_fit.name]]
+        file = codecs.open(filename, 'a+', "gbk")
+        writer = csv.writer(file)
+
         writer.writerows(data)
         file.close()
     
@@ -633,22 +634,22 @@ def parse_ecc(ecc, maxecc):
 def save_namecol(filename):
     file = codecs.open(filename, 'wb', "gbk")
     writer = csv.writer(file)
-    data = [['SXS id',
-            'approx',
-            'mass ratio',
-            'spin1z',
-            'spin1y',
-            'spin1z',
-            'spin2x',
-            'spin2y',
-            'spin2z',
-            'relaxed ecc',
-            'f_ini',
-            'tc_fit',
-            'phic_fit',
-            'FF',
-            'ecc_fit',
-            'Status']]
+    data = [['#SXS id',
+            '#approx',
+            '#mass ratio',
+            '#spin1z',
+            '#spin1y',
+            '#spin1z',
+            '#spin2x',
+            '#spin2y',
+            '#spin2z',
+            '#relaxed ecc',
+            '#f_ini',
+            '#tc_fit',
+            '#phic_fit',
+            '#FF',
+            '#ecc_fit',
+            '#Status']]
     writer.writerows(data)
     file.close()
 

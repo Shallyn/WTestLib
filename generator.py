@@ -236,8 +236,11 @@ class self_adaptivor(object):
                     continue
                 else:
                     break
-        Num_x = len(xout)
-        return np.asarray(xout), np.asarray(yout).reshape(-1, Num_x)
+        xout = np.asarray(xout)
+        yout = np.asarray(yout)
+        if len(yout.shape) is 1:
+            yout = yout.reshape(1, xout.size)
+        return xout, yout
 
             
     def __check_adaptive(self,xlist, ylist, idx_ymax):

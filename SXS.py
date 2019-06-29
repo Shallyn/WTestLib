@@ -281,7 +281,7 @@ class SXSCompGenerator(Generator):
         if isinstance(h22_wf, CEV):
             if verbose:
                 sys.stderr.write(f'{WARNING}:Abnormal h22...\n')
-            return 0,0,-1, h22_wf.value
+            return 0,0,-1,0,h22_wf.value
         SXS = self._core.copy()
         # Check sample rate
         if verbose:

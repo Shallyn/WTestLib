@@ -210,7 +210,7 @@ class SXSCompGenerator(Generator):
     @property
     def SXS(self):
         return self._core
-    
+        
         
     def get_waveform(self, ecc = None, 
                      jobtag = 'test',
@@ -499,13 +499,10 @@ class CompResults(object):
     
     def _get_fit_waveform(self):
         if self.CEV_STATE_fit is not CEV.SUCCESS:
-            msg = f'SXSnum: {self.generator.SXS.SXSnum}\n \
-                    approx: {self.generator.approx}\n \
-                    errtype: {self.CEV_STATE_fit.name}\n \
-                    CMD: {self.generator._fCMD(self.ecc_fit)}'
+            msg = f'SXSnum: {self.generator.SXS.SXSnum}\napprox: {self.generator.approx}\nerrtype: {self.CEV_STATE_fit.name}\nCMD: {self.generator._fecc(self.ecc_fit)}'
             sys.stderr.write(f'{WARNING}:Failed Job: \n{MESSAGE}: \n{msg}\n')
             self._errmsg = msg
-            self.h22_fit = None
+            self._h22_fit = None
         else:
             self._errmsg = f'{self.generator.SXS.SXSnum}:{self.generator.approx}:Success'
             fit = self.generator.get_waveform(ecc = self.ecc_fit,

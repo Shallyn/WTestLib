@@ -236,7 +236,8 @@ class self_adaptivor(object):
                     continue
                 else:
                     break
-        return np.asarray(xout), np.asarray(yout)
+        Num_x = len(xout)
+        return np.asarray(xout), np.asarray(yout).reshape(-1, Num_x)
 
             
     def __check_adaptive(self,xlist, ylist, idx_ymax):

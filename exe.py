@@ -5,6 +5,8 @@ Created on Sun Jun 23 17:06:37 2019
 
 @author: drizl
 """
+import matplotlib as mlb
+mlb.use('Agg')
 
 import numpy as np
 from .SXS import SXSh22, save_namecol
@@ -79,3 +81,4 @@ def main(argv = None):
     np.savetxt(ferrmsg, np.array([errmsg]), fmt = '%s', delimiter = '\n')
     
     return 0
+

@@ -1,0 +1,189 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""
+Created on Sun Jun 30 09:56:42 2019
+
+@author: drizl
+"""
+
+import numpy as np
+from ..generator import CMD_lalsim_inspiral
+from ..Utils import cmd_stdout_cev, CEV
+from .detectors import Detector
+from .strain import gwStrain
+from . import signal as sgl
+from scipy.interpolate import interp1d
+
+#------------CMD to generate ifo template----------#
+def detector_strain(CMD_tmpl, 
+                        ra, de, ifo, t_inj = 1186624818):
+    CMD = f'{CMD_tmpl} | -r -a {ra} -d {de} -D {ifo} -t {t_inj} -p 0'
+    return CMD
+
+class template(object):
+    def __init__(self, m1, m2, s1z, s2z, 
+                 fini = 20, 
+                 approx = 'SEOBNRv4', 
+                 srate = 4096, 
+                 D = 100):
+        self._m1 = m1
+        self._m2 = m2
+        self._s1z = s1z
+        self._s2z = s2z
+        self._fini = fini
+        self._srate = srate
+        self._approx = approx
+        self._D = D
+        state, data = cmd_stdout_cev(self.CMD, name_out = 'template')
+        if len(data) == 0:
+            state = CEV.GEN_FAIL
+        self._STATE = state
+        if state is not CEV.SUCCESS:
+            # regeneration
+            fail = True
+            for i in range(1,5):
+                fs_retry = int(self._srate * i)
+                state, data = cmd_stdout_cev(self.fCMD(fs_retry), name_out = 'template')
+                if len(data) != 0:
+                    fail = False
+                    self._STATE = state
+                    break
+            if fail:
+                self._ht = None
+            else:
+                # do resample
+                ht = np.asarray(data[:,1]) + 1.j * np.asarray(data[:,2])
+                time_new, ht_new = sgl.resample(data[:,0], ht, self._srate)
+                self._ht = ht_new
+        else:
+            self._ht = np.asarray(data[:,1]) + 1.j*np.asarray(data[:,2])
+            
+    def fCMD(self, fs):
+        return CMD_lalsim_inspiral(exe = 'lalsim-inspiral',
+                                   m1 = self._m1,
+                                   m2 = self._m2,
+                                   s1z = self._s1z,
+                                   s2z = self._s2z,
+                                   D = self._D,
+                                   srate = fs,
+                                   f_ini = self._fini,
+                                   approx = self._approx)
+    
+    @property
+    def CMD(self):
+        return self.fCMD(self._srate)
+    
+    @property
+    def fs(self):
+        return self._srate
+    
+    @property
+    def template(self):
+        if self._ht is not None:
+            return self._ht
+        else:
+            return None
+    
+    @property
+    def real(self):
+        if self._ht is not None:
+            return self._ht.real
+        else:
+            return None
+    
+    @property
+    def imag(self):
+        if self._ht is not None:
+            return self._ht.imag
+        else:
+            return None
+    
+    @property
+    def STATE(self):
+        return self._STATE
+            
+    @property
+    def m1(self):
+        return self._m1
+    
+    @property
+    def m2(self):
+        return self._m2
+    
+    @property
+    def s1z(self):
+        return self._s1z
+    
+    @property
+    def s2z(self):
+        return self._s2z
+    
+    @property
+    def approx(self):
+        return self._approx
+    
+    def __len__(self):
+        if self._ht is not None:
+            return len(self._ht)
+        else:
+            return 0
+        
+    def get_track(self, tpeak):
+        return sgl.get_track(self.time, self.template, tpeak)
+    
+    @property
+    def deltat(self):
+        return 1./self._srate
+    
+    @property
+    def duration(self):
+        return len(self) / self._srate
+    
+    @property
+    def argpeak(self):
+        return np.argmax(np.abs(self.template))
+    
+    @property
+    def dtpeak(self):
+        return self.time[self.argpeak] - self.time[0]
+    
+    @property
+    def time(self):
+        return np.arange(0, len(self) * self.deltat, self.deltat)
+        
+    def construct_detector_strain(self, ifo, ra, de, psi, t_inj, noise = None):
+        if self.STATE is not CEV.SUCCESS:
+            return None
+        det = Detector(ifo)
+        ap = det.antenna_pattern(ra, de, psi, gps = t_inj)
+        strain = self.real * ap[0] + self.imag * ap[1]
+        t_start = t_inj - np.abs(strain).argmax() / self.fs
+        t_end = t_start + len(strain) / self.fs
+        if not isinstance(noise, gwStrain):
+            return gwStrain(strain, epoch = t_start, fs = self.fs, ifo = ifo)
+        else:
+            if t_end < noise.epoch or t_start > noise.epoch + noise.duration:
+                return noise
+            if self.fs != noise.fs:
+                th, strain = sgl.resample(self.time, strain, noise.fs)
+            fs = noise.fs
+            if t_start < noise.epoch:
+                strain = strain[int((noise.epoch-t_start)*fs):]
+                th = th[int((noise.epoch-t_start)*fs):]
+                t_start = noise.epoch
+            if t_end > noise.epoch + noise.duration:
+                strain = strain[:int((t_end - noise.epoch - noise.duration)*fs)]
+                th = th[:int((t_end - noise.epoch - noise.duration)*fs)]
+                t_end = noise.epoch + noise.duration
+            itp_strain = interp1d(th, strain)
+            idx_start = int((t_start - noise.epoch) * fs)
+            idx_end = int((t_end - noise.epoch) * fs)
+            val = noise.value
+            vtime = noise.time
+            val[idx_start:idx_end] += itp_strain(vtime[idx_start:idx_end])
+            return gwStrain(val, epoch = noise.epoch, fs = fs, ifo = ifo)
+            
+
+#-------------------------------------------------------#
+#-------------------------------------------------------#
+        

@@ -10,7 +10,6 @@ from . import Utils
 from . import SXS
 from . import generator
 from . import h22datatype
-from . import exe
 
-__all__ = ['Utils', 'SXS', 'generator', 'h22datatype', 'exe']
+__all__ = ['Utils', 'SXS', 'generator', 'h22datatype']
 

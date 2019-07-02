@@ -5,8 +5,6 @@ Created on Fri Jun 21 09:36:40 2019
 
 @author: drizl
 """
-import matplotlib as mlb
-mlb.use('Agg')
 
 import numpy as np
 from optparse import OptionParser

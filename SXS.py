@@ -628,10 +628,8 @@ def parse_ecc(ecc, maxecc):
         elip_min = max(0, ecc - 0.1)
     return [elip_min, elip_max]
     
-def save_namecol(filename):
-    file = codecs.open(filename, 'wb', "gbk")
-    writer = csv.writer(file)
-    data = [['#SXS id',
+
+DEFAULT_NAMECOL = ['#SXS id',
             '#approx',
             '#mass ratio',
             '#spin1z',
@@ -646,7 +644,39 @@ def save_namecol(filename):
             '#phic_fit',
             '#FF',
             '#ecc_fit',
-            '#Status']]
+            '#Status']
+def save_namecol(filename):
+    file = codecs.open(filename, 'wb', "gbk")
+    writer = csv.writer(file)
+    data = [DEFAULT_NAMECOL]
+    writer.writerows(data)
+    file.close()
+    
+def load_csv(filename):
+    file = codecs.open(filename, 'r', "gbk")
+    reader = csv.reader(file,dialect='excel')
+    data = []
+    for i,line in enumerate(reader):
+        if i>0:
+            data.append(line)
+    file.close()
+    return data
+
+def add_csv(filename, data):
+    file = codecs.open(filename, 'a+', "gbk")
+    writer = csv.writer(file)
     writer.writerows(data)
     file.close()
 
+def resave_results(prefix, target):
+    from pathlib import Path
+    pre_list = prefix.split('/')
+    prefix = pre_list.pop(-1)
+    loc = Path('/'.join(pre_list))
+    lth = len(prefix)
+    save_namecol(target)
+    for file in loc.iterdir():
+        if file.name[:lth] == prefix:
+            sys.stderr.write(f'{LOG}:Saving {file.name} to {target}...\n')
+            data = load_csv(file)
+            add_csv(target, data)

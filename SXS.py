@@ -486,10 +486,13 @@ class CompResults(object):
                 self.generator.SXS.s2z,
                 self.generator.SXS.ecc,
                 self.generator.SXS.f_ini_dimless,
+                self.generator.SXS.duration,
+                self.generator.SXS.tpeak,
                 self.tc_fit,
                 self.phic_fit,
                 self.max_FF,
                 self.ecc_fit,
+                self.tmove_fit,
                 self.CEV_STATE_fit.name]]
         file = codecs.open(filename, 'a+', "gbk")
         writer = csv.writer(file)
@@ -640,10 +643,13 @@ DEFAULT_NAMECOL = ['#SXS id',
             '#spin2z',
             '#relaxed ecc',
             '#f_ini',
+            '#duration',
+            '#NR_time_peak',
             '#tc_fit',
             '#phic_fit',
             '#FF',
             '#ecc_fit',
+            '#tpeak_move_fit',
             '#Status']
 def save_namecol(filename):
     file = codecs.open(filename, 'wb', "gbk")

@@ -10,8 +10,36 @@ mlb.use('Agg')
 
 import numpy as np
 from .SXS import SXSh22, save_namecol
-from .Utils import parseargs
 from pathlib import Path
+from optparse import OptionParser
+
+
+#-----Parse args-----#
+def parseargs(argv):
+    # Input Parameters:
+    # --executable: exe file path
+    # --jobtag: job tag
+    # --fini: Initial orbital frequency
+    # --approx: Code version
+    # --SXS: Template for comparision
+    # --prefix: dir for saving
+    from .SXS import DEFAULT_TABLE
+    from .SXS import DEFAULT_SRCLOC
+    parser = OptionParser(description='Waveform Comparation With SXS')
+    parser.add_option('--executable', type = 'str', default = 'lalsim-inspiral', help = 'Exe command')
+    parser.add_option('--jobtag', type = 'str', default = '_test', help = 'Jobtag for the code run')
+    parser.add_option('--approx', type = 'str', default = 'SEOBNRv1', help = 'Version of the code')
+    parser.add_option('--fini', type = 'float', default = 0, help = 'Initial orbital frequency')
+    parser.add_option('--SXS', type = 'str', action = 'append', default = [], help = 'SXS template for comparision')
+    parser.add_option('--prefix', type = 'str', default = '.', help = 'dir for results saving.')
+    parser.add_option('--plot', action = 'store_true', help = 'If added, will plot sa results and waveform.')
+    parser.add_option('--verbose', action = 'store_true', help = 'If added, will print verbose message.')
+    parser.add_option('--hertz', action = 'store_true', help = 'If added, will use dimension Hz for fini.')
+    parser.add_option('--maxecc', type = 'float', default = 0, help = 'If zero, will automatically set ecc search range.')
+    parser.add_option('--table', type = 'str', default = str(DEFAULT_TABLE), help = 'Path of SXS table.')
+    parser.add_option('--srcloc', type = 'str', default = str(DEFAULT_SRCLOC), help = 'Path of SXS waveform data.')
+    args = parser.parse_args(argv)
+    return args
 
 
 def main(argv = None):

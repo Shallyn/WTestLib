@@ -102,6 +102,10 @@ class h22base(object):
         return self.time[self.argpeak]
     
     @property
+    def duration(self):
+        return self.time[-1] - self.time[0]
+    
+    @property
     def h22f(self):
         return np.fft.fft(self._h22)
     

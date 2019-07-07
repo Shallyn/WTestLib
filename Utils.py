@@ -287,7 +287,7 @@ def plot_marker(x, y,
             figsize = (8,5)
             
         plt.figure(figsize = figsize)
-        plt.plot(x, y, marker = marker, color = color)
+        plt.scatter(x, y, marker = marker, color = color)
         plt.xlabel(xlabel)
         plt.ylabel(ylabel)
         plt.title(title)

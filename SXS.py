@@ -423,10 +423,7 @@ class CompResults(object):
         if not self.generator.allow_ecc:
             sys.stderr.write(f'{WARNING}:Parameter ecc is unused, skip sa plot.\n')
         else:
-            if not isinstance(fname, str):
-                filename = 'scan.png'
-            else:
-                filename = fname
+            filename = fname
             if self.CEV_STATE_fit is not CEV.SUCCESS:
                 sys.stderr.write(f'{WARNING}:State is not success, skip sa plot.\n')
             else:

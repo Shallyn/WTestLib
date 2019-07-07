@@ -110,3 +110,20 @@ def main(argv = None):
     
     return 0
 
+#-------------Resave------------#
+from .SXS import resave_results
+def resave_main(argv=None):
+    parser = OptionParser(description='Resave results.')
+    parser.add_option('--source', type = 'str', default = '.', help = 'Path for row data.')
+    parser.add_option('--prefix', type = 'str', default = 'results', help = 'Prefix for data saveing.')
+    parser.add_option('--dataprefix', type = 'str', default = 'results', help = 'csv src file prefix.')
+    args,empty = parser.parse_args(argv)
+    source = Path(args.source)
+    prefix = args.prefix
+    datapref = args.dataprefix
+    for ddir in source.iterdir():
+        fsave = Path(f'{prefix}_{ddir.name}.csv')
+        if ddir.is_dir():
+            resave_results(str(ddir / datapref), fsave )
+
+    

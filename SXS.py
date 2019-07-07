@@ -184,6 +184,18 @@ class SXSh22(SXSparameters, h22base):
     
     def copy(self):
         return SXSh22(self._SXSnum, self._srcloc, self._table, self._f_ini, self._srate, self._Mtotal, self._D)
+    
+    @property
+    def dim_t(self):
+        return dim_t(self._Mtotal)
+    
+    @property
+    def dim_h(self):
+        return dim_h(self._D, self._Mtotal)
+    
+    @property
+    def duration_dimM(self):
+        return self.duration * self.dim_t
         
         
 class SXSCompGenerator(Generator):
@@ -483,13 +495,13 @@ class CompResults(object):
                 self.generator.SXS.s2z,
                 self.generator.SXS.ecc,
                 self.generator.SXS.f_ini_dimless,
-                self.generator.SXS.duration,
-                self.generator.SXS.tpeak,
-                self.tc_fit,
+                self.generator.SXS.duration_dimM,
+                self.generator.SXS.tpeak * self.generator.SXS.dim_t,
+                self.tc_fit * self.generator.SXS.dim_t,
                 self.phic_fit,
                 self.max_FF,
                 self.ecc_fit,
-                self.tmove_fit,
+                self.tmove_fit * self.generator.SXS.dim_t,
                 self.CEV_STATE_fit.name]]
         file = codecs.open(filename, 'a+', "gbk")
         writer = csv.writer(file)

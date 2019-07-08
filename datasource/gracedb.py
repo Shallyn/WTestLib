@@ -38,7 +38,9 @@ class GraceEvent(object):
         data = table['extra_attributes']['SingleInspiral']
         names = self.__dict__
         for ele in data:
-            names['_'+ele['ifo']] = DetTable(ele)
+            names[ele['ifo']] = DetTable(ele)
+            
+            
 
 class DetTable(object):
     def __init__(self, table):

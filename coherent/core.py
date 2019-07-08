@@ -294,19 +294,15 @@ def snr_rhotf_vec(sLIST, ra, de, psi, times, freqs, tmpl, verbose = False, **kwa
     dt = np.zeros(3)
     for i,series in enumerate(sLIST):
         dt[i]  = series.ifo_delay(ra, de, gps_time)
-        
-    if verbose:
-        cumitr = 0
-        itr_tot = nfreq * ndet * ntime
-    for i in range(ntime):
-        for j in range(nfreq):
-            for k, series in enumerate(sLIST):
-                if not hasattr(series, "q_snrfunc"):
-                    series.snr_q_scan(tmpl = tmpl, toutseg = times, foutseg = freqs, psd = 'set', **kwargs)
-                rho[i,j,k] = series.q_snrfunc(times[i] + dt[k], freqs[j])
-        if verbose:
-            cumitr += ndet * nfreq
-            Progress(cumitr, itr_tot)
-    if verbose:
-        sys.stderr.write('\r')
+        time_ifo = times + dt[i]
+        if not hasattr(series, "q_snrfunc"):
+            series.snr_q_scan(tmpl = tmpl, toutseg = times, foutseg = freqs, psd = 'set', **kwargs)
+        rho[:,:,i] = series.q_snrfunc(time_ifo, freqs).T
+    
+    # for i in range(ntime):
+    #     for j in range(nfreq):
+    #         for k, series in enumerate(sLIST):
+    #             if not hasattr(series, "q_snrfunc"):
+    #                 series.snr_q_scan(tmpl = tmpl, toutseg = times, foutseg = freqs, psd = 'set', **kwargs)
+    #             rho[i,j,k] = series.q_snrfunc(times[i] + dt[k], freqs[j])
     return rho

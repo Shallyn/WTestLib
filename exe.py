@@ -126,4 +126,97 @@ def resave_main(argv=None):
         if ddir.is_dir():
             resave_results(str(ddir / datapref), fsave )
 
+#------------Model Comp----------#
+from .generator import CompGenerator
+def modcomp(argv = None):
+    parser = OptionParser(description='General model compare.')
+    parser.add_option('--approx1', type = 'str', default = 'SEOBNRv1', help = 'approx1 for compare')
+    parser.add_option('--approx2', type = 'str', default = 'SEOBNRv4', help = 'approx2 for compare')
+    parser.add_option('--executable1', type = 'str', default = 'lalsim-inspiral', help = 'command for waveform generation')
+    parser.add_option('--executable2', type = 'str', default = 'lalsim-inspiral', help = 'command for waveform generation')
+    parser.add_option('--prefix', type = 'str', default = '.', help = 'prefix for data save')
+    parser.add_option('--verbose', action = 'store_true', help = 'If added, will print verbose message.')
+    parser.add_option('--mratio', type = 'float', action = 'append', default = [1], help = 'Mass ratio')
+    parser.add_option('--spin1z', type = 'float', action = 'append', default = [0], help = 'Spin1z')
+    parser.add_option('--spin2z', type = 'float', action = 'append', default = [0], help = 'Spin2z')
+    parser.add_option('--mtotal', type = 'float', default = 16, help = 'Total mass of the binary system')
+    parser.add_option('--ecc', type = 'float', action = 'append', default = [0], help = 'eccentricity')
+    parser.add_option('--fini', type = 'float', default = 40, help = 'Initial orbit frequency')
+    parser.add_option('--distance', type = 'float', default = 100, help = 'BBH distance in Mpc')
+    parser.add_option('--srate', type = 'float', default = 16384, help = 'Sample rate')
+    parser.add_option('--jobtag', type = 'str', default = '_test', help = 'Tag for this run')
+    parser.add_option('--timeout', type = 'int', default = 60, help = 'Time limit for waveform generation')
+    args, empty = parser.parse_args(argv)
+    approx1 = args.approx1
+    approx2 = args.approx2
+    exe1 = args.executable1
+    exe2 = args.executable2
+    verbose = args.verbose
+    
+    q = args.mratio
+    s1z = args.spin1z
+    s2z = args.spin2z
+    ecc = args.ecc
+    Mtotal = args.mtotal
+    D = args.distance
+    f_ini = args.fini
+    srate = args.srate
+    timeout = args.timeout
+    jobtag = args.jobtag
+    
+    savedir = Path(args.prefix)
+    if not savedir.exists():
+        savedir.mkdir(parents = True)
+    
+    Comp = CompGenerator(approx1, exe1, approx2, exe2, verbose = verbose)
+    # shape of ret:[nq, ns1z, ns2z, necc]
+    ret = Comp.compare(q, s1z, s2z, ecc, Mtotal, D, f_ini, srate, timeout, jobtag)
+    
+    # 1. save all
+    np.savetxt(savedir / 'all.txt', ret)
+    from .Utils import plot_marker
+    # 2. plot
+    if len(q) > 0:
+        x = q
+        y = 1 - ret[:,0,0,0]
+        plot_marker(x, y, fname = savedir / 'CompMratio.png', 
+                    title = 'q vs 1 - FF', 
+                    xlabel = 'q', 
+                    ylabel = 'log 1 - FF', 
+                    ylim = [0,1],
+                    ylog = True)
+    
+    if len(s1z) > 0:
+        x = s1z
+        y = 1 - ret[0,:,0,0]
+        plot_marker(x, y, fname = savedir / 'CompSpin1z.png', 
+                    title = 's1z vs 1 - FF', 
+                    xlabel = 's1z', 
+                    ylabel = 'log 1 - FF', 
+                    ylim = [0,1],
+                    ylog = True)
+        
+    if len(s2z) > 0:
+        x = s2z
+        y = 1 - ret[0,0,:,0]
+        plot_marker(x, y, fname = savedir / 'CompSpin2z.png', 
+                    title = 's2z vs 1 - FF', 
+                    xlabel = 's2z', 
+                    ylabel = 'log 1 - FF', 
+                    ylim = [0,1],
+                    ylog = True)
+        
+    if len(ecc) > 0:
+        x = ecc
+        y = 1 - ret[0,0,0,:]
+        plot_marker(x, y, fname = savedir / 'CompEcc.png', 
+                    title = 'ecc vs 1 - FF', 
+                    xlabel = 'ecc', 
+                    ylabel = 'log 1 - FF', 
+                    ylim = [0,1],
+                    ylog = True)
+        
+    return 0
+
+    
     

@@ -185,7 +185,7 @@ def event_scan(gps, sH1, sL1, sV1,
         if strain is not None:
             sLIST.append(strain)
             locals()['SNR_{}'.format(strain.ifo)] = \
-            strain.matched_filter(tmpl.template, cut = [30,1000], window = True, psd = 'set', ret_complex = True)
+            strain.matched_filter(tmpl.template, cut = [30,1000], window = True, psd = 'set', ret_complex = True, shift = tmpl.dtpeak)
             snrLIST.append(locals()[f'SNR_{strain.ifo}'])    
             if max(locals()['SNR_{}'.format(strain.ifo)]) > tmpmax:
                 tmpmax = max(locals()['SNR_{}'.format(strain.ifo)])
@@ -225,7 +225,7 @@ def event_scan(gps, sH1, sL1, sV1,
         plt.ylabel('frequency')
         plt.ylim([30, 1000])
         plt.yscale('log')
-        plt.xlim([tmap - h_dur, tmap + h_dur])
+        plt.xlim(tlim)
         plt.savefig(fsave/f'testQscan_{data.ifo}.png', dpi = 200)
         plt.show()
         
@@ -270,13 +270,13 @@ def event_scan(gps, sH1, sL1, sV1,
         max_ra = max_ra[0] - np.pi
         max_de = np.pi/2 - max_de[0]
         
-    tout = np.linspace(tlim[0], tlim[1], 600)
+    tout = np.linspace(tlim[0], tlim[1], 1000)
     fout = np.logspace(np.log10(30), np.log10(1000), 600)
     coh_matrix = snr_cohTF(sLIST, max_ra, max_de, 0, 
                            tout, fout, 
                            tmpl = tmpl.template, verbose = True, 
                            qrange = qrange, frange = frange, 
-                           mismatch = mismatch)
+                           mismatch = mismatch, shift = tmpl.dtpeak)
     ucoh2 = np.multiply(coh_matrix, coh_matrix.conjugate()).real
     coh_oscan = np.sqrt(ucoh2[:,:,0] + ucoh2[:,:,1])
     coh_oscan_01 = np.sqrt(ucoh2[:,:,0])

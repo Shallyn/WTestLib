@@ -124,7 +124,8 @@ class gwStrain(TimeSeriesBase):
                        cut = None, 
                        window = True, 
                        psd = None,
-                       ret_complex = False):
+                       ret_complex = False,
+                       shift = 0):
         h = np.asarray(tmpl)
         if len(h) > self.Nt:
             s, h = sgl.cutinsert(self.value, h)
@@ -138,7 +139,7 @@ class gwStrain(TimeSeriesBase):
                                          fs = self.fs, psdfun = psd, 
                                          cut = cut, window = window,
                                          ret_complex = ret_complex)
-        SNRstrain = gwStrain(SNR, epoch = self.epoch, ifo = self.ifo, fs = self.fs)
+        SNRstrain = gwStrain(SNR, epoch = self.epoch + shift, ifo = self.ifo, fs = self.fs)
         return SNRstrain
     
     def matched_filter_cplx(self,
@@ -158,7 +159,7 @@ class gwStrain(TimeSeriesBase):
         return SNRstrain
 
     
-    def matched_filter_convolve(self, tmpl, cut = None, psd = None, mode = 'full'):
+    def matched_filter_convolve(self, tmpl, cut = None, psd = None, mode = 'full', shift = 0):
         if psd in ('self', None,):
             psd = self.psdfun()
         s_whiten, s_sig2 = sgl.whiten(self.value, psd, self.fs)
@@ -175,15 +176,15 @@ class gwStrain(TimeSeriesBase):
         else:
             h_whiten, h_sig2 = sgl.whiten(tmpl, psd, self.fs)
             op = 2*np.convolve(s_whiten, h_whiten, mode = mode)
-        SNRstrain = gwStrain(np.abs(op), epoch = self.epoch, ifo = self.ifo, fs = self.fs)
+        SNRstrain = gwStrain(np.abs(op), epoch = self.epoch + shift, ifo = self.ifo, fs = self.fs)
         return SNRstrain
 
     #FIXME
-    def snr_q_scan(self, tmpl, cut = None, window = True, psd = None, **kwargs):
+    def snr_q_scan(self, tmpl, cut = None, window = True, psd = None, shift = 0, **kwargs):
         if psd in ('set',) and self._psdfun_setted is not False:
             psd = self._psdfun_setted
         ret = snr_q_scanf(data = self.value, ht = tmpl, window = window, psd = psd,
-                          sampling = self.fs, epoch = self.epoch, retfunc = True ,**kwargs)
+                          sampling = self.fs, epoch = self.epoch + shift, retfunc = True ,**kwargs)
         self.q_snrfunc = ret[0]
         self.q_snrtime = ret[1]
         self.q_snrfreq = ret[2]

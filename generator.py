@@ -7,7 +7,7 @@ Created on Fri Jun 21 09:58:29 2019
 """
 import numpy as np
 from .Utils import switch, cmd_stdout_cev, CEV, LOG, WARNING
-from .h22datatype import h22base, dim_h, dim_t
+from .h22datatype import h22base, dim_h, dim_t, h22_alignment
 import sys
 from pathlib import Path
 
@@ -141,7 +141,7 @@ class Generator(object):
                 self._allow_ecc = True
                 break
             raise ValueError('Unsupported approx: {}'.format(self._approx))
-            
+    
     @property
     def allow_ecc(self):
         return self._allow_ecc 
@@ -160,7 +160,7 @@ class Generator(object):
                  srate,
                  f_ini,
                  timeout = 60,
-                 jobtag = 'test'):
+                 jobtag = '_test'):
         cev, ret =  cmd_stdout_cev(self._CMD(m1 = m1,
                                     m2 = m2,
                                     s1z = s1z,
@@ -177,6 +177,101 @@ class Generator(object):
             return ret
         else:
             return cev
+
+
+class CompGenerator(object):
+    def __init__(self, approx1, exe1, approx2, exe2, verbose = False):
+        self._verbose = verbose
+        if verbose:
+            sys.stderr.write(f'{LOG}:Construct CompGenerator...\n')
+        gen1 = Generator(approx1, exe1, verbose)
+        gen2 = Generator(approx2, exe2, verbose)
+        self._get_wf1 = gen1.__call__
+        self._get_wf2 = gen2.__call__
+        
+    def compare(self,
+                q,
+                s1z,
+                s2z,
+                ecc,
+                Mtotal = 16,
+                D = 100,
+                f_ini = 40,
+                srate = 16384,
+                timeout = 60,
+                jobtag = '_test'):
+        if self._verbose:
+            sys.stderr.write(f'{LOG}:Initialize parameter...\n')
+        if hasattr(q, '__len__'):
+            nq = len(q)
+        else:
+            nq = 1
+            q = [q]
+        
+        if hasattr(s1z, '__len__'):
+            ns1z = len(s1z)
+        else:
+            ns1z = 1
+            s1z = [s1z]
+            
+        if hasattr(s2z, '__len__'):
+            ns2z = len(s2z)
+        else:
+            ns2z = 1
+            s2z = [s2z]
+            
+        if hasattr(ecc, '__ecc__'):
+            necc = len(ecc)
+        else:
+            necc = 1
+            ecc = [ecc]
+        
+        if self._verbose:
+            sys.stderr.write(f'{LOG}:Now calling...\n')
+        ret = np.zeros([nq, ns1z, ns2z, necc])
+        for i, qi in enumerate(q):
+            for j, s1zj in enumerate(s1z):
+                for k, s2zk in enumerate(s2z):
+                    for l, eccl in enumerate(ecc):
+                        m1 = Mtotal * qi / (1 + qi)
+                        m2 = Mtotal / (1 + qi) 
+                        ret[i,j,k] = self._core_calcFF(m1, m2, 
+                                                       s1zj, s2zk, eccl,
+                                                       D, f_ini, 
+                                                       srate, timeout, jobtag)
+        
+        return ret
+    
+    def _core_calcFF(self, m1, m2, s1z, s2z, ecc,
+                     D, f_ini, srate, timeout, jobtag):
+        wf1 = self._get_wf1(m1, m2, s1z, s2z, D, ecc,
+                            srate, f_ini, timeout, jobtag)
+        if isinstance(wf1, CEV):
+            return -1
+        wf2 = self._get_wf2(m1, m2, s1z, s2z, D, ecc,
+                            srate, f_ini, timeout, jobtag)
+        if isinstance(wf2, CEV):
+            return -1
+        wf1, wf2, tmove = h22_alignment(wf1, wf2)
+        fs = wf1.srate
+        NFFT = len(wf1)
+        df = fs/NFFT
+        Stilde = wf1.h22f
+        htilde = wf2.h22f
+        O11 = np.sum(Stilde * Stilde.conjugate()).real * df
+        O22 = np.sum(htilde * htilde.conjugate()).real * df
+        Ox = Stilde * htilde.conjugate()
+        Oxt = np.fft.ifft(Ox) * fs
+        Oxt_abs = np.abs(Oxt) / np.sqrt(O11 * O22)
+        idx = np.where(Oxt_abs == max(Oxt_abs))[0][0]
+        return Oxt_abs[idx]
+
+
+        
+
+
+
+
 
 #------------Utils-----------#
 

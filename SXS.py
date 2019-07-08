@@ -9,7 +9,7 @@ Created on Fri Jun 21 10:41:46 2019
 import numpy as np
 import sys, os, json
 from .Utils import switch, CEV, LOG, WARNING, CEV_parse_value, MESSAGE, plot_compare_attach_any, plot_marker
-from .h22datatype import dim_h, dim_t, h22base
+from .h22datatype import dim_h, dim_t, h22base, h22_alignment
 from pathlib import Path
 from .generator import Generator, self_adaptivor
 import csv,codecs
@@ -580,45 +580,6 @@ class CompResults(object):
     
     
 #--------Utils-------#
-def h22_alignment(wfA, wfB):
-    fs_A = wfA.srate
-    fs_B = wfB.srate
-    if fs_A > fs_B:
-        wfA.resample(fs_B)
-        fs = fs_B
-    else:
-        wfB.resample(fs_A)
-        fs = fs_A
-    peak_A = wfA.argpeak
-    peak_B = wfB.argpeak           
-
-    if peak_A > peak_B:
-        idx_A = peak_A - peak_B
-        idx_B = 0
-        tmove = -idx_A / fs
-    else:
-        idx_A = 0
-        idx_B = peak_B - peak_A
-        tmove = idx_B / fs
-
-    wfA = wfA[idx_A:]
-    wfB = wfB[idx_B:]
-    len_A = len(wfA)
-    len_B = len(wfB)
-    peak_A = wfA.argpeak
-    peak_B = wfB.argpeak           
-    tail_A = len_A - peak_A
-    tail_B = len_B - peak_B
-
-    # Check data shape 
-    if tail_A > tail_B:
-        lpad = tail_A - tail_B
-        wfB.pad((0,lpad), 'constant')
-    else:
-        lpad = tail_B - tail_A
-        wfA.pad((0,lpad), 'constant')
-        
-    return wfA, wfB, tmove
 
 def parse_ecc(ecc, maxecc):
     if maxecc > 0:

@@ -282,7 +282,10 @@ def plot_marker(x, y,
                 fname = 'marker.png',
                 title = 'marker plot',
                 xlabel = 'x',
-                ylabel = 'y'):
+                ylabel = 'y',
+                xlim = None,
+                ylim = None,
+                ylog = False):
         if figsize is None:
             figsize = (8,5)
             
@@ -290,7 +293,11 @@ def plot_marker(x, y,
         plt.scatter(x, y, marker = marker, color = color)
         plt.xlabel(xlabel)
         plt.ylabel(ylabel)
+        if ylog:
+            plt.yscale('log')
         plt.title(title)
+        plt.xlim(xlim)
+        plt.ylim(ylim)
         plt.savefig(fname, dpi = 100)
 
 

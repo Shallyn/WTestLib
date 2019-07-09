@@ -10,5 +10,15 @@ from . import gracedb
 from . import datasource
 from glue import gpstime
 from astropy.time import Time
+import time
+
+def get_nowtime():
+    t = time.time()
+    return gpstime.GpsSecondsFromPyUTC(t)
+
+def GPS2ISO(gps):
+    scTime = Time(int(gps), format = 'gps')
+    return scTime.iso
+
 
 __all__ = ['gracedb', 'datasource']

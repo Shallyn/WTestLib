@@ -21,6 +21,7 @@ def get_sigma2(ifo):
         return (118 * 2)**2
     if ifo is 'V1':
         return (53 * 2)**2
+    print('NO FIT IFO')
 
 
 #-----------------------My Strain Series Class--------------------#

@@ -175,6 +175,7 @@ def main(argv = None):
             if refpsd is not None:
                 datapsd = np.loadtxt(fdict_refpsd[ifo])
                 print(datapsd.shape)
+                print(datapsd[0,:])
                 psd = interp1d(datapsd[0,:], datapsd[1,:])
             else:
                 refdata = np.loadtxt(fdict_ref[ifo])

@@ -107,6 +107,9 @@ def main(argv = None):
     refpsd = args.ref_psd
     channel = args.channel
     
+    if refpsd is not None:
+        fdict_refpsd = sngl_load_file(refpsd, channel)
+
     track = args.track
     # Step.2 load data...
     if graceid is None:
@@ -123,8 +126,6 @@ def main(argv = None):
         else:
             fdict_ref = sngl_load_file(ref, channel)
         
-        if refpsd is not None:
-            fdict_refpsd = sngl_load_file(refpsd, channel)
         # load data, make gwStrain, set psd.
         for ifo in ['H1', 'L1', 'V1']:
             if ifo not in fdict:

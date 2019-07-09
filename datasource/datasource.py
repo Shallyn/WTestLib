@@ -124,6 +124,7 @@ def load_data_from_shm(gpsstart, gpsend, ifo, channel, shmpath, fs = 4096):
     seg = shmseg(name, channel, gpsstart)
     for t in range(t_start, t_end):
         filename = '{0}/{1}-{2}-{3}'.format(shmpath, fprefix, t, '1.gwf')
+        print(filename)
         seg.append(filename, 1)
     return seg.togwStrain(fs = fs)
     

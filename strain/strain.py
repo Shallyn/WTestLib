@@ -101,6 +101,7 @@ class gwStrain(TimeSeriesBase):
              epoch = False, 
              fsave = None,
              title = None,
+             ylabel = None,
              figsize = None):
         if epoch:
             epoch = self.epoch
@@ -115,7 +116,7 @@ class gwStrain(TimeSeriesBase):
         sgl.plotit(self.time, data,
                    xrange = xrange, yrange = yrange,
                    title = title,
-                   xlabel = 'time', ylabel = None,
+                   xlabel = 'time', ylabel = ylabel,
                    epoch = epoch, save = fsave, 
                    figsize = figsize)
 

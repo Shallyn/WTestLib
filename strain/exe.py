@@ -243,7 +243,7 @@ def event_scan(gps, sH1, sL1, sV1,
                         ylabel = 'strain',
                         figsize = (12, 5))
             # plot psd
-            psd_data = strain.psdfun(psd_freqs)
+            psd_data = strain.psdfun_setted(psd_freqs)
             plt.figure(figsize = (8,6))
             plt.plot(psd_freqs, psd_data, color = 'black')
             plt.xlabel('freq [Hz]')

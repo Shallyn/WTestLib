@@ -24,7 +24,8 @@ from ..coherent.skymap import mollview, graticule, MollweideProj
 from pathlib import Path
 from .snr_qTansform import snr_q_scanf
 from .detectors import time_delay
-from ..Utils import WARNING
+from ..Utils import WARNING, LOG
+from ..datasource.gracedb import GraceEvent
 
 
 DEFAULT_NSIDE = 32
@@ -40,6 +41,9 @@ def parseargs(argv):
     parser.add_option('--de', type = 'float', help = 'dec of this event, if added, will use this value.')
     
     parser.add_option('--graceid', type = 'str', help = 'GraceDB Event ID, if added, will load such Grace event parameters.')
+    parser.add_option('--stepback', type = 'int', default = 15, help = 'Used for GraceDB data load.')
+    parser.add_option('--stepforward', type = 'int', default = 15, help = 'Used for GraceDB data load.')
+    
     parser.add_option('--gps', type = 'float', help = 'gps trigger time for this event.')
     parser.add_option('--sample-rate', type = 'int', default = 4096, help = 'sample rate used.')
     
@@ -77,6 +81,8 @@ def main(argv = None):
     
     gps = args.gps
     graceid = args.graceid
+    sback = args.stepback
+    sfwd = args.stepforward
     fs = args.sample_rate
     
     m1 = args.m1
@@ -107,7 +113,7 @@ def main(argv = None):
             s1z is None or \
             s2z is None:
             sys.stderr.write(f'{WARNING}:Input parameters is insufficient, exit.\n')
-            return 0
+            return -1
         fdict = sngl_load_file(datadir, channel)
         if ref is None:
             fdict_ref = sngl_load_file(datadir, channel)
@@ -133,7 +139,27 @@ def main(argv = None):
                         locals()[f's{ifo}'] = gwStrain.resample(fs)
                     locals()[f's{ifo}'].set_psd(psd)
     else:
-        pass
+        sys.stderr.write(f'{LOG}:Parse GraceID...\n')
+        try:
+            Gevt = GraceEvent(graceid)
+            sngl = Gevt.get_sngl('L1')
+            m1 = sngl.mass1
+            m2 = sngl.mass2
+            s1z = sngl.spin1z
+            s2z = sngl.spin2z
+            gps = Gevt.end_time
+        except:
+            sys.stderr.write(f'{WARNING}:Failed to parse GraceEvent, exit\n')
+            return -1
+        sys.stderr.write(f'{LOG}:Loading data...\n')
+        try:
+            datadict = Gevt.load_data(stepback = sback, stepforward = sfwd, channel = channel, fs = fs)
+            for key in datadict:
+                locals()[f's{key}'] = datadict[key]
+        except:
+            sys.stderr.write(f'{WARNING}:Failed to load data, exit\n')
+            return -1
+        
     # Step.3 Call....
     event_scan(gps = gps,
                sH1 = locals()['sH1'],

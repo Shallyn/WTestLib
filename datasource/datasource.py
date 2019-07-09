@@ -19,7 +19,7 @@ channel_dict = {'H1_CALIB':'H1:GDS-CALIB_STRAIN', 'H1_GATED':'H1:GDS-GATED_STRAI
 
 
 class gwStrainSRC(object):
-    def __init__(self, ifo, gpsstart, gpsend, channel, tag = 'kafka', fs = 4096):
+    def __init__(self, ifo, gpsstart, gpsend, channel, tag = 'kafka'):
         self._shmpath = Path(f'/dev/shm/{tag}')
         self._gpsstart = gpsstart
         self._gpsend = gpsend
@@ -33,9 +33,8 @@ class gwStrainSRC(object):
             self._frame = '{}_HOFT_C00'.format(self._ifo)
         else:
             self._frame = 'V1Online'
-        self._load_data(fs)
     
-    def _load_data(self, fs = 4096):
+    def load_data(self, fs = 4096):
         t_start = int(self._gpsstart)
         t_end = int(self._gpsend)
         ret = load_data_from_shm(t_start, t_end, 

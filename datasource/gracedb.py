@@ -8,7 +8,7 @@ Created on Mon Jul  8 12:36:31 2019
 
 from ligo.gracedb.rest import GraceDb
 from glue.ligolw import ligolw, lsctables
-from ..Utils import CEV, WARNING
+from ..Utils import CEV, WARNING, LOG
 import sys
 from .datasource import gwStrainSRC
 
@@ -68,6 +68,8 @@ class GraceEvent(object):
     def load_data(self, stepback = 15, stepforward = 15, channel = 'GATED', fs = 4096):
         tstart = self.end_time - abs(stepback)
         tend = self.end_time + abs(stepforward)
+        if self._verbose:
+            sys.stderr.write(f'{LOG}:Load data {tstart} .. {tend}\n')
         ret = dict()
         for ifo in self._ifos:
             gws = gwStrainSRC(ifo, tstart, tend, channel = f'{ifo}_{channel}')

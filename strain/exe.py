@@ -296,7 +296,7 @@ def event_scan(gps, sH1, sL1, sV1,
         plt.ylim([30, 1000])
         plt.yscale('log')
         plt.xlim(tlim)
-        plt.savefig(fsave/f'testQscan_{data.ifo}.png', dpi = 200)
+        plt.savefig(fsave/f'Qscan_{data.ifo}.png', dpi = 200)
         plt.show()
         
     # Step.6 Plot coherent skymap
@@ -367,7 +367,7 @@ def event_scan(gps, sH1, sL1, sV1,
     plt.ylim([30, 500])
     plt.xlim(tlim)
     plt.yscale('log')
-    plt.savefig(fsave/'testsnrQscan_coh.png',dpi = 200)
+    plt.savefig(fsave/'snrQscan_coh.png',dpi = 200)
     plt.show()
     
     fig = plt.figure(figsize=(10,5))
@@ -380,7 +380,7 @@ def event_scan(gps, sH1, sL1, sV1,
     plt.ylim([30, 500])
     plt.xlim(tlim)
     plt.yscale('log')
-    plt.savefig(fsave/'testsnrQscan_coh_01.png',dpi = 200)
+    plt.savefig(fsave/'snrQscan_coh_01.png',dpi = 200)
     plt.show()
     
     fig = plt.figure(figsize=(10,5))
@@ -393,7 +393,7 @@ def event_scan(gps, sH1, sL1, sV1,
     plt.ylim([30, 500])
     plt.xlim(tlim)
     plt.yscale('log')
-    plt.savefig(fsave/'testsnrQscan_coh_02.png',dpi = 200)
+    plt.savefig(fsave/'snrQscan_coh_02.png',dpi = 200)
     plt.show()
 
     fig = plt.figure(figsize=(10,5))
@@ -406,7 +406,7 @@ def event_scan(gps, sH1, sL1, sV1,
     plt.ylim([30, 500])
     plt.xlim(tlim)
     plt.yscale('log')
-    plt.savefig(fsave/'testsnrQscan_null.png',dpi = 200)
+    plt.savefig(fsave/'snrQscan_null.png',dpi = 200)
     plt.show()
 
 

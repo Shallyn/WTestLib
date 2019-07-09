@@ -9,7 +9,7 @@ import matplotlib as mlb
 mlb.use('Agg')
 from optparse import OptionParser
 
-from .signal import sngl_load_file, whiten, get_psdfun
+from .signal import sngl_load_file, whiten, get_psdfun, plotit
 from .strain import gwStrain
 from .template import template
 from .detectors import Detector
@@ -235,12 +235,24 @@ def event_scan(gps, sH1, sL1, sV1,
     tmpmax = 0
     snrLIST = []
     sLIST = []
+    psd_freqs = np.logspace(np.log10(1), np.log10(1500), 500)
     for strain in [sH1, sL1, sV1]:
         if strain is not None:
             strain.plot(fsave = fsave / f'{strain.ifo}_data.png', 
                         title = f'{strain.ifo} data',
                         ylabel = 'strain',
                         figsize = (12, 5))
+            # plot psd
+            psd_data = strain.psdfun(psd_freqs)
+            plt.figure(figsize = (8,6))
+            plt.plot(psd_freqs, psd_data, color = 'black')
+            plt.xlabel('freq [Hz]')
+            plt.ylabel('strain [$Hz^-2$]')
+            plt.yscale('log')
+            plt.title(f'psd {strain.ifo}')
+            plt.savefig(fsave / 'psd_{strain.ifo}.png', dpi = 200)
+            plt.show()
+            
             sLIST.append(strain)
             locals()['SNR_{}'.format(strain.ifo)] = \
             strain.matched_filter(tmpl.template, cut = [30,1000], window = True, psd = 'set', ret_complex = True, shift = tmpl.dtpeak)

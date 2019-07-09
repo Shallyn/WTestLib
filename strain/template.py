@@ -26,6 +26,7 @@ class template(object):
                  approx = 'SEOBNRv4', 
                  srate = 4096, 
                  D = 100):
+        self._role = 'template'
         self._m1 = m1
         self._m2 = m2
         self._s1z = s1z
@@ -150,7 +151,29 @@ class template(object):
     @property
     def time(self):
         return np.arange(0, len(self) * self.deltat, self.deltat)
-        
+    
+    def plot(self, 
+             xrange = None, 
+             yrange = None, 
+             epoch = False, 
+             fsave = None,
+             title = None,
+             figsize = None):
+        if epoch:
+            epoch = self.epoch
+        else:
+            epoch = None
+        if title is None:
+            title = self._role
+        data = self.real
+        sgl.plotit(self.time, data,
+                   xrange = xrange, yrange = yrange,
+                   title = title,
+                   xlabel = 'time', ylabel = None,
+                   epoch = epoch, save = fsave, 
+                   figsize = figsize)
+    
+    
     def construct_detector_strain(self, ifo, ra, de, psi, t_inj, noise = None):
         if self.STATE is not CEV.SUCCESS:
             return None

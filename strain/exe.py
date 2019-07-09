@@ -159,6 +159,12 @@ def main(argv = None):
             s1z = sngl.spin1z
             s2z = sngl.spin2z
             gps = Gevt.end_time
+            sys.stderr.write(f'{LOG}:Parameters:\n\t\
+                             m1 = {m1}\n\t\
+                             m2 = {m2}\n\t\
+                             s1z = {s1z}\n\t\
+                             s2z = {s2z}\n\t\
+                             gps end time: {gps}\n')
         except:
             sys.stderr.write(f'{WARNING}:Failed to parse GraceEvent, exit\n')
             return -1
@@ -222,13 +228,19 @@ def event_scan(gps, sH1, sL1, sV1,
                     srate = fs,
                     D = 100)
     track_x, track_y = tmpl.get_track(gps)
-    
+    tmpl.plot(fsave = fsave / 'template.png', 
+              title = 'template',
+              figsize = (12,5))
     # Step.2 Matched filtering
     tmpmax = 0
     snrLIST = []
     sLIST = []
     for strain in [sH1, sL1, sV1]:
         if strain is not None:
+            strain.plot(fsave = fsave / f'{strain.ifo}_data.png', 
+                        title = f'{strain.ifo} data',
+                        ylabel = 'strain',
+                        figsize = (12, 5))
             sLIST.append(strain)
             locals()['SNR_{}'.format(strain.ifo)] = \
             strain.matched_filter(tmpl.template, cut = [30,1000], window = True, psd = 'set', ret_complex = True, shift = tmpl.dtpeak)

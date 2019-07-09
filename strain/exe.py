@@ -152,7 +152,7 @@ def main(argv = None):
     else:
         sys.stderr.write(f'{LOG}:Parse GraceID...\n')
         try:
-            Gevt = GraceEvent(graceid)
+            Gevt = GraceEvent(graceid, verbose = True)
             sngl = Gevt.get_sngl('L1')
             m1 = sngl.mass1
             m2 = sngl.mass2
@@ -174,8 +174,6 @@ def main(argv = None):
         for ifo in datadict:
             if refpsd is not None:
                 datapsd = np.loadtxt(fdict_refpsd[ifo])
-                print(datapsd.shape)
-                print(datapsd[0,:])
                 psd = interp1d(datapsd[0,:], datapsd[1,:])
             else:
                 refdata = np.loadtxt(fdict_ref[ifo])

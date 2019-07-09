@@ -162,13 +162,22 @@ def main(argv = None):
             sys.stderr.write(f'{WARNING}:Failed to parse GraceEvent, exit\n')
             return -1
         sys.stderr.write(f'{LOG}:Loading data...\n')
-        # try:
-        datadict = Gevt.load_data(stepback = sback, stepforward = sfwd, channel = channel, fs = fs)
-        for key in datadict:
-            locals()[f's{key}'] = datadict[key]
-        # except:
-        #     sys.stderr.write(f'{WARNING}:Failed to load data, exit\n')
-        #     return -1
+        try:
+            datadict = Gevt.load_data(stepback = sback, stepforward = sfwd, channel = channel, fs = fs)
+            for key in datadict:
+                locals()[f's{key}'] = datadict[key]
+        except:
+            sys.stderr.write(f'{WARNING}:Failed to load data, exit\n')
+            return -1
+        
+        for ifo in datadict:
+            if refpsd is not None:
+                datapsd = np.loadtxt(fdict_refpsd[ifo])
+                psd = interp1d(datapsd[0,:], datapsd[1,:])
+            else:
+                refdata = np.loadtxt(fdict_ref[ifo])
+                psd = get_psdfun(refdata[:,1], fs = fs)
+            locals()[f's{ifo}'].set_psd(psd)
         
     # Step.3 Call....
     event_scan(gps = gps,

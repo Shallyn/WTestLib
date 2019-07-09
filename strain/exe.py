@@ -67,7 +67,7 @@ def parseargs(argv):
     parser.add_option('--datadir', type = 'str', help = 'dir for data saving.')
     parser.add_option('--prefix', type = 'str', default = '.', help = 'prefix for results saving.')
     parser.add_option('--ref', type = 'str', help = 'prefix for reference psd.')
-    parser.add_option('--ref-pad', type = 'str', help = 'prefix for reference psd, preferred.')
+    parser.add_option('--ref-psd', type = 'str', help = 'prefix for reference psd, preferred.')
     parser.add_option('--channel', type = 'str', default = 'GATED', help = 'channel type, if local data used.')
     
     parser.add_option('--track', action = 'store_true', help = 'If added, will plot track.')

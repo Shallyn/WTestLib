@@ -83,9 +83,8 @@ class shmseg(object):
         return self._broken
     
     def togwStrain(self, fs = 4096):
-        print(CEV.GEN_FAIL)
         if self.broken:
-            return CEV.FAILURE
+            return CEV.GEN_FAIL
         gs = gwStrain(self._value, self._epoch, self._ifo, self._fs, info = f'{self._ifo}')
         if fs != self._fs:
             gs.resample(fs)
@@ -108,7 +107,7 @@ def load_data_from_gwpy(gpsstart, gpsend, ifo, channel, frame, fs = 4096):
             return ret.resample(fs)
         return ret
     except:
-        return CEV.FAILURE
+        return CEV.GEN_FAIL
 
 def load_data_from_shm(gpsstart, gpsend, ifo, channel, shmpath, fs = 4096):
     
@@ -129,7 +128,7 @@ def load_data_manual(gpsstart, gpsend, ifo, channel, fs = 4096):
     # This method will reset self.value & self.epoch & self.duration
     filelist, glist = find_data_path(ifo, gpsstart, gpsend)
     if len(filelist) == 0:
-            return CEV.FAILURE
+            return CEV.GEN_FAIL
     argsrt = np.argsort(np.asarray(glist))
     value = np.array([])
     epoch = int(gpsstart)

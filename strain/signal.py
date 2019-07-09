@@ -29,6 +29,10 @@ def whiten(strain, interp_psd, fs):
     return white_ht, sigmasq
 
 def get_psdfun(data, fs, NFFT = None, NOVL = None, window = False):
+    data_psd, freqs = get_psd(data, fs = fs, NFFT = NFFT, window=window, NOVL=NOVL)
+    return interp1d(freqs, data_psd)
+
+def get_psd(data, fs, NFFT = None, NOVL = None, window = False):
     if NFFT is None:
         NFFT = 4*fs
     if window:
@@ -39,7 +43,7 @@ def get_psdfun(data, fs, NFFT = None, NOVL = None, window = False):
     if NOVL is None:
         NOVL = NFFT/2
     data_psd, freqs = mlab.psd(data, Fs = fs, NFFT = NFFT, window=psd_window, noverlap=NOVL)
-    return interp1d(freqs, data_psd)
+    return data_psd, freqs
 
 def matched_filter(s, h, fs, psdfun = None, cut = None, window = True, ret_complex = False):
     if window:
@@ -234,3 +238,4 @@ def sngl_load_file(fdir, channel = 'CALIB'):
             if ifo in file.name.split('_'):
                 out[ifo] = file
     return out
+    

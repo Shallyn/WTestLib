@@ -26,6 +26,7 @@ from .snr_qTansform import snr_q_scanf
 from .detectors import time_delay
 from ..Utils import WARNING, LOG
 from ..datasource.gracedb import GraceEvent
+from scipy.interpolate import interp1d
 
 
 DEFAULT_NSIDE = 32
@@ -66,6 +67,7 @@ def parseargs(argv):
     parser.add_option('--datadir', type = 'str', help = 'dir for data saving.')
     parser.add_option('--prefix', type = 'str', default = '.', help = 'prefix for results saving.')
     parser.add_option('--ref', type = 'str', help = 'prefix for reference psd.')
+    parser.add_option('--ref-pad', type = 'str', help = 'prefix for reference psd, preferred.')
     parser.add_option('--channel', type = 'str', default = 'GATED', help = 'channel type, if local data used.')
     
     parser.add_option('--track', action = 'store_true', help = 'If added, will plot track.')
@@ -102,6 +104,7 @@ def main(argv = None):
     datadir = args.datadir
     prefix = args.prefix
     ref = args.ref
+    refpsd = args.ref_psd
     channel = args.channel
     
     track = args.track
@@ -119,6 +122,9 @@ def main(argv = None):
             fdict_ref = sngl_load_file(datadir, channel)
         else:
             fdict_ref = sngl_load_file(ref, channel)
+        
+        if refpsd is not None:
+            fdict_refpsd = sngl_load_file(refpsd, channel)
         # load data, make gwStrain, set psd.
         for ifo in ['H1', 'L1', 'V1']:
             if ifo not in fdict:
@@ -131,8 +137,12 @@ def main(argv = None):
                     resample = True
                 else:
                     resample = False
-                refdata = np.loadtxt(fdict_ref[ifo])
-                psd = get_psdfun(refdata[:,1], fs = fs)
+                if refpsd is not None:
+                    datapsd = np.loadtxt(fdict_refpsd[ifo])
+                    psd = interp1d(datapsd[:,0], datapsd[:,1])
+                else:
+                    refdata = np.loadtxt(fdict_ref[ifo])
+                    psd = get_psdfun(refdata[:,1], fs = fs)
                 if np.max(src[:,1]) > 0:
                     locals()[f's{ifo}'] = gwStrain(src[:,1], epoch = src[:,0][0], ifo = ifo, fs = fs)
                     if resample:

@@ -139,7 +139,7 @@ def main(argv = None):
                     resample = False
                 if refpsd is not None:
                     datapsd = np.loadtxt(fdict_refpsd[ifo])
-                    psd = interp1d(datapsd[:,0], datapsd[:,1])
+                    psd = interp1d(datapsd[0,:], datapsd[1,:])
                 else:
                     refdata = np.loadtxt(fdict_ref[ifo])
                     psd = get_psdfun(refdata[:,1], fs = fs)

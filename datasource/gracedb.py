@@ -70,8 +70,8 @@ class GraceEvent(object):
         tend = self.end_time + abs(stepforward)
         ret = dict()
         for ifo in self._ifos:
-            gwStrainSRC(ifo, tstart, tend, channel = f'{ifo}_{channel}')
-            ret[f'{ifo}'] = gwStrainSRC.load_data(fs)
+            gws = gwStrainSRC(ifo, tstart, tend, channel = f'{ifo}_{channel}')
+            ret[f'{ifo}'] = gws.load_data(fs)
         return ret
         
 

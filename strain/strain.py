@@ -15,6 +15,7 @@ from .snr_qTansform import snr_q_scanf
 
 # H1-118 L1-150 V1-53
 def get_sigma2(ifo):
+    print('OK')
     if ifo is 'L1':
         return (150 * 2)**2
     if ifo is 'H1':

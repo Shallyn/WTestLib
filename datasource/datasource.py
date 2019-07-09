@@ -51,7 +51,7 @@ class gwStrainSRC(object):
         if not isinstance(ret, CEV):
             return ret
         sys.stderr.write(f'{WARNING}:Failed to find data...\n')
-        return CEV.FAIL
+        return CEV.GEN_FAIL
             
 class shmseg(object):
     def __init__(self, name, channel, epoch, fs = 16384):

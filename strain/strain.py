@@ -15,13 +15,12 @@ from .snr_qTansform import snr_q_scanf
 
 # H1-118 L1-150 V1-53
 def get_sigma2(ifo):
-    if ifo is 'L1':
+    if ifo == 'L1':
         return (150 * 2)**2
-    if ifo is 'H1':
+    if ifo == 'H1':
         return (118 * 2)**2
-    if ifo is 'V1':
+    if ifo == 'V1':
         return (53 * 2)**2
-    print('NO FIT IFO')
 
 
 #-----------------------My Strain Series Class--------------------#

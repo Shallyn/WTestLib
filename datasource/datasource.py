@@ -35,6 +35,7 @@ class gwStrainSRC(object):
             self._frame = 'V1Online'
     
     def load_data(self, fs = 4096):
+        print(type(self._gpsstart))
         t_start = int(self._gpsstart)
         t_end = int(self._gpsend)
         ret = load_data_from_shm(t_start, t_end, 

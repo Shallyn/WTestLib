@@ -47,3 +47,5 @@ class DetTable(object):
         names = self.__dict__
         for key in table:
             names[key] = table[key]
+        self.gps = self.end_time + 1e-9 * self.end_time_ns
+            

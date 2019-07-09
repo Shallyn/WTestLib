@@ -150,17 +150,17 @@ def main(argv = None):
                     locals()[f's{ifo}'].set_psd(psd)
     else:
         sys.stderr.write(f'{LOG}:Parse GraceID...\n')
-        try:
-            Gevt = GraceEvent(graceid)
-            sngl = Gevt.get_sngl('L1')
-            m1 = sngl.mass1
-            m2 = sngl.mass2
-            s1z = sngl.spin1z
-            s2z = sngl.spin2z
-            gps = Gevt.end_time
-        except:
-            sys.stderr.write(f'{WARNING}:Failed to parse GraceEvent, exit\n')
-            return -1
+        # try:
+        Gevt = GraceEvent(graceid)
+        sngl = Gevt.get_sngl('L1')
+        m1 = sngl.mass1
+        m2 = sngl.mass2
+        s1z = sngl.spin1z
+        s2z = sngl.spin2z
+        gps = Gevt.end_time
+        # except:
+        #     sys.stderr.write(f'{WARNING}:Failed to parse GraceEvent, exit\n')
+        #     return -1
         sys.stderr.write(f'{LOG}:Loading data...\n')
         try:
             datadict = Gevt.load_data(stepback = sback, stepforward = sfwd, channel = channel, fs = fs)

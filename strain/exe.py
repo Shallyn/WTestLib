@@ -250,7 +250,7 @@ def event_scan(gps, sH1, sL1, sV1,
             plt.ylabel('strain [$Hz^-2$]')
             plt.yscale('log')
             plt.title(f'psd {strain.ifo}')
-            plt.savefig(fsave / 'psd_{strain.ifo}.png', dpi = 200)
+            plt.savefig(fsave / f'psd_{strain.ifo}.png', dpi = 200)
             plt.show()
             
             sLIST.append(strain)

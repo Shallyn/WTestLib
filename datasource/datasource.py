@@ -49,6 +49,10 @@ class gwStrainSRC(object):
             return ret
         sys.stderr.write(f'{WARNING}:Failed to find data in gwpy, try manual...\n')
         ret = load_data_manual(self._gpsstart, self._gpsend, self._ifo, self._channel, fs)
+        if not isinstance(ret, CEV):
+            return ret
+        sys.stderr.write(f'{WARNING}:Failed to find data...\n')
+        return CEV.FAIL
             
 class shmseg(object):
     def __init__(self, name, channel, epoch, fs = 16384):

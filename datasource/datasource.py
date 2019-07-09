@@ -169,7 +169,7 @@ def find_data_path(ifo, gpsstart, gpsend):
     g5 = int(gpsstart / 1e5)
     srcpath = None
     for src in shmpath.iterdir():
-        gsrc = int(src.split(prefix)[-1])
+        gsrc = int(src.name.split(prefix)[-1])
         if g5 == gsrc:
             srcpath = src
             break

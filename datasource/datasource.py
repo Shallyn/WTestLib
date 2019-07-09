@@ -83,6 +83,7 @@ class shmseg(object):
         return self._broken
     
     def togwStrain(self, fs = 4096):
+        print(self.broken)
         if self.broken:
             return CEV.FAILURE
         gs = gwStrain(self._value, self._epoch, self._ifo, self._fs, info = f'{self._ifo}')

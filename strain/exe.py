@@ -147,7 +147,7 @@ def main(argv = None):
                 if np.max(src[:,1]) > 0:
                     locals()[f's{ifo}'] = gwStrain(src[:,1], epoch = src[:,0][0], ifo = ifo, fs = fs)
                     if resample:
-                        locals()[f's{ifo}'] = gwStrain.resample(fs)
+                        locals()[f's{ifo}'] = locals()[f's{ifo}'].resample(fs)
                     locals()[f's{ifo}'].set_psd(psd)
     else:
         sys.stderr.write(f'{LOG}:Parse GraceID...\n')
@@ -251,6 +251,7 @@ def event_scan(gps, sH1, sL1, sV1,
     
     # Step.5 Plot snr q scan spectrum.
     for data in sLIST:
+        print(data.sigma2)
         func = snr_q_scanf(data.value, tmpl.template, 
                            data.fs, data.epoch, 
                            cut=None, psd = data.psdfun_setted,

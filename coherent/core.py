@@ -10,14 +10,14 @@ import numpy as np
 from scipy.interpolate import interp1d
 from ..strain.detectors import Detector
 import sys
-from ..Utils import Progress, Progress_time
+from ..Utils import Progress, Progress_time, WARNING
 import time
 try:
     from . import PyGWCOH as pg
     GWCOH = True
 except:
     GWCOH = False
-    sys.stderr.write('Warning: cannot import PyGWCOH')
+    sys.stderr.write(f'{WARNING}: cannot import PyGWCOH')
 
 # LIST = [SNR_H1, SNR_L1, SNR_V1]
 # SNR_ifo = [channel, snrTimeSeries, sigma2, index]

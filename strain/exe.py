@@ -275,7 +275,7 @@ def event_scan(gps, sH1, sL1, sV1,
 
     # Step.4 Plot SNR time series.
     for SNR in snrLIST:
-        SNR.plot(xrange = tlim, title = f'SNR {SNR.ifo}', fsave = fsave / f'fig_SNR_{SNR.ifo}.png')
+        SNR.plot(xrange = None, title = f'SNR {SNR.ifo}', fsave = fsave / f'fig_SNR_{SNR.ifo}.png')
     
     # Step.5 Plot snr q scan spectrum.
     for data in sLIST:

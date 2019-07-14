@@ -10,7 +10,7 @@ from gwpy.timeseries import TimeSeries
 from pathlib import Path
 from ..strain.strain import gwStrain
 import numpy as np
-from ..Utils import CEV, WARNING
+from ..Utils import CEV, WARNING, DEBUG
 import sys
 
 channel_dict = {'H1_CALIB':'H1:GDS-CALIB_STRAIN', 'H1_GATED':'H1:GDS-GATED_STRAIN', 'H1_IDQ': 'H1:IDQ-PGLITCH_OVL_16_4096' ,\
@@ -106,10 +106,10 @@ def load_data_from_gwpy(gpsstart, gpsend, ifo, channel, frame, fs = 4096):
         value = data.value
         srate = data.sample_rate.value
         epoch = data.epoch.value
-        sys.stderr.write('DURATION = {}'.format(len(value)/srate))
         #duration = data.duration.value
         ret = gwStrain(value, epoch, ifo, srate, info = f'{ifo}')
-        if srate != fs:
+        sys.stderr.write(f'{DEBUG}:DURATION = {ret.duration}\n')
+        if srate != fs:            
             return ret.resample(fs)
         return ret
     except:

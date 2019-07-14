@@ -34,6 +34,7 @@ WARNING = warningWrapper('Warning')
 def debugWrapper(debug):
     return f'{COLOR.DEBUG}{debug}{COLOR.END}'
 MESSAGE = debugWrapper('Message')
+DEBUG = debugWrapper('DEBUG')
 
 #------Exception Type------#
 class CEV(Enum):

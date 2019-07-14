@@ -47,7 +47,7 @@ def utdk_times(LIST, ra_pix, de_pix, times, verbose = False):
     if verbose:
         sys.stderr.write('Done\n')
         sys.stderr.write('--Calculating rho_vec ...\n')
-    if GWCOH:
+    if False:
         rho = rho_vec_GWCOH(LIST, ra_pix, de_pix, times)
     else:
         rho = rho_vec(LIST, ra_pix, de_pix, times, verbose)
@@ -100,26 +100,18 @@ def rho_vec(snr_set, ra, de, times, verbose = False):
     ndet = len(snr_set)
     rho = np.zeros([ntime,npix,ndet],np.complex)
     rho_i = np.zeros([ntime],np.complex)
-    if verbose:
-        cumitr = 0
-        itr_tot = npix * len(snr_set) * ntime
-
-    for k in range(npix):
-        rak = ra[k]
-        dek = de[k]
-        for i, snr in enumerate(snr_set):
-            fsnr = snr.sfun
-            detector = Detector(snr.ifo)
-            gps_time = times[int(ntime/2)]
+        
+    for i, snr in enumerate(snr_set):
+        fsnr = snr.sfun
+        detector = Detector(snr.ifo)
+        gps_time = times[int(ntime/2)]
+        for k in range(npix):
+            rak = ra[k]
+            dek = de[k]
             dt  = detector.time_delay_from_earth_center(rak, dek, gps_time)
-            for j in range(ntime):
-                rho_i[j] = fsnr(times[j]+dt)
-            if verbose:
-                Progress(cumitr, itr_tot)
-                cumitr += ntime
-            rho[:,k,i] = rho_i
-    if verbose:
-        sys.stderr.write('\r')
+            rho_i = fsnr(times + dt)
+        rho[:, k, i] = rho_i
+    
     return rho
 
 def rho_vec_GWCOH(snr_set, ra, de, times):

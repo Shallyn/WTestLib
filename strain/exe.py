@@ -175,7 +175,9 @@ def main(argv = None):
         try:
             datadict = Gevt.load_data(stepback = sback, stepforward = sfwd, channel = channel, fs = fs)
             for key in datadict:
-                locals()[f's{key}'] = datadict[key]
+                tmp = datadict[key]
+                sys.stderr.write(f'{LOG}:Load {key} data, duration = {tmp.duration}\n')
+                locals()[f's{key}'] = tmp
         except:
             sys.stderr.write(f'{WARNING}:Failed to load data, exit\n')
             return -1

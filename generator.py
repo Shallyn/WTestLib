@@ -67,6 +67,24 @@ def CMD_SEOBNREv4(exe,
             
     return CMD
 
+# Type 04: For new_SEOBNRE:
+def CMD_new_SEOBNRE(exe,
+                    m1,
+                    m2,
+                    s1z,
+                    s2z,
+                    D,
+                    ecc,
+                    srate,
+                    f_ini,
+                    approx):
+    CMD = f'{exe} --m1={m1} --m2={m2} \
+            --spin1z={s1z} --spin2z={s2z} \
+            --distance={D} --sample-rate={srate} \
+            --f-min={f_ini} --eccentricity={ecc} \
+            --approx={approx} --inclination=0'
+    return CMD
+
 
 # Classifier
 class Generator(object):
@@ -86,6 +104,7 @@ class Generator(object):
             if case('EOBNRv1') or \
                 case('EOBNRv4') or \
                 case('SEOBNRv1') or \
+                case('SEOBNRv2') or \
                 case('SEOBNRv4'):
                 self._CMD = lambda m1, m2, s1z, s2z, D, ecc, srate, f_ini : \
                     CMD_lalsim_inspiral(exe = self._exe,
@@ -140,6 +159,29 @@ class Generator(object):
                 self._pretreat = _pretreat
                 self._allow_ecc = True
                 break
+            if case('new_SEOBNREv1') or \
+                case('new_SEOBNREv2') or \
+                case('new_SEOBNREv4'):
+                self._approx = self._approx.split('_')[-1]
+                self._CMD = lambda m1, m2, s1z, s2z, D, ecc, srate, f_ini : \
+                    CMD_new_SEOBNRE(exe = self._exe,
+                                    m1 = m1,
+                                    m2 = m2,
+                                    s1z = s1z,
+                                    s2z = s2z,
+                                    D = D,
+                                    ecc = ecc,
+                                    srate = srate,
+                                    f_ini = f_ini,
+                                    approx = self._approx)
+                def _pretreat(hr, hi, r, M):
+                    hr *= np.sqrt(4 * np.pi / 5) * dim_h(r, M)
+                    hi *= -np.sqrt(4 * np.pi / 5) * dim_h(r, M)
+                    return hr, hi
+                self._pretreat = _pretreat
+                self._allow_ecc = True
+                break
+
             raise ValueError('Unsupported approx: {}'.format(self._approx))
     
     @property
@@ -161,14 +203,15 @@ class Generator(object):
                  f_ini,
                  timeout = 60,
                  jobtag = '_test'):
-        cev, ret =  cmd_stdout_cev(self._CMD(m1 = m1,
-                                    m2 = m2,
-                                    s1z = s1z,
-                                    s2z = s2z,
-                                    D = D,
-                                    ecc = ecc,
-                                    srate = srate,
-                                    f_ini = f_ini ), 
+        EXE = self._CMD(m1 = m1,
+                        m2 = m2,
+                        s1z = s1z,
+                        s2z = s2z,
+                        D = D,
+                        ecc = ecc,
+                        srate = srate,
+                        f_ini = f_ini )
+        cev, ret =  cmd_stdout_cev(EXE, 
                             timeout = timeout,
                             name_out = jobtag)
         if cev is CEV.SUCCESS:
@@ -187,7 +230,9 @@ class CompGenerator(object):
         gen1 = Generator(approx1, exe1, verbose)
         gen2 = Generator(approx2, exe2, verbose)
         self._get_wf1 = gen1.__call__
+        self._pretreat1 = gen1._pretreat
         self._get_wf2 = gen2.__call__
+        self._pretreat2 = gen2._pretreat
         
     def compare(self,
                 q,
@@ -220,12 +265,11 @@ class CompGenerator(object):
             ns2z = 1
             s2z = [s2z]
             
-        if hasattr(ecc, '__ecc__'):
+        if hasattr(ecc, '__len__'):
             necc = len(ecc)
         else:
             necc = 1
             ecc = [ecc]
-        
         if self._verbose:
             sys.stderr.write(f'{LOG}:Now calling...\n')
         ret = np.zeros([nq, ns1z, ns2z, necc])
@@ -235,23 +279,35 @@ class CompGenerator(object):
                     for l, eccl in enumerate(ecc):
                         m1 = Mtotal * qi / (1 + qi)
                         m2 = Mtotal / (1 + qi) 
-                        ret[i,j,k] = self._core_calcFF(m1, m2, 
-                                                       s1zj, s2zk, eccl,
-                                                       D, f_ini, 
-                                                       srate, timeout, jobtag)
+                        ans = self._core_calcFF(m1, m2, 
+                                               s1zj, s2zk, eccl,
+                                               D, f_ini, 
+                                               srate, timeout, jobtag)
+                        ret[i,j,k,l] = ans
+                        sys.stderr.write(f'PMS: m1 = {m1}, m2 = {m2}, s1z = {s1zj}, s2z = {s2zk} ecc = {eccl}\n\t FF = {ans}\n\n')
         
         return ret
     
     def _core_calcFF(self, m1, m2, s1z, s2z, ecc,
                      D, f_ini, srate, timeout, jobtag):
-        wf1 = self._get_wf1(m1, m2, s1z, s2z, D, ecc,
+        Mtotal = m1 + m2
+        data = self._get_wf1(m1, m2, s1z, s2z, D, ecc,
                             srate, f_ini, timeout, jobtag)
-        if isinstance(wf1, CEV):
-            return -1
-        wf2 = self._get_wf2(m1, m2, s1z, s2z, D, ecc,
+        if isinstance(data, CEV):
+            return 0
+        t, hr, hi = data[:,0], data[:,1], data[:,2]
+        hr, hi = self._pretreat1(hr, hi, D, Mtotal)
+
+        wf1 = h22base(t, hr, hi, srate)
+
+        data = self._get_wf2(m1, m2, s1z, s2z, D, ecc,
                             srate, f_ini, timeout, jobtag)
-        if isinstance(wf2, CEV):
-            return -1
+        if isinstance(data, CEV):
+            return 0
+        t, hr, hi = data[:,0], data[:,1], data[:,2]
+        hr, hi = self._pretreat2(hr, hi, D, Mtotal)
+        wf2 = h22base(t, hr, hi, srate)
+
         wf1, wf2, tmove = h22_alignment(wf1, wf2)
         fs = wf1.srate
         NFFT = len(wf1)

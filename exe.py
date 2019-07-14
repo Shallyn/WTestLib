@@ -124,7 +124,7 @@ def resave_main(argv=None):
     for ddir in source.iterdir():
         fsave = Path(f'{prefix}_{ddir.name}.csv')
         if ddir.is_dir():
-            resave_results(str(ddir / datapref), fsave )
+            resave_results(str(ddir / datapref), fsave)
 
 #------------Model Comp----------#
 from .generator import CompGenerator
@@ -136,11 +136,11 @@ def modcomp(argv = None):
     parser.add_option('--executable2', type = 'str', default = 'lalsim-inspiral', help = 'command for waveform generation')
     parser.add_option('--prefix', type = 'str', default = '.', help = 'prefix for data save')
     parser.add_option('--verbose', action = 'store_true', help = 'If added, will print verbose message.')
-    parser.add_option('--mratio', type = 'float', action = 'append', default = [1], help = 'Mass ratio')
-    parser.add_option('--spin1z', type = 'float', action = 'append', default = [0], help = 'Spin1z')
-    parser.add_option('--spin2z', type = 'float', action = 'append', default = [0], help = 'Spin2z')
+    parser.add_option('--mratio', type = 'float', action = 'append', default = [], help = 'Mass ratio')
+    parser.add_option('--spin1z', type = 'float', action = 'append', default = [], help = 'Spin1z')
+    parser.add_option('--spin2z', type = 'float', action = 'append', default = [], help = 'Spin2z')
     parser.add_option('--mtotal', type = 'float', default = 16, help = 'Total mass of the binary system')
-    parser.add_option('--ecc', type = 'float', action = 'append', default = [0], help = 'eccentricity')
+    parser.add_option('--ecc', type = 'float', action = 'append', default = [], help = 'eccentricity')
     parser.add_option('--fini', type = 'float', default = 40, help = 'Initial orbit frequency')
     parser.add_option('--distance', type = 'float', default = 100, help = 'BBH distance in Mpc')
     parser.add_option('--srate', type = 'float', default = 16384, help = 'Sample rate')
@@ -154,9 +154,18 @@ def modcomp(argv = None):
     verbose = args.verbose
     
     q = args.mratio
+    if len(q) == 0:
+        q = [1.]
     s1z = args.spin1z
+    if len(s1z) == 0:
+        s1z = [0.]
     s2z = args.spin2z
+    if len(s2z) == 0:
+        s2z = [0.]
     ecc = args.ecc
+    if len(ecc) == 0:
+        ecc = [0.]
+    
     Mtotal = args.mtotal
     D = args.distance
     f_ini = args.fini
@@ -171,50 +180,65 @@ def modcomp(argv = None):
     Comp = CompGenerator(approx1, exe1, approx2, exe2, verbose = verbose)
     # shape of ret:[nq, ns1z, ns2z, necc]
     ret = Comp.compare(q, s1z, s2z, ecc, Mtotal, D, f_ini, srate, timeout, jobtag)
-    
     # 1. save all
-    np.savetxt(savedir / 'all.txt', ret)
+    # np.savetxt(savedir / 'all.txt', ret)
     from .Utils import plot_marker
     # 2. plot
     if len(q) > 0:
         x = q
         y = 1 - ret[:,0,0,0]
+        if min(y) <= 1e-8:
+            LOGY = False
+        else:
+            LOGY = True
         plot_marker(x, y, fname = savedir / 'CompMratio.png', 
                     title = 'q vs 1 - FF', 
                     xlabel = 'q', 
                     ylabel = 'log 1 - FF', 
-                    ylim = [0,1],
-                    ylog = True)
+                    ylim = [0, 1],
+                    ylog = LOGY)
     
     if len(s1z) > 0:
         x = s1z
         y = 1 - ret[0,:,0,0]
+        if min(y) <= 1e-8:
+            LOGY = False
+        else:
+            LOGY = True
         plot_marker(x, y, fname = savedir / 'CompSpin1z.png', 
                     title = 's1z vs 1 - FF', 
                     xlabel = 's1z', 
                     ylabel = 'log 1 - FF', 
-                    ylim = [0,1],
-                    ylog = True)
+                    ylim = [0, 1],
+                    ylog = LOGY)
         
     if len(s2z) > 0:
         x = s2z
         y = 1 - ret[0,0,:,0]
+        if min(y) <= 1e-8:
+            LOGY = False
+        else:
+            LOGY = True
         plot_marker(x, y, fname = savedir / 'CompSpin2z.png', 
                     title = 's2z vs 1 - FF', 
                     xlabel = 's2z', 
                     ylabel = 'log 1 - FF', 
-                    ylim = [0,1],
-                    ylog = True)
+                    ylim = [0, 1],
+                    ylog = LOGY)
         
     if len(ecc) > 0:
         x = ecc
         y = 1 - ret[0,0,0,:]
+        if min(y) <= 1e-8:
+            LOGY = False
+        else:
+            LOGY = True
         plot_marker(x, y, fname = savedir / 'CompEcc.png', 
                     title = 'ecc vs 1 - FF', 
                     xlabel = 'ecc', 
                     ylabel = 'log 1 - FF', 
-                    ylim = [0,1],
-                    ylog = True)
+                    ylim = [0, 1],
+                    ylog = LOGY)
         
     return 0
 

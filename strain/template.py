@@ -25,7 +25,8 @@ class template(object):
                  fini = 20, 
                  approx = 'SEOBNRv4', 
                  srate = 4096, 
-                 D = 100):
+                 D = 100,
+                 duration = None):
         self._role = 'template'
         self._m1 = m1
         self._m2 = m2
@@ -58,7 +59,14 @@ class template(object):
                 self._ht = ht_new
         else:
             self._ht = np.asarray(data[:,1]) + 1.j*np.asarray(data[:,2])
-            
+            if duration is not None:
+                self._check_duration(duration)
+                
+    def _check_duration(self, duration):
+        if self.dtpeak > abs(duration):
+            cut_idx = self.argpeak - int(abs(duration) * self.fs)
+            self._ht = self._ht[cut_idx:]
+    
     def fCMD(self, fs):
         return CMD_lalsim_inspiral(exe = 'lalsim-inspiral',
                                    m1 = self._m1,

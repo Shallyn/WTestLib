@@ -150,6 +150,9 @@ def main(argv = None):
                         locals()[f's{ifo}'] = locals()[f's{ifo}'].resample(fs)
                     locals()[f's{ifo}'].set_psd(psd)
     else:
+        if refpsd is None:
+            sys.stderr.write(f'{WARNING}:No ref psd, exit.\n')
+            return -1;
         sys.stderr.write(f'{LOG}:Parse GraceID...\n')
         try:
             Gevt = GraceEvent(graceid, verbose = True)

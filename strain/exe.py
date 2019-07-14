@@ -229,7 +229,8 @@ def event_scan(gps, sH1, sL1, sV1,
                     s2z = s2z,
                     fini = fini,
                     srate = fs,
-                    D = 100)
+                    D = 100,
+                    duration = sH1.duration)
     track_x, track_y = tmpl.get_track(gps)
     tmpl.plot(fsave = fsave / 'template.png', 
               title = 'template',

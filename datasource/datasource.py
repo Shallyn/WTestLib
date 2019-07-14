@@ -37,6 +37,7 @@ class gwStrainSRC(object):
     def load_data(self, fs = 4096):
         t_start = int(self._gpsstart)
         t_end = int(self._gpsend)
+        sys.stderr.write(f'--Loading {self._channel} {t_start}...{t_end}\n')
         ret = load_data_from_shm(t_start, t_end, 
                                  self._ifo, self._channel, self._shmpath, fs)
         if not isinstance(ret, CEV):

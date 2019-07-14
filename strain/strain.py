@@ -12,6 +12,7 @@ from .detectors import Detector
 from scipy.interpolate import interp1d
 from . import signal as sgl
 from .snr_qTansform import snr_q_scanf
+from scipy.signal import resample
 
 # H1-118 L1-150 V1-53
 def get_sigma2(ifo):
@@ -64,8 +65,9 @@ class gwStrain(TimeSeriesBase):
     
     def resample(self, fs):
         if fs != self.fs:
-            time, value = sgl.resample(self.time, self.value, fs)
-            return gwStrain(value, self.epoch, self.ifo, fs, self._role)
+            nsamp = int(self.value.size * self.deltat * fs)
+            new = resample(self.value, nsamp)
+            return gwStrain(new, self.epoch, self.ifo, fs, self._role)
         else:
             return self
     

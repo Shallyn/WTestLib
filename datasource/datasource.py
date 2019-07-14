@@ -109,8 +109,6 @@ def load_data_from_gwpy(gpsstart, gpsend, ifo, channel, frame, fs = 4096):
         #duration = data.duration.value
         ret = gwStrain(value, epoch, ifo, srate, info = f'{ifo}')
         if srate != fs:
-            tmp = ret.resample(fs)
-            sys.stderr.write(f'{DEBUG}:DURATION = {tmp.duration}\n')
             return ret.resample(fs)
         return ret
     except:

@@ -31,7 +31,7 @@ def utdk_times(LIST, ra_pix, de_pix, times, verbose = False):
     if verbose:
         sys.stderr.write('Calculating utdk...\n')
         sys.stderr.write('--Calculating Gpc matrix...\n')
-    if False:
+    if GWCOH:
         ifo_list = []
         sigma2_list = []
         for data in LIST:
@@ -75,17 +75,16 @@ def Gpc(snr_set, ra, de, times, verbose = False):
         cumitr = 0
         time_ini = time.time()
         itr_tot = npix * ntime * ndet
-    for k in range(npix):
-        rak = ra[k]
-        dek = de[k]
-        for j in range(ntime):
-            for i,snr in enumerate(snr_set):
-                detector = Detector(snr.ifo)
-                ar = detector.antenna_pattern(rak, dek, 0, times[j])
-                Gpc_matrix[j,k,i,0] = ar[0] * np.sqrt(snr.sigma2)
-                Gpc_matrix[j,k,i,1] = ar[1] * np.sqrt(snr.sigma2)
-                #Gpc_sigma[j,k,i,0]  = ar[0]*np.sqrt(snr.sigma2)
-                #Gpc_sigma[j,k,i,1]  = ar[1]*np.sqrt(snr.sigma2)
+    gps_time = times[int(ntime/2)]
+    for i, snr in enumerate(snr_set):
+        detector = Detector(snr.ifo)
+        for k in range(npix):
+            rak = ra[k]
+            dek = de[k]
+            ar = detector.antenna_pattern(rak, dek, 0, gps_time)
+            Gpc_matrix[:,k,i,0] = ar[0] * np.sqrt(snr.sigma2)
+            Gpc_matrix[:,k,i,1] = ar[1] * np.sqrt(snr.sigma2)
+            
         if verbose:
             cumitr += ndet * ntime
             Progress_time((time.time() - time_ini) / cumitr, cumitr, itr_tot)

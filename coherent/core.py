@@ -111,7 +111,6 @@ def rho_vec(snr_set, ra, de, times, verbose = False):
             dt  = detector.time_delay_from_earth_center(rak, dek, gps_time)
             rho_i = fsnr(times + dt)
         rho[:, k, i] = rho_i
-    
     return rho
 
 def rho_vec_GWCOH(snr_set, ra, de, times):

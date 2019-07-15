@@ -85,9 +85,9 @@ def Gpc(snr_set, ra, de, times, verbose = False):
             Gpc_matrix[:,k,i,0] = ar[0] * np.sqrt(snr.sigma2)
             Gpc_matrix[:,k,i,1] = ar[1] * np.sqrt(snr.sigma2)
             
-            if verbose:
-                cumitr += ntime
-                Progress_time((time.time() - time_ini) / cumitr, cumitr, itr_tot)
+        if verbose:
+            cumitr += ntime * npix
+            Progress_time((time.time() - time_ini) / cumitr, cumitr, itr_tot)
     if verbose:
         sys.stderr.write('\r')
     return Gpc_matrix

@@ -31,7 +31,7 @@ def utdk_times(LIST, ra_pix, de_pix, times, verbose = False):
     if verbose:
         sys.stderr.write('Calculating utdk...\n')
         sys.stderr.write('--Calculating Gpc matrix...\n')
-    if GWCOH:
+    if False:
         ifo_list = []
         sigma2_list = []
         for data in LIST:
@@ -47,7 +47,7 @@ def utdk_times(LIST, ra_pix, de_pix, times, verbose = False):
     if verbose:
         sys.stderr.write('Done\n')
         sys.stderr.write('--Calculating rho_vec ...\n')
-    if False:
+    if GWCOH:
         rho = rho_vec_GWCOH(LIST, ra_pix, de_pix, times)
     else:
         rho = rho_vec(LIST, ra_pix, de_pix, times, verbose)

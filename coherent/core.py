@@ -47,7 +47,7 @@ def utdk_times(LIST, ra_pix, de_pix, times, verbose = False):
     if verbose:
         sys.stderr.write('Done\n')
         sys.stderr.write('--Calculating rho_vec ...\n')
-    if GWCOH:
+    if False:
         rho = rho_vec_GWCOH(LIST, ra_pix, de_pix, times)
     else:
         rho = rho_vec(LIST, ra_pix, de_pix, times, verbose)

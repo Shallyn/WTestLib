@@ -99,18 +99,17 @@ def rho_vec(snr_set, ra, de, times, verbose = False):
     ntime = len(times)
     ndet = len(snr_set)
     rho = np.zeros([ntime,npix,ndet],np.complex)
-    rho_i = np.zeros([ntime],np.complex)
-        
+    #rho_i = np.zeros([ntime],np.complex)
+    gps_time = times[int(ntime/2)]
     for i, snr in enumerate(snr_set):
         fsnr = snr.sfun
         detector = Detector(snr.ifo)
-        gps_time = times[int(ntime/2)]
         for k in range(npix):
             rak = ra[k]
             dek = de[k]
             dt  = detector.time_delay_from_earth_center(rak, dek, gps_time)
-            rho_i = fsnr(times + dt)
-        rho[:, k, i] = rho_i
+            rho[:, k, i] = fsnr(times + dt)
+        #rho[:, k, i] = rho_i
     return rho
 
 def rho_vec_GWCOH(snr_set, ra, de, times):

@@ -31,7 +31,7 @@ def utdk_times(LIST, ra_pix, de_pix, times, verbose = False):
     if verbose:
         sys.stderr.write('Calculating utdk...\n')
         sys.stderr.write('--Calculating Gpc matrix...\n')
-    if GWCOH:
+    if False:
         ifo_list = []
         sigma2_list = []
         for data in LIST:

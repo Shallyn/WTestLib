@@ -47,7 +47,7 @@ def utdk_times(LIST, ra_pix, de_pix, times, verbose = False):
     if verbose:
         sys.stderr.write('Done\n')
         sys.stderr.write('--Calculating rho_vec ...\n')
-    if False:
+    if GWCOH:
         rho = rho_vec_GWCOH(LIST, ra_pix, de_pix, times)
     else:
         rho = rho_vec(LIST, ra_pix, de_pix, times, verbose)
@@ -101,6 +101,7 @@ def rho_vec(snr_set, ra, de, times, verbose = False):
     rho = np.zeros([ntime,npix,ndet],np.complex)
     #rho_i = np.zeros([ntime],np.complex)
     gps_time = times[int(ntime/2)]
+
     for i, snr in enumerate(snr_set):
         fsnr = snr.sfun
         detector = Detector(snr.ifo)
@@ -109,6 +110,7 @@ def rho_vec(snr_set, ra, de, times, verbose = False):
             dek = de[k]
             dt  = detector.time_delay_from_earth_center(rak, dek, gps_time)
             rho[:, k, i] = fsnr(times + dt)
+            
         #rho[:, k, i] = rho_i
     return rho
 

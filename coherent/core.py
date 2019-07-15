@@ -14,7 +14,7 @@ from ..Utils import Progress, Progress_time, WARNING
 import time
 try:
     from . import PyGWCOH as pg
-    GWCOH = False
+    GWCOH = True
 except:
     GWCOH = False
     sys.stderr.write(f'{WARNING}: cannot import PyGWCOH')

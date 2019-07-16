@@ -120,10 +120,11 @@ class SubprocessHandler(object):
                 obj.shut(flog)
                 dellist.append(obj)
         for obj in dellist:
-            # try:
-            self._OBJlist.remove(obj)
-            # except:
-            #     sys.stderr.write(f'{WARNING}:The element need to remove is not in the list.\n')
+            try:
+                self._OBJlist.remove(obj)
+            except:
+                sys.stderr.write(f'{WARNING}:The element need to remove is not in the list.\n')
+        sys.stderr.write(f'{LOG}: Now {self.num_obj} subprocess are running.\n')
             
 class mysubprocess(object):
     def __init__(self, CMD, ferr):
@@ -156,7 +157,7 @@ class mysubprocess(object):
     
     def clean(self, flog = None):
         if flog is not None:
-            return os.system(f'cat {self.ferr} > {flog} && rm {self.ferr}')
+            return os.system(f'cat {self.ferr} >> {flog} && rm {self.ferr}')
         else:
             if self.ferr.exists():
                 return os.system(f'rm {self.ferr}')

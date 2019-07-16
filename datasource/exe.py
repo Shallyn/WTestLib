@@ -17,6 +17,7 @@ STEPFWD = 15
 STEPBACK = 15
 SRATE = 4096
 NSIDE = 16
+INTERVAL = 5
 
 def GraceDB_Scanner(argv = None):
     parser = OptionParser(description='GraceDB Scanner')
@@ -29,6 +30,8 @@ def GraceDB_Scanner(argv = None):
     sys.stderr.write(f'{LOG}:Parsing args.\n')
     prefix = Path(args.prefix)
     twait = args.time_interval
+    if twait < INTERVAL:
+        twait = INTERVAL * 1.5
     exe = args.executable
     flog = Path(args.log)
     
@@ -61,6 +64,8 @@ def GraceDB_Scanner(argv = None):
         now = get_nowtime()
         ISO = GPS2ISO(now)
         tscan = time.time() - t_ini
+        if tscan < twait:
+            continue
         t_ini = time.time()
         start = now - tscan
         Slist = get_Sevents_from_time(start, now)
@@ -76,8 +81,8 @@ def GraceDB_Scanner(argv = None):
                 continue
             CMD = fCMD(Gid, f'{Sid}_{Gid}')
             process.createprocess(CMD, f'{Sid}.err', flog)
-            process.checkprocess(flog)
-        time.sleep(twait)
+        process.checkprocess(flog)
+        time.sleep(interval)
     return 0
 
 

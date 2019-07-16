@@ -53,7 +53,9 @@ def get_Sevents_from_time(gstart = None, gend = None):
     Sevttag = f'{gstart} .. {gend}'
     Sevents = client.superevents(Sevttag)
     for Sevt in Sevents:
-        Sevent_list.append(GraceSuperEvent(Sevent = Sevt))
+        ret = GraceSuperEvent(Sevent = Sevt)
+        if ret.STAT:
+            Sevent_list.append(ret)
     return Sevent_list
 
 class GraceEvent(object):
@@ -68,11 +70,18 @@ class GraceEvent(object):
             response = client.event(GraceID)
             datatable = response.json()
         self._verbose = verbose
-        self._load_coinc(datatable)
-        self._load_sngl(datatable)
+        try:
+            self._load_coinc(datatable)
+            self._load_sngl(datatable)
+            self._STAT = True
+        except:
+            self._STAT = False
+    
+    @property
+    def STAT(self):
+        return self._STAT
         
     def _load_coinc(self, table):
-        print(table)
         data = table['extra_attributes']['CoincInspiral']
         self._snr = data.pop('snr', 0)
         self._end_time = data.pop('end_time', 0) + 1e-9 * data.pop('end_time_ns', 0)
@@ -168,6 +177,10 @@ class GraceSuperEvent(object):
     
     def SGraceID(self):
         return self._SGraceID
+    
+    @property
+    def STAT(self):
+        return self.Preferred_GraceEvent.STAT
     
     @property
     def Preferred_GraceEvent(self):

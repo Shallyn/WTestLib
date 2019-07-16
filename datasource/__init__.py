@@ -21,4 +21,4 @@ def GPS2ISO(gps):
     return scTime.iso
 
 
-__all__ = ['gracedb', 'datasource', 'get_nowtime']
+__all__ = ['gracedb', 'datasource']

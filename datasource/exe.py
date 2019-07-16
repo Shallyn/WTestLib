@@ -82,7 +82,7 @@ def GraceDB_Scanner(argv = None):
             CMD = fCMD(Gid, f'{Sid}_{Gid}')
             process.createprocess(CMD, f'{Sid}.err', flog)
         process.checkprocess(flog)
-        time.sleep(interval)
+        time.sleep(INTERVAL)
     return 0
 
 

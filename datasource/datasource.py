@@ -16,7 +16,7 @@ import sys
 channel_dict = {'H1_CALIB':'H1:GDS-CALIB_STRAIN', 'H1_GATED':'H1:GDS-GATED_STRAIN', 'H1_IDQ': 'H1:IDQ-PGLITCH_OVL_16_4096' ,\
                 'L1_CALIB':'L1:GDS-CALIB_STRAIN', 'L1_GATED':'L1:GDS-GATED_STRAIN', 'L1_IDQ': 'L1:IDQ-PGLITCH_OVL_16_4096' ,\
                 'V1_CALIB':'V1:Hrec_hoft_16384Hz', 'V1_GATED':'V1:Hrec_hoft_16384Hz_Gated', 'V1_IDQ': None}
-
+BROKEN_THRE = 0.3
 
 class gwStrainSRC(object):
     def __init__(self, ifo, gpsstart, gpsend, channel, tag = 'kafka'):
@@ -84,7 +84,7 @@ class shmseg(object):
     def broken(self):
         if self._duration == 0:
             return False
-        if self._broken_time > 0:
+        if self._broken_time / self._duration > BROKEN_THRE:
             return True
     
     def togwStrain(self, fs = 4096):

@@ -66,7 +66,7 @@ def GraceDB_Scanner(argv = None):
         start = now - tscan
         Slist = get_Sevents_from_time(start, now)
         if len(Slist) == 0:
-            sys.stderr.write(f'{LOG}:{ISO}-No new superevent.')
+            sys.stderr.write(f'{LOG}:{ISO}-No new superevent.\n')
             continue
         for Sevt in Slist:
             Sid = Sevt.SGraceID

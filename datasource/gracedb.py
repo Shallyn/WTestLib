@@ -53,7 +53,6 @@ def get_Sevents_from_time(gstart = None, gend = None):
     Sevttag = f'{gstart} .. {gend}'
     Sevents = client.superevents(Sevttag)
     for Sevt in Sevents:
-        print(Sevt)
         Sevent_list.append(GraceSuperEvent(Sevent = Sevt))
     return Sevent_list
 
@@ -143,10 +142,13 @@ class GraceSuperEvent(object):
     def __init__(self, Sevent = None, SGraceID = None, verbose = False):
         if Sevent is None and SGraceID is None:
             raise Exception('One of Sevent and SGraceID must be specified.')
-        
-        self._SGraceID = SGraceID
-        response = client.superevent(SGraceID)
-        datatable = response.json()
+        if Sevent is not None and isinstance(Sevent, dict):
+            datatable = Sevent
+            self._SGraceID = datatable['superevent_id']
+        else:
+            self._SGraceID = SGraceID
+            response = client.superevent(SGraceID)
+            datatable = response.json()
         self._verbose = verbose
         self._load_table(datatable)
         

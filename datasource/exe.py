@@ -10,7 +10,7 @@ from optparse import OptionParser
 from ..Utils import LOG, WARNING, cmd_hang
 import sys, time
 from pathlib import Path
-from .gracedb import get_Sevents_from_time, get_nowtime
+from .gracedb import get_Sevents_from_time, get_nowtime, GPS2ISO
 import os
 
 STEPFWD = 15
@@ -60,14 +60,17 @@ def GraceDB_Scanner(argv = None):
     while(1):
         time.sleep(twait)
         now = get_nowtime()
+        ISO = GPS2ISO(now)
         tscan = time.time() - t_ini
         t_ini = time.time()
         start = now - tscan
         Slist = get_Sevents_from_time(start, now)
         if len(Slist) == 0:
+            sys.stderr.write(f'{LOG}:{ISO}-No new superevent.')
             continue
         for Sevt in Slist:
             Sid = Sevt.SGraceID
+            sys.stderr.write(f'{LOG}:{ISO}-New superevent {Sid}\n')
             Gevent = Sevt.Preferred_GraceEvent
             Gid = Gevent.GraceID
             if len(Gid.ifos) < 2:

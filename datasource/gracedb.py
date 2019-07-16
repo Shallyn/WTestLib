@@ -72,6 +72,7 @@ class GraceEvent(object):
         self._load_sngl(datatable)
         
     def _load_coinc(self, table):
+        print(table)
         data = table['extra_attributes']['CoincInspiral']
         self._snr = data.pop('snr', 0)
         self._end_time = data.pop('end_time', 0) + 1e-9 * data.pop('end_time_ns', 0)

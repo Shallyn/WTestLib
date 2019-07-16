@@ -74,7 +74,7 @@ def GraceDB_Scanner(argv = None):
             if len(Gid.ifos) < 2:
                 return -1
             CMD = fCMD(Gid, f'{Sid}_{Gid}')
-            process.createprocess(CMD, f'{Sid}.err')
+            process.createprocess(CMD, f'{Sid}.err', flog)
             process.checkprocess(flog)
     
     return 0
@@ -92,8 +92,19 @@ class SubprocessHandler(object):
     def num_obj(self):
         return len(self._OBJlist)
             
-    def createprocess(self, CMD, ferr):
+    def createprocess(self, CMD, ferr, flog = None):
         self._OBJlist.append(mysubprocess(CMD, ferr))
+        if self.num_obj > self._lim:
+            self.remove_oldest_one(flog)
+            
+    def remove_oldest_one(self, flog = None):
+        cost = 0
+        for obj in self:
+            if obj.cost > cost:
+                cost = cost
+                rem = obj
+        rem.shut(flog = flog)
+        self._OBJlist.remove(rem)
     
     def checkprocess(self, flog):
         dellist = []

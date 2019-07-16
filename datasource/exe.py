@@ -73,7 +73,7 @@ def GraceDB_Scanner(argv = None):
             Gevent = Sevt.Preferred_GraceEvent
             Gid = Gevent.GraceID
             if len(Gevent.ifos) < 2:
-                return -1
+                continue
             CMD = fCMD(Gid, f'{Sid}_{Gid}')
             process.createprocess(CMD, f'{Sid}.err', flog)
             process.checkprocess(flog)
@@ -94,6 +94,7 @@ class SubprocessHandler(object):
         return len(self._OBJlist)
             
     def createprocess(self, CMD, ferr, flog = None):
+        sys.stderr.write(f'{LOG}:Creating:\n{CMD}\n\n')
         self._OBJlist.append(mysubprocess(CMD, ferr))
         if self.num_obj > self._lim:
             self.remove_oldest_one(flog)

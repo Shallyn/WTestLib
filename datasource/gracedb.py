@@ -175,6 +175,7 @@ class GraceSuperEvent(object):
         for gid in self._GraceID_list:
             yield gid
     
+    @property
     def SGraceID(self):
         return self._SGraceID
     

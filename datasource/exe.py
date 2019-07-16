@@ -56,7 +56,7 @@ def GraceDB_Scanner(argv = None):
     sys.stderr.write(f'{LOG}:Run scanner...\n')
     # Run
     process = SubprocessHandler(10)
-    t_ini = time.time()
+    t_ini = time.time() - twait
     while(1):
         now = get_nowtime()
         ISO = GPS2ISO(now)

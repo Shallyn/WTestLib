@@ -10,8 +10,7 @@ from optparse import OptionParser
 from ..Utils import LOG, WARNING, cmd_hang
 import sys, time
 from pathlib import Path
-from .gracedb import get_Sevents_from_time
-from . import get_nowtime
+from .gracedb import get_Sevents_from_time, get_nowtime
 import os
 
 STEPFWD = 15

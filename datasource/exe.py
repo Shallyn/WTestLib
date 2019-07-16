@@ -26,7 +26,7 @@ def GraceDB_Scanner(argv = None):
     parser.add_option('--ref-psd', type = 'str', help = 'reference psd')
     parser.add_option('--log', type = 'str', default = 'log.err', help = 'log file')
     args, empty = parser.parse_args(argv)
-    
+    sys.stderr.write(f'{LOG}:Parsing args.\n')
     prefix = Path(args.prefix)
     twait = args.time_interval
     exe = args.executable
@@ -53,7 +53,7 @@ def GraceDB_Scanner(argv = None):
                         --stepforward={STEPFWD} \
                         --sample-rate={SRATE} \
                         --nside={NSIDE}'
-    
+    sys.stderr.write(f'{LOG}:Run scanner...\n')
     # Run
     process = SubprocessHandler(10)
     t_ini = time.time()

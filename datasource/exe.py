@@ -72,7 +72,7 @@ def GraceDB_Scanner(argv = None):
             sys.stderr.write(f'{LOG}:{ISO}-New superevent {Sid}\n')
             Gevent = Sevt.Preferred_GraceEvent
             Gid = Gevent.GraceID
-            if len(Gid.ifos) < 2:
+            if len(Gevent.ifos) < 2:
                 return -1
             CMD = fCMD(Gid, f'{Sid}_{Gid}')
             process.createprocess(CMD, f'{Sid}.err', flog)

@@ -159,7 +159,7 @@ class GraceSuperEvent(object):
         self._gps = datatable['t_0']
         self._gps_end = datatable['t_end']
         self._far = datatable['far']
-        self._GraceEvent = GraceEvent(self._GraceID_preferred, self._verbose)
+        self._GraceEvent = GraceEvent(GraceID = self._GraceID_preferred, verbose = self._verbose)
     
     def __iter__(self):
         for gid in self._GraceID_list:

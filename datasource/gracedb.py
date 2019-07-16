@@ -52,6 +52,7 @@ def get_Sevents_from_time(gstart = None, gend = None):
     Sevent_list = []
     Sevttag = f'{gstart} .. {gend}'
     Sevents = client.superevents(Sevttag)
+    print(Sevents)
     for Sevt in Sevents:
         Sevent_list.append(GraceSuperEvent(Sevent = Sevt))
     return Sevent_list

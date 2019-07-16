@@ -27,7 +27,7 @@ from .detectors import time_delay
 from ..Utils import WARNING, LOG
 from ..datasource.gracedb import GraceEvent
 from scipy.interpolate import interp1d
-
+from ..generator import dim_t
 
 DEFAULT_NSIDE = 32
 DEFAULT_QRANGE = (7,8)
@@ -52,7 +52,7 @@ def parseargs(argv):
     parser.add_option('--m2', type = 'float', help = 'mass2 of this event, for template generation.')
     parser.add_option('--s1z', type = 'float', help = 'spin1z of this event, for template generation.')
     parser.add_option('--s2z', type = 'float', help = 'spin2z of this event, for template generation.')
-    parser.add_option('--fini', type = 'float', default = 20, help = 'Initial frequency for template generation.')
+    parser.add_option('--fini', type = 'float', default = 0.002, help = 'Initial frequency for template generation.')
     parser.add_option('--approx', type = 'str', help = 'approx for template generation.')
     
     parser.add_option('--nside', type = 'int', default = DEFAULT_NSIDE, help = 'Nside for skymap pix.')
@@ -120,6 +120,7 @@ def main(argv = None):
             s2z is None:
             sys.stderr.write(f'{WARNING}:Input parameters is insufficient, exit.\n')
             return -1
+        fini = fini * dim_t(m1 + m2)
         fdict = sngl_load_file(datadir, channel)
         if ref is None:
             fdict_ref = sngl_load_file(datadir, channel)

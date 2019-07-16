@@ -61,6 +61,8 @@ def GraceDB_Scanner(argv = None):
     process = SubprocessHandler(10)
     t_ini = time.time() - twait
     while(1):
+        process.checkprocess(flog)
+        time.sleep(INTERVAL)
         now = get_nowtime()
         ISO = GPS2ISO(now)
         tscan = time.time() - t_ini
@@ -81,8 +83,6 @@ def GraceDB_Scanner(argv = None):
                 continue
             CMD = fCMD(Gid, f'{Sid}_{Gid}')
             process.createprocess(CMD, f'{Sid}.err', flog)
-        process.checkprocess(flog)
-        time.sleep(INTERVAL)
     return 0
 
 

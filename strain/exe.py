@@ -120,7 +120,6 @@ def main(argv = None):
             s2z is None:
             sys.stderr.write(f'{WARNING}:Input parameters is insufficient, exit.\n')
             return -1
-        fini = fini * dim_t(m1 + m2)
         fdict = sngl_load_file(datadir, channel)
         if ref is None:
             fdict_ref = sngl_load_file(datadir, channel)
@@ -197,7 +196,7 @@ def main(argv = None):
             approx = 'SEOBNRv4'
         else:
             approx = 'SpinTaylorT4'
-    
+    fini = fini * dim_t(m1 + m2)
     # Step.3 Call....
     event_scan(gps = gps,
                sH1 = locals()['sH1'],

@@ -53,7 +53,7 @@ def parseargs(argv):
     parser.add_option('--s1z', type = 'float', help = 'spin1z of this event, for template generation.')
     parser.add_option('--s2z', type = 'float', help = 'spin2z of this event, for template generation.')
     parser.add_option('--fini', type = 'float', default = 20, help = 'Initial frequency for template generation.')
-    parser.add_option('--approx', type = 'str', default = 'SEOBNRv4', help = 'approx for template generation.')
+    parser.add_option('--approx', type = 'str', help = 'approx for template generation.')
     
     parser.add_option('--nside', type = 'int', default = DEFAULT_NSIDE, help = 'Nside for skymap pix.')
     parser.add_option('--minq', type = 'int', default = DEFAULT_QRANGE[0], help = 'min Q.')
@@ -190,7 +190,13 @@ def main(argv = None):
                 refdata = np.loadtxt(fdict_ref[ifo])
                 psd = get_psdfun(refdata[:,1], fs = fs)
             locals()[f's{ifo}'].set_psd(psd)
-        
+    
+    if approx is None:
+        if m1 + m2 > 5:
+            approx = 'SEOBNRv4'
+        else:
+            approx = 'SpinTaylorT4'
+    
     # Step.3 Call....
     event_scan(gps = gps,
                sH1 = locals()['sH1'],
@@ -230,6 +236,7 @@ def event_scan(gps, sH1, sL1, sV1,
                     s1z = s1z,
                     s2z = s2z,
                     fini = fini,
+                    approx = approx,
                     srate = fs,
                     D = 100,
                     duration = sH1.duration/2)

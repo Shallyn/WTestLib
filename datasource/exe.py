@@ -1,0 +1,161 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""
+Created on Mon Jul 15 14:30:34 2019
+
+@author: drizl
+"""
+
+from optparse import OptionParser
+from ..Utils import LOG, WARNING, cmd_hang
+import sys, time
+from pathlib import Path
+from gracedb import get_Sevents_from_time
+from . import get_nowtime
+import os
+
+STEPFWD = 15
+STEPBACK = 15
+SRATE = 4096
+NSIDE = 16
+
+def GraceDB_Scanner(argv = None):
+    parser = OptionParser(description='GraceDB Scanner')
+    parser.add_option('--prefix', type = 'str', default = '.', help = 'prefix for data saving')
+    parser.add_option('--time-interval', type = float, default = 60, help = 'time interval for each scan')
+    parser.add_option('--executable', type = 'str', help = 'executable file')
+    parser.add_option('--ref-psd', type = 'str', help = 'reference psd')
+    parser.add_option('--log', type = 'str', default = 'log.err', help = 'log file')
+    args, empty = parser.parse_args(argv)
+    
+    prefix = Path(args.prefix)
+    twait = args.time_interval
+    exe = args.executable
+    flog = Path(args.log)
+    
+    if exe is None:
+        sys.stderr.write(f'{WARNING}:executable must be specified.\n')
+        return 0
+    exe = Path(exe)
+    if not exe.exists():
+        sys.stderr.write(f'{WARNING}:{exe} does not exist.\n')
+        return 0
+    ref_psd = args.ref_psd
+    if ref_psd is None:
+        sys.stderr.write(f'{WARNING}:ref-psd must be specified.\n')
+        return 0
+    
+    def fCMD(gid, save):
+        savepath = prefix / save
+        return f'{exe} --graceid={gid} \
+                        --ref-psd={ref_psd} \
+                        --prefix={savepath} \
+                        --stepback={STEPBACK} \
+                        --stepforward={STEPFWD} \
+                        --sample-rate={SRATE} \
+                        --nside={NSIDE}'
+    
+    # Run
+    process = SubprocessHandler(10)
+    t_ini = time.time()
+    while(1):
+        time.sleep(twait)
+        now = get_nowtime()
+        tscan = time.time() - t_ini
+        t_ini = time.time()
+        start = now - tscan
+        Slist = get_Sevents_from_time(start, now)
+        if len(Slist) == 0:
+            continue
+        for Sevt in Slist:
+            Sid = Sevt.SGraceID
+            Gevent = Sevt.Preferred_GraceEvent
+            Gid = Gevent.GraceID
+            if len(Gid.ifos) < 2:
+                return -1
+            CMD = fCMD(Gid, f'{Sid}_{Gid}')
+            process.createprocess(CMD, f'{Sid}.err')
+            process.checkprocess(flog)
+    
+    return 0
+
+
+class SubprocessHandler(object):
+    def __init__(self, lim = 10):
+        self._OBJlist = []
+        self._lim = lim
+    
+    def __iter__(self):
+        for obj in self._OBJlist:
+            yield obj
+    @property
+    def num_obj(self):
+        return len(self._OBJlist)
+            
+    def createprocess(self, CMD, ferr):
+        self._OBJlist.append(mysubprocess(CMD, ferr))
+    
+    def checkprocess(self, flog):
+        dellist = []
+        for obj in self:
+            if obj.poll() is not None:
+                obj.shut(flog)
+                dellist.append(obj)
+        for obj in dellist:
+            try:
+                self._OBJdict.remove(obj)
+            except:
+                sys.stderr.write(f'{WARNING}:The element need to remove is not in the list.\n')
+            
+class mysubprocess(object):
+    def __init__(self, CMD, ferr):
+        obj, ferr = cmd_hang(CMD, ferr)
+        self._obj = obj
+        self._ferr = Path(ferr)
+        self._start_time = time.time()
+        self._RUN = True
+    
+    @property
+    def RUN(self):
+        return self._RUN
+    
+    @property
+    def cost(self):
+        return time.time() - self._start_time
+    
+    def poll(self, **kwargs):
+        return self._obj.poll(**kwargs)
+    
+    def terminate(self, **kwargs):
+        return self._obj.terminate(**kwargs)
+    
+    @property
+    def ferr(self):
+        return self._ferr
+            
+    def kill(self, **kwargs):
+        return self._obj.kill(**kwargs)
+    
+    def clean(self, flog = None):
+        if flog is not None:
+            return os.system(f'cat {self.ferr} > {flog} && rm {self.ferr}')
+        else:
+            if self.ferr.exists():
+                return os.system(f'rm {self.ferr}')
+            return 0
+    
+    def shut(self, flog = None):
+        if self.poll() is None:
+            ret = self.terminate()
+        else:
+            ret = self.poll()
+        self.clean(flog = flog)
+        self._RUN = False
+        return ret
+    
+    def __del__(self):
+        self.terminate()
+        self.clean()
+        del self._obj
+        del self._ferr
+    

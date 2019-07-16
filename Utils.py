@@ -177,6 +177,10 @@ def cmd_stdout_cev(CMD, name_out, timeout = 60):
             return CEV.GEN_TIMEOUT, None
         time.sleep(0.5)
 
+def cmd_hang(CMD, name_err):
+    obj = subprocess.Popen(CMD, stdout = subprocess.PIPE, stderr = open(name_err, "w"), shell = True)
+    return obj, name_err
+
 #-------PLOT------#
 def plot_compare_attach_any(LIST, 
                             tstart = None,

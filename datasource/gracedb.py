@@ -11,17 +11,52 @@ from glue.ligolw import ligolw, lsctables
 from ..Utils import CEV, WARNING, LOG
 import sys
 from .datasource import gwStrainSRC
+from . import get_nowtime
 
 class LIGOLWContentHandler(ligolw.LIGOLWContentHandler):
         pass
 
 client = GraceDb()
+pipelist = ['gstlal', 'MBTAOnline', 'spiir', 'pycbc']
+
+def get_events_from_time(gstart = None, gend = None, evttag = None, url = None, getid = True):
+    if gend is None:
+            gend = get_nowtime()
+    if gstart is None:
+            gstart = gend - 86400
+    if evttag is None:
+            evttag = ''
+    event_list = []
+    for pipeline in pipelist:
+        evttag = pipeline + ' ' + str(gstart) + ' .. ' + str(gend)
+        events = client.events(evttag)
+        for evt in events:
+            event_list.append(GraceEvent(event = evt))
+    return event_list
+
+def get_Sevents_from_time(gstart = None, gend = None):
+    if gend is None:
+            gend = get_nowtime()
+    if gstart is None:
+            gstart = gend - 86400
+    Sevent_list = []
+    Sevttag = f'{gstart} .. {gend}'
+    Sevents = client.superevents(Sevttag)
+    for Sevt in Sevents:
+        Sevent_list.append(GraceSuperEvent(Sevent = Sevt))
+    return Sevent_list
 
 class GraceEvent(object):
-    def __init__(self, GraceID, verbose = False):
-        self._GraceID = GraceID
-        response = client.event(GraceID)
-        datatable = response.json()
+    def __init__(self, event = None, GraceID = None, verbose = False):
+        if event is None and GraceID is None:
+            raise Exception('One of event and GraceID must be specified.')
+        if event is not None and isinstance(event, dict):
+            datatable = event
+            self._GraceID = event['graceid']
+        else:
+            self._GraceID = GraceID
+            response = client.event(GraceID)
+            datatable = response.json()
         self._verbose = verbose
         self._load_coinc(datatable)
         self._load_sngl(datatable)
@@ -58,8 +93,16 @@ class GraceEvent(object):
         return self._end_time
     
     @property
+    def ifos(self):
+        return self._ifos
+    
+    @property
     def combined_far(self):
         return self._combined_far
+    
+    @property
+    def GraceID(self):
+        return self._GraceID
     
     @property
     def snr(self):
@@ -86,7 +129,10 @@ class DetTable(object):
 
 
 class GraceSuperEvent(object):
-    def __init__(self, SGraceID, verbose = False):
+    def __init__(self, Sevent = None, SGraceID = None, verbose = False):
+        if Sevent is None and SGraceID is None:
+            raise Exception('One of Sevent and SGraceID must be specified.')
+        
         self._SGraceID = SGraceID
         response = client.superevent(SGraceID)
         datatable = response.json()
@@ -106,8 +152,11 @@ class GraceSuperEvent(object):
         for gid in self._GraceID_list:
             yield gid
     
+    def SGraceID(self):
+        return self._SGraceID
+    
     @property
-    def Event(self):
+    def Preferred_GraceEvent(self):
         return self._GraceEvent
     
     @property
@@ -126,3 +175,4 @@ class GraceSuperEvent(object):
     def far(self):
         return self._far
         
+

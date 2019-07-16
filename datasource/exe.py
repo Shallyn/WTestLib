@@ -35,7 +35,7 @@ def GraceDB_Scanner(argv = None):
     if exe is None:
         sys.stderr.write(f'{WARNING}:executable must be specified.\n')
         return 0
-    exe = Path(exe)
+    exe = Path(exe).absolute()
     if not exe.exists():
         sys.stderr.write(f'{WARNING}:{exe} does not exist.\n')
         return 0

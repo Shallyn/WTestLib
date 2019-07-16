@@ -155,7 +155,7 @@ def main(argv = None):
             return -1;
         sys.stderr.write(f'{LOG}:Parse GraceID...\n')
         try:
-            Gevt = GraceEvent(graceid, verbose = True)
+            Gevt = GraceEvent(GraceID=graceid, verbose = True)
             sngl = Gevt.get_sngl('L1')
             m1 = sngl.mass1
             m2 = sngl.mass2

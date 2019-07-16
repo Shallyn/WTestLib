@@ -64,7 +64,7 @@ class shmseg(object):
         self._fs = fs
         self._duration = 0
         self._broken_time = 0
-        self._broken = False
+
     
     @property
     def deltat(self):
@@ -79,12 +79,13 @@ class shmseg(object):
             self._value = np.concatenate([self._value, data])
             self._broken_time += duration
         self._duration += duration
-        if self._broken_time / self._duration > 0.9:
-            self._broken = True
     
     @property
     def broken(self):
-        return self._broken
+        if self._duration == 0:
+            return False
+        if self._broken_time > 0:
+            return True
     
     def togwStrain(self, fs = 4096):
         if self.broken:

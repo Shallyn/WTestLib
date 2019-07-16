@@ -11,7 +11,17 @@ from glue.ligolw import ligolw, lsctables
 from ..Utils import CEV, WARNING, LOG
 import sys
 from .datasource import gwStrainSRC
-from . import get_nowtime
+from glue import gpstime
+from astropy.time import Time
+import time
+
+def get_nowtime():
+    t = time.time()
+    return gpstime.GpsSecondsFromPyUTC(t)
+
+def GPS2ISO(gps):
+    scTime = Time(int(gps), format = 'gps')
+    return scTime.iso
 
 class LIGOLWContentHandler(ligolw.LIGOLWContentHandler):
         pass

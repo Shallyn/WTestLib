@@ -274,7 +274,7 @@ def event_scan(gps, sH1, sL1, sV1,
             plt.yscale('log')
             plt.title(f'psd {strain.ifo}')
             plt.savefig(fsave / f'psd_{strain.ifo}.png', dpi = 200)
-            plt.show()
+            plt.close()
             
             sLIST.append(strain)
             locals()['SNR_{}'.format(strain.ifo)] = \
@@ -443,9 +443,9 @@ def event_scan(gps, sH1, sL1, sV1,
                title = 'Coherent SNR wscan')
 
     idx_tpeak, idx_fpeak = get_2D_argpeak(coh_oscan_01)
-    tpeak = tout[idx_tpeak]
-    fpeak = fout[idx_fpeak]
-    snrpeak = coh_oscan_01[idx_tpeak, idx_fpeak]
+    tpeak = '%.2f'%tout[idx_tpeak]
+    fpeak = '%.1f'%fout[idx_fpeak]
+    snrpeak = '%.3f'%coh_oscan_01[idx_tpeak, idx_fpeak]
     label = f'loudest snr = {snrpeak}, at t = {tpeak}, f = {fpeak}'
 
     # coh_SNRscan1
@@ -474,9 +474,9 @@ def event_scan(gps, sH1, sL1, sV1,
                title = 'Coherent SNR wscan stream 01')
     
     idx_tpeak, idx_fpeak = get_2D_argpeak(coh_oscan_02)
-    tpeak = tout[idx_tpeak]
-    fpeak = fout[idx_fpeak]
-    snrpeak = coh_oscan_02[idx_tpeak, idx_fpeak]
+    tpeak = '%.2f'%tout[idx_tpeak]
+    fpeak = '%.1f'%fout[idx_fpeak]
+    snrpeak = '%.3f'%coh_oscan_02[idx_tpeak, idx_fpeak]
     label = f'loudest snr = {snrpeak}, at t = {tpeak}, f = {fpeak}'
 
     # coh_SNRscan2
@@ -505,6 +505,8 @@ def event_scan(gps, sH1, sL1, sV1,
                title = 'Coherent SNR wscan stream 02')
 
     nullsnr = null_oscan[idx_tpeak_0, idx_fpeak_0]
+    tpeak = '%.2f'%tout[idx_tpeak_0]
+    fpeak = '%.1f'%fout[idx_fpeak_0]
     label = f'null snr = {nullsnr}, at t = {tpeak}, f = {fpeak}'
 
     # null

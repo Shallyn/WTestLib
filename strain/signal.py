@@ -222,7 +222,7 @@ def plotit(time, data,
     plt.title(title)
     if save:
         plt.savefig(save, dpi = 200)
-    plt.show()
+    plt.close()
     
 def sngl_load_file(fdir, channel = 'CALIB'):
     fdir = Path(fdir)

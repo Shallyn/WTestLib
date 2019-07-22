@@ -299,17 +299,12 @@ def event_scan(gps, sH1, sL1, sV1,
     
     # Step.5 Plot snr q scan spectrum.
     for data in sLIST:
-        # func = snr_q_scanf(data.value, tmpl.template, 
-        #                     data.fs, data.epoch + tmpl.dtpeak, 
-        #                     cut=None, psd = data.psdfun_setted,
-        #                     qrange = qrange, retfunc = True, window = True)[0]
-        # Eng = np.abs(func(tsnr, fout))
-        x, y, Eng = snr_q_scanf(data.value, tmpl.template, 
+        func, xout, yout = snr_q_scanf(data.value, tmpl.template, 
                             data.fs, data.epoch + tmpl.dtpeak, 
                             cut=None, psd = data.psdfun_setted,
-                            toutseg = tsnr,
-                            qrange = qrange, retfunc = False, window = True)[0]
-        Eng = np.abs(Eng)
+                            qrange = qrange, retfunc = True, window = True)
+        sys.stderr.write(f'{LOG}:xout = {xout}\n')
+        Eng = np.abs(func(tsnr, fout))
         
         levels = MaxNLocator(nbins=pcolorbins).tick_values(Eng.min(), Eng.max())
         norm = BoundaryNorm(levels, ncolors=cmap.N, clip=True)

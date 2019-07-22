@@ -25,7 +25,7 @@ from pathlib import Path
 from .snr_qTansform import snr_q_scanf
 from .detectors import time_delay
 from ..Utils import WARNING, LOG
-from ..datasource.gracedb import GraceEvent
+from ..datasource.gracedb import GraceEvent, GraceSuperEvent
 from scipy.interpolate import interp1d
 from ..generator import dim_t
 
@@ -41,7 +41,8 @@ def parseargs(argv):
     parser.add_option('--ra', type = 'float', help = 'ra of this event, if added, will use this value.')
     parser.add_option('--de', type = 'float', help = 'dec of this event, if added, will use this value.')
     
-    parser.add_option('--graceid', type = 'str', help = 'GraceDB Event ID, if added, will load such Grace event parameters.')
+    parser.add_option('--Sgraceid', type = 'str', help = 'GraceDB Super Event ID, if added, will load the Preferred event parameters.')
+    parser.add_option('--graceid', type = 'str', help = 'GraceDB Event ID, if added, will load such Grace event parameters(Prefer).')
     parser.add_option('--stepback', type = 'int', default = 15, help = 'Used for GraceDB data load.')
     parser.add_option('--stepforward', type = 'int', default = 15, help = 'Used for GraceDB data load.')
     
@@ -52,7 +53,7 @@ def parseargs(argv):
     parser.add_option('--m2', type = 'float', help = 'mass2 of this event, for template generation.')
     parser.add_option('--s1z', type = 'float', help = 'spin1z of this event, for template generation.')
     parser.add_option('--s2z', type = 'float', help = 'spin2z of this event, for template generation.')
-    parser.add_option('--fini', type = 'float', default = 0.002, help = 'Initial frequency for template generation.')
+    parser.add_option('--fini', type = 'float', default = 0.002, help = 'Initial frequency for template generation(natual dimension).')
     parser.add_option('--approx', type = 'str', help = 'approx for template generation.')
     
     parser.add_option('--nside', type = 'int', default = DEFAULT_NSIDE, help = 'Nside for skymap pix.')
@@ -63,7 +64,7 @@ def parseargs(argv):
     parser.add_option('--mismatch', type = 'float', default = DEFAULT_MISMATCH, help = 'mismatch for qscan.')
     parser.add_option('--cmap', type = 'str', default = DEFAULT_CMAP, help = 'Plot color map type.')
     parser.add_option('--pcolorbins', type = 'int', default = DEFAULT_PCOLORBINS, help = 'color bins for pcolor mesh plot.')
-
+    
     parser.add_option('--datadir', type = 'str', help = 'dir for data saving.')
     parser.add_option('--prefix', type = 'str', default = '.', help = 'prefix for results saving.')
     parser.add_option('--ref', type = 'str', help = 'prefix for reference psd.')
@@ -74,6 +75,11 @@ def parseargs(argv):
     args = parser.parse_args(argv)
     return args
 
+def get_proper_approx(m1, m2):
+    if m1 + m2 > 6:
+        return 'SEOBNRv4'
+    else:
+        return 'SpinTaylorT4'
 
 def main(argv = None):
     # Step.1 parse args...
@@ -82,6 +88,7 @@ def main(argv = None):
     de = args.de
     
     gps = args.gps
+    Sgraceid = args.Sgraceid
     graceid = args.graceid
     sback = args.stepback
     sfwd = args.stepforward
@@ -112,7 +119,8 @@ def main(argv = None):
 
     track = args.track
     # Step.2 load data...
-    if graceid is None:
+    
+    if graceid is None and Sgraceid is None:
         if datadir is None or \
             m1 is None or \
             m2 is None or\
@@ -155,7 +163,10 @@ def main(argv = None):
             return -1;
         sys.stderr.write(f'{LOG}:Parse GraceID...\n')
         try:
-            Gevt = GraceEvent(GraceID=graceid, verbose = True)
+            if graceid is not None:
+                Gevt = GraceEvent(GraceID=graceid, verbose = True)
+            else:
+                Gevt = GraceSuperEvent(SGraceID=Sgraceid, verbose = True).Preferred_GraceEvent
             sngl = Gevt.get_sngl('L1')
             m1 = sngl.mass1
             m2 = sngl.mass2
@@ -191,29 +202,27 @@ def main(argv = None):
                 psd = get_psdfun(refdata[:,1], fs = fs)
             locals()[f's{ifo}'].set_psd(psd)
     
+    # reset approx and initial frequency for waveform generation
     if approx is None:
-        if m1 + m2 > 5:
-            approx = 'SEOBNRv4'
-        else:
-            approx = 'SpinTaylorT4'
+        approx = get_proper_approx(m1, m2)
     fini = fini * dim_t(m1 + m2)
     # Step.3 Call....
-    event_scan(gps = gps,
-               sH1 = locals()['sH1'],
-               sL1 = locals()['sL1'],
-               sV1 = locals()['sV1'],
-               m1 = m1, m2 = m2,
-               s1z = s1z, s2z = s2z,
-               fini = fini, approx = approx, fs = fs,
-               prefix = prefix,
-               ra = ra, de = de,
-               track = track,
-               nside = nside,
-               qrange = qrange,
-               frange = frange,
-               pcolorbins = pcolorbins,
-               cmaptype = cmaptype,
-               mismatch = mismatch)
+    return event_scan(gps = gps,
+                      sH1 = locals()['sH1'],
+                      sL1 = locals()['sL1'],
+                      sV1 = locals()['sV1'],
+                      m1 = m1, m2 = m2,
+                      s1z = s1z, s2z = s2z,
+                      fini = fini, approx = approx, fs = fs,
+                      prefix = prefix,
+                      ra = ra, de = de,
+                      track = track,
+                      nside = nside,
+                      qrange = qrange,
+                      frange = frange,
+                      pcolorbins = pcolorbins,
+                      cmaptype = cmaptype,
+                      mismatch = mismatch)
 
 def event_scan(gps, sH1, sL1, sV1,
                m1, m2, s1z, s2z, fini, approx, fs,
@@ -225,7 +234,7 @@ def event_scan(gps, sH1, sL1, sV1,
                pcolorbins = DEFAULT_PCOLORBINS,
                cmaptype = DEFAULT_CMAP,
                mismatch = DEFAULT_MISMATCH):
-    # Step.0 fsave setting.
+    # Step.0 fsave prefix setting.
     fsave = Path(prefix)
     if not fsave.exists():
         fsave.mkdir(parents=True)
@@ -278,6 +287,8 @@ def event_scan(gps, sH1, sL1, sV1,
     tpeak = gps - tmpl.dtpeak
     h_dur = min(0.5, tmpl.dtpeak)
     tlim = [tmap - h_dur, tmap + h_dur]
+    tlim2 = [tmap - h_dur*2, tmap + h_dur*2]
+    tlim3 = [tmap - h_dur*3, tmap + h_dur*3]
     cmap = plt.get_cmap(cmaptype)
     tsnr = np.linspace(tlim[0], tlim[1], 500)
     fout = np.logspace(np.log10(30), np.log10(1000), 600)
@@ -353,8 +364,8 @@ def event_scan(gps, sH1, sL1, sV1,
         max_ra = max_ra[0] - np.pi
         max_de = np.pi/2 - max_de[0]
         
-    tout = np.linspace(tlim[0], tlim[1], 1000)
-    fout = np.logspace(np.log10(30), np.log10(1000), 600)
+    tout = np.linspace(tlim3[0], tlim3[1], 1200)
+    fout = np.logspace(np.log10(30), np.log10(1000), 500)
     coh_matrix = snr_cohTF(sLIST, max_ra, max_de, 0, 
                            tout, fout, 
                            tmpl = tmpl.template, verbose = True, 
@@ -369,61 +380,199 @@ def event_scan(gps, sH1, sL1, sV1,
     #plot
     levels = MaxNLocator(nbins=pcolorbins).tick_values(coh_oscan.min(), coh_oscan.max())
     norm = BoundaryNorm(levels, ncolors=cmap.N, clip=True)
-
-    fig = plt.figure(figsize=(10,5))
-    ax = fig.add_subplot(111)
-    im = ax.pcolormesh(tout, fout, coh_oscan.T, cmap = cmap, norm = norm)
-    fig.colorbar(im, ax=ax)
-    plt.title('Coherent SNR wscan')
-    plt.xlabel('gps time')
-    plt.ylabel('frequency')
-    plt.ylim([30, 500])
-    plt.xlim(tlim)
-    plt.yscale('log')
-    plt.savefig(fsave/'snrQscan_coh.png',dpi = 200)
-    plt.show()
     
-    fig = plt.figure(figsize=(10,5))
-    ax = fig.add_subplot(111)
-    im = ax.pcolormesh(tout, fout, coh_oscan_01.T, cmap = cmap, norm = norm)
-    fig.colorbar(im, ax=ax)
-    plt.title('Coherent SNR wscan stream 01')
-    plt.xlabel('gps time')
-    plt.ylabel('frequency')
-    plt.ylim([30, 500])
-    plt.xlim(tlim)
-    plt.yscale('log')
-    plt.savefig(fsave/'snrQscan_coh_01.png',dpi = 200)
-    plt.show()
+    # coh_SNRscan
+    idx_tpeak_0, idx_fpeak_0 = get_2D_argpeak(coh_oscan)
+    tpeak = tout[idx_tpeak_0]
+    fpeak = fout[idx_fpeak_0]
+    snrpeak = coh_oscan[idx_tpeak_0, idx_fpeak_0]
+    label = f'loudest snr = {snrpeak}, at t = {tpeak}, f = {fpeak}'
+    plot_wscan(tout, fout, coh_oscan.T, 
+               cmap = cmap, norm = norm, 
+               figsize = (10,5), 
+               xlabel = label, ylabel = 'frequency', 
+               xlim = tlim3, ylim = [30,750], 
+               fsave = fsave/'snrQscan_coh.png', 
+               title = 'Coherent SNR wscan')
     
-    fig = plt.figure(figsize=(10,5))
-    ax = fig.add_subplot(111)
-    im = ax.pcolormesh(tout, fout, coh_oscan_02.T, cmap = cmap, norm = norm)
-    fig.colorbar(im, ax=ax)
-    plt.title('Coherent SNR wscan stream 02')
-    plt.xlabel('gps time')
-    plt.ylabel('frequency')
-    plt.ylim([30, 500])
-    plt.xlim(tlim)
-    plt.yscale('log')
-    plt.savefig(fsave/'snrQscan_coh_02.png',dpi = 200)
-    plt.show()
+    plot_wscan(tout, fout, coh_oscan.T, 
+               cmap = cmap, norm = norm, 
+               figsize = (10,5), 
+               xlabel = label, ylabel = 'frequency', 
+               xlim = tlim2, ylim = [30,750], 
+               fsave = fsave/'snrQscan_coh_zoom1.png', 
+               title = 'Coherent SNR wscan')
 
-    fig = plt.figure(figsize=(10,5))
-    ax = fig.add_subplot(111)
-    im = ax.pcolormesh(tout, fout, null_oscan.T, cmap = cmap, norm = norm)
-    fig.colorbar(im, ax=ax)
-    plt.title('NULL SNR wscan')
-    plt.xlabel('gps time')
-    plt.ylabel('frequency')
-    plt.ylim([30, 500])
-    plt.xlim(tlim)
-    plt.yscale('log')
-    plt.savefig(fsave/'snrQscan_null.png',dpi = 200)
-    plt.show()
+    plot_wscan(tout, fout, coh_oscan.T, 
+               cmap = cmap, norm = norm, 
+               figsize = (10,5), 
+               xlabel = label, ylabel = 'frequency', 
+               xlim = tlim, ylim = [30,750], 
+               fsave = fsave/'snrQscan_coh_zoom2.png', 
+               title = 'Coherent SNR wscan')
 
+    idx_tpeak, idx_fpeak = get_2D_argpeak(coh_oscan_01)
+    tpeak = tout[idx_tpeak]
+    fpeak = fout[idx_fpeak]
+    snrpeak = coh_oscan_01[idx_tpeak, idx_fpeak]
+    label = f'loudest snr = {snrpeak}, at t = {tpeak}, f = {fpeak}'
 
+    # coh_SNRscan1
+    plot_wscan(tout, fout, coh_oscan_01.T, 
+               cmap = cmap, norm = norm, 
+               figsize = (10,5), 
+               xlabel = label, ylabel = 'frequency', 
+               xlim = tlim3, ylim = [30,750], 
+               fsave = fsave/'snrQscan_coh_01.png', 
+               title = 'Coherent SNR wscan stream 01')
+    
+    plot_wscan(tout, fout, coh_oscan_01.T, 
+               cmap = cmap, norm = norm, 
+               figsize = (10,5), 
+               xlabel = label, ylabel = 'frequency', 
+               xlim = tlim2, ylim = [30,750], 
+               fsave = fsave/'snrQscan_coh_01_zoom1.png', 
+               title = 'Coherent SNR wscan stream 01')
 
+    plot_wscan(tout, fout, coh_oscan_01.T, 
+               cmap = cmap, norm = norm, 
+               figsize = (10,5), 
+               xlabel = label, ylabel = 'frequency', 
+               xlim = tlim, ylim = [30,750], 
+               fsave = fsave/'snrQscan_coh_01_zoom2.png', 
+               title = 'Coherent SNR wscan stream 01')
+    
+    idx_tpeak, idx_fpeak = get_2D_argpeak(coh_oscan_02)
+    tpeak = tout[idx_tpeak]
+    fpeak = fout[idx_fpeak]
+    snrpeak = coh_oscan_02[idx_tpeak, idx_fpeak]
+    label = f'loudest snr = {snrpeak}, at t = {tpeak}, f = {fpeak}'
+
+    # coh_SNRscan2
+    plot_wscan(tout, fout, coh_oscan_02.T, 
+               cmap = cmap, norm = norm, 
+               figsize = (10,5), 
+               xlabel = label, ylabel = 'frequency', 
+               xlim = tlim3, ylim = [30,750], 
+               fsave = fsave/'snrQscan_coh_02.png', 
+               title = 'Coherent SNR wscan stream 02')
+    
+    plot_wscan(tout, fout, coh_oscan_02.T, 
+               cmap = cmap, norm = norm, 
+               figsize = (10,5), 
+               xlabel = label, ylabel = 'frequency', 
+               xlim = tlim2, ylim = [30,750], 
+               fsave = fsave/'snrQscan_coh_02_zoom1.png', 
+               title = 'Coherent SNR wscan stream 02')
+
+    plot_wscan(tout, fout, coh_oscan_02.T, 
+               cmap = cmap, norm = norm, 
+               figsize = (10,5), 
+               xlabel = label, ylabel = 'frequency', 
+               xlim = tlim, ylim = [30,750], 
+               fsave = fsave/'snrQscan_coh_02_zoom2.png', 
+               title = 'Coherent SNR wscan stream 02')
+
+    nullsnr = null_oscan[idx_tpeak_0, idx_fpeak_0]
+    label = f'null snr = {nullsnr}, at t = {tpeak}, f = {fpeak}'
+
+    # null
+    plot_wscan(tout, fout, null_oscan.T, 
+               cmap = cmap, norm = norm, 
+               figsize = (10,5), 
+               xlabel = label, ylabel = 'frequency', 
+               xlim = tlim3, ylim = [30,750], 
+               fsave = fsave/'null_oscan.png', 
+               title = 'NULL SNR wscan stream')
+    
+    plot_wscan(tout, fout, null_oscan.T, 
+               cmap = cmap, norm = norm, 
+               figsize = (10,5), 
+               xlabel = label, ylabel = 'frequency', 
+               xlim = tlim2, ylim = [30,750], 
+               fsave = fsave/'null_oscan_zoom1.png', 
+               title = 'NULL SNR wscan stream')
+
+    plot_wscan(tout, fout, null_oscan.T, 
+               cmap = cmap, norm = norm, 
+               figsize = (10,5), 
+               xlabel = label, ylabel = 'frequency', 
+               xlim = tlim, ylim = [30,750], 
+               fsave = fsave/'null_oscan_zoom2.png', 
+               title = 'NULL SNR wscan stream')
+
+    
+    # fig = plt.figure(figsize=(10,5))
+    # ax = fig.add_subplot(111)
+    # im = ax.pcolormesh(tout, fout, coh_oscan.T, cmap = cmap, norm = norm)
+    # fig.colorbar(im, ax=ax)
+    # plt.title('Coherent SNR wscan')
+    # plt.xlabel('gps time')
+    # plt.ylabel('frequency')
+    # plt.ylim([30, 500])
+    # plt.xlim(tlim)
+    # plt.yscale('log')
+    # plt.savefig(fsave/'snrQscan_coh.png',dpi = 200)
+    # plt.show()
+    
+    # fig = plt.figure(figsize=(10,5))
+    # ax = fig.add_subplot(111)
+    # im = ax.pcolormesh(tout, fout, coh_oscan_01.T, cmap = cmap, norm = norm)
+    # fig.colorbar(im, ax=ax)
+    # plt.title('Coherent SNR wscan stream 01')
+    # plt.xlabel('gps time')
+    # plt.ylabel('frequency')
+    # plt.ylim([30, 500])
+    # plt.xlim(tlim)
+    # plt.yscale('log')
+    # plt.savefig(fsave/'snrQscan_coh_01.png',dpi = 200)
+    # plt.show()
+    
+    # fig = plt.figure(figsize=(10,5))
+    # ax = fig.add_subplot(111)
+    # im = ax.pcolormesh(tout, fout, coh_oscan_02.T, cmap = cmap, norm = norm)
+    # fig.colorbar(im, ax=ax)
+    # plt.title('Coherent SNR wscan stream 02')
+    # plt.xlabel('gps time')
+    # plt.ylabel('frequency')
+    # plt.ylim([30, 500])
+    # plt.xlim(tlim)
+    # plt.yscale('log')
+    # plt.savefig(fsave/'snrQscan_coh_02.png',dpi = 200)
+    # plt.show()
+
+    # fig = plt.figure(figsize=(10,5))
+    # ax = fig.add_subplot(111)
+    # im = ax.pcolormesh(tout, fout, null_oscan.T, cmap = cmap, norm = norm)
+    # fig.colorbar(im, ax=ax)
+    # plt.title('NULL SNR wscan')
+    # plt.xlabel('gps time')
+    # plt.ylabel('frequency')
+    # plt.ylim([30, 500])
+    # plt.xlim(tlim)
+    # plt.yscale('log')
+    # plt.savefig(fsave/'snrQscan_null.png',dpi = 200)
+    # plt.show()
+    
+    return 0
         
-    
+def plot_wscan(x, y, z, cmap, norm,
+               figsize, xlabel, ylabel,
+               xlim, ylim, 
+               fsave, title):
+    fig = plt.figure(figsize = figsize)
+    ax = fig.add_subplot(111)
+    im = ax.pcolormesh(x, y, z, cmap = cmap, norm = norm)
+    fig.colorbar(im, ax=ax)
+    plt.title(title)
+    plt.xlabel(xlabel)
+    plt.ylabel(ylabel)
+    plt.ylim(ylim)
+    plt.xlim(xlim)
+    plt.yscale('log')
+    plt.savefig(fsave ,dpi = 200)
+    plt.show()
 
+def get_2D_argpeak(matrix):
+    arg = np.where(matrix == np.max(matrix))
+    return arg[0][0], arg[1][0]

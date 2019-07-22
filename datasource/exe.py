@@ -107,8 +107,8 @@ class SubprocessHandler(object):
     def remove_oldest_one(self, flog = None):
         cost = 0
         for obj in self:
-            if obj.cost > cost:
-                cost = cost
+            if obj.cost() > cost:
+                cost = obj.cost()
                 rem = obj
         rem.shut(flog = flog)
         self._OBJlist.remove(rem)
@@ -138,7 +138,6 @@ class mysubprocess(object):
     def RUN(self):
         return self._RUN
     
-    @property
     def cost(self):
         return time.time() - self._start_time
     

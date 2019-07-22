@@ -583,18 +583,21 @@ def plot_wscan(x, y, z, cmap, norm,
                figsize, xlabel, ylabel,
                xlim, ylim, 
                fsave, title):
-    fig = plt.figure(figsize = figsize)
-    ax = fig.add_subplot(111)
-    im = ax.pcolormesh(x, y, z, cmap = cmap, norm = norm)
-    fig.colorbar(im, ax=ax)
-    plt.title(title)
-    plt.xlabel(xlabel)
-    plt.ylabel(ylabel)
-    plt.ylim(ylim)
-    plt.xlim(xlim)
-    plt.yscale('log')
-    plt.savefig(fsave ,dpi = 200)
-    plt.close(fig)
+    if True:
+        pass
+    else:
+        fig = plt.figure(figsize = figsize)
+        ax = fig.add_subplot(111)
+        im = ax.pcolormesh(x, y, z, cmap = cmap, norm = norm)
+        fig.colorbar(im, ax=ax)
+        plt.title(title)
+        plt.xlabel(xlabel)
+        plt.ylabel(ylabel)
+        plt.ylim(ylim)
+        plt.xlim(xlim)
+        plt.yscale('log')
+        plt.savefig(fsave ,dpi = 200)
+        plt.close(fig)
 
 def get_2D_argpeak(matrix):
     arg = np.where(matrix == np.max(matrix))

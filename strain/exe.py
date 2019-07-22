@@ -35,6 +35,7 @@ DEFAULT_FRANGE = (30, 1200)
 DEFAULT_PCOLORBINS = 100
 DEFAULT_CMAP = 'jet'
 DEFAULT_MISMATCH = 0.1
+FIGSIZE_QSCAN = (14,6)
 
 def parseargs(argv):
     parser = OptionParser(description='Waveform Comparation With SXS')
@@ -320,7 +321,7 @@ def event_scan(gps, sH1, sL1, sV1,
         snrpeak = '%.3f'%Eng.T[idx_tpeak, idx_fpeak]
         label = f'loudest snr = {snrpeak}, at t = {tpeak}, f = {fpeak}'
         
-        fig = plt.figure(figsize = (10,5))
+        fig = plt.figure(figsize = FIGSIZE_QSCAN)
         ax = fig.add_subplot(111)
         im = ax.pcolormesh(tsnr, fout, Eng, cmap = cmap, norm = norm)
         fig.colorbar(im, ax=ax)
@@ -336,21 +337,21 @@ def event_scan(gps, sH1, sL1, sV1,
         plt.savefig(fsave/f'Qscan_{data.ifo}.png', dpi = 200)
         plt.close()
         
-        # plot_wscan(tsnr, fout, Eng, 
-        #             cmap = cmap, norm = norm, 
-        #             figsize = (10,5), 
-        #             xlabel = label, ylabel = 'frequency', 
-        #             xlim = tlim2, ylim = [30, 1000], 
-        #             fsave = fsave/f'Qscan_{data.ifo}_zoom1.png', 
-        #             title = f'{data.ifo} snr Qscan')
+        plot_wscan(tsnr, fout, Eng, 
+                    cmap = cmap, norm = norm, 
+                    figsize = FIGSIZE_QSCAN, 
+                    xlabel = label, ylabel = 'frequency', 
+                    xlim = tlim2, ylim = [30, 1000], 
+                    fsave = fsave/f'Qscan_{data.ifo}_zoom1.png', 
+                    title = f'{data.ifo} snr Qscan')
 
-        # plot_wscan(tsnr, fout, Eng, 
-        #             cmap = cmap, norm = norm, 
-        #             figsize = (10,5), 
-        #             xlabel = label, ylabel = 'frequency', 
-        #             xlim = tlim, ylim = [30, 1000], 
-        #             fsave = fsave/f'Qscan_{data.ifo}_zoom2.png', 
-        #             title = f'{data.ifo} snr Qscan')
+        plot_wscan(tsnr, fout, Eng, 
+                    cmap = cmap, norm = norm, 
+                    figsize = FIGSIZE_QSCAN, 
+                    xlabel = label, ylabel = 'frequency', 
+                    xlim = tlim, ylim = [30, 1000], 
+                    fsave = fsave/f'Qscan_{data.ifo}_zoom2.png', 
+                    title = f'{data.ifo} snr Qscan')
 
         
     # Step.6 Plot coherent skymap
@@ -419,7 +420,7 @@ def event_scan(gps, sH1, sL1, sV1,
     label = f'loudest snr = {snrpeak}, at t = {tpeak}, f = {fpeak}'
     plot_wscan(tout, fout, coh_oscan.T, 
                cmap = cmap, norm = norm, 
-               figsize = (10,5), 
+               figsize = FIGSIZE_QSCAN, 
                xlabel = label, ylabel = 'frequency', 
                xlim = tlim3, ylim = [30,750], 
                fsave = fsave/'snrQscan_coh.png', 
@@ -427,7 +428,7 @@ def event_scan(gps, sH1, sL1, sV1,
     
     plot_wscan(tout, fout, coh_oscan.T, 
                cmap = cmap, norm = norm, 
-               figsize = (10,5), 
+               figsize = FIGSIZE_QSCAN, 
                xlabel = label, ylabel = 'frequency', 
                xlim = tlim2, ylim = [30,750], 
                fsave = fsave/'snrQscan_coh_zoom1.png', 
@@ -435,7 +436,7 @@ def event_scan(gps, sH1, sL1, sV1,
 
     plot_wscan(tout, fout, coh_oscan.T, 
                cmap = cmap, norm = norm, 
-               figsize = (10,5), 
+               figsize = FIGSIZE_QSCAN, 
                xlabel = label, ylabel = 'frequency', 
                xlim = tlim, ylim = [30,750], 
                fsave = fsave/'snrQscan_coh_zoom2.png', 
@@ -450,7 +451,7 @@ def event_scan(gps, sH1, sL1, sV1,
     # coh_SNRscan1
     plot_wscan(tout, fout, coh_oscan_01.T, 
                cmap = cmap, norm = norm, 
-               figsize = (10,5), 
+               figsize = FIGSIZE_QSCAN, 
                xlabel = label, ylabel = 'frequency', 
                xlim = tlim3, ylim = [30,750], 
                fsave = fsave/'snrQscan_coh_01.png', 
@@ -458,7 +459,7 @@ def event_scan(gps, sH1, sL1, sV1,
     
     plot_wscan(tout, fout, coh_oscan_01.T, 
                cmap = cmap, norm = norm, 
-               figsize = (10,5), 
+               figsize = FIGSIZE_QSCAN, 
                xlabel = label, ylabel = 'frequency', 
                xlim = tlim2, ylim = [30,750], 
                fsave = fsave/'snrQscan_coh_01_zoom1.png', 
@@ -466,7 +467,7 @@ def event_scan(gps, sH1, sL1, sV1,
 
     plot_wscan(tout, fout, coh_oscan_01.T, 
                cmap = cmap, norm = norm, 
-               figsize = (10,5), 
+               figsize = FIGSIZE_QSCAN, 
                xlabel = label, ylabel = 'frequency', 
                xlim = tlim, ylim = [30,750], 
                fsave = fsave/'snrQscan_coh_01_zoom2.png', 
@@ -481,7 +482,7 @@ def event_scan(gps, sH1, sL1, sV1,
     # coh_SNRscan2
     plot_wscan(tout, fout, coh_oscan_02.T, 
                cmap = cmap, norm = norm, 
-               figsize = (10,5), 
+               figsize = FIGSIZE_QSCAN, 
                xlabel = label, ylabel = 'frequency', 
                xlim = tlim3, ylim = [30,750], 
                fsave = fsave/'snrQscan_coh_02.png', 
@@ -489,7 +490,7 @@ def event_scan(gps, sH1, sL1, sV1,
     
     plot_wscan(tout, fout, coh_oscan_02.T, 
                cmap = cmap, norm = norm, 
-               figsize = (10,5), 
+               figsize = FIGSIZE_QSCAN, 
                xlabel = label, ylabel = 'frequency', 
                xlim = tlim2, ylim = [30,750], 
                fsave = fsave/'snrQscan_coh_02_zoom1.png', 
@@ -497,7 +498,7 @@ def event_scan(gps, sH1, sL1, sV1,
 
     plot_wscan(tout, fout, coh_oscan_02.T, 
                cmap = cmap, norm = norm, 
-               figsize = (10,5), 
+               figsize = FIGSIZE_QSCAN, 
                xlabel = label, ylabel = 'frequency', 
                xlim = tlim, ylim = [30,750], 
                fsave = fsave/'snrQscan_coh_02_zoom2.png', 
@@ -509,7 +510,7 @@ def event_scan(gps, sH1, sL1, sV1,
     # null
     plot_wscan(tout, fout, null_oscan.T, 
                cmap = cmap, norm = norm, 
-               figsize = (10,5), 
+               figsize = FIGSIZE_QSCAN, 
                xlabel = label, ylabel = 'frequency', 
                xlim = tlim3, ylim = [30,750], 
                fsave = fsave/'null_oscan.png', 
@@ -517,7 +518,7 @@ def event_scan(gps, sH1, sL1, sV1,
     
     plot_wscan(tout, fout, null_oscan.T, 
                cmap = cmap, norm = norm, 
-               figsize = (10,5), 
+               figsize = FIGSIZE_QSCAN, 
                xlabel = label, ylabel = 'frequency', 
                xlim = tlim2, ylim = [30,750], 
                fsave = fsave/'null_oscan_zoom1.png', 
@@ -525,7 +526,7 @@ def event_scan(gps, sH1, sL1, sV1,
 
     plot_wscan(tout, fout, null_oscan.T, 
                cmap = cmap, norm = norm, 
-               figsize = (10,5), 
+               figsize = FIGSIZE_QSCAN, 
                xlabel = label, ylabel = 'frequency', 
                xlim = tlim, ylim = [30,750], 
                fsave = fsave/'null_oscan_zoom2.png', 

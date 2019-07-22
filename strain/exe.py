@@ -299,11 +299,12 @@ def event_scan(gps, sH1, sL1, sV1,
     
     # Step.5 Plot snr q scan spectrum.
     for data in sLIST:
+        sys.stderr.write(f'{LOG}:{data.ifo} epoch = {data.epoch}\n')
         func, xout, yout = snr_q_scanf(data.value, tmpl.template, 
                             data.fs, data.epoch + tmpl.dtpeak, 
                             cut=None, psd = data.psdfun_setted,
                             qrange = qrange, retfunc = True, window = True)
-        sys.stderr.write(f'{LOG}:xout = {xout}\n')
+        #sys.stderr.write(f'{LOG}:xout = {xout}\n')
         Eng = np.abs(func(tsnr, fout))
         
         levels = MaxNLocator(nbins=pcolorbins).tick_values(Eng.min(), Eng.max())
@@ -317,7 +318,7 @@ def event_scan(gps, sH1, sL1, sV1,
         
         fig = plt.figure(figsize = (10,5))
         ax = fig.add_subplot(111)
-        im = ax.pcolormesh(x, y, Eng, cmap = cmap, norm = norm)
+        im = ax.pcolormesh(tsnr, fout, Eng, cmap = cmap, norm = norm)
         fig.colorbar(im, ax=ax)
         plt.title(f'{data.ifo} snr Qscan')
         if track and ra is not None and de is not None:

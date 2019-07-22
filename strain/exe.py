@@ -325,7 +325,7 @@ def event_scan(gps, sH1, sL1, sV1,
         plt.ylabel('frequency')
         plt.ylim([30, 1000])
         plt.yscale('log')
-        plt.xlim(tlim)
+        plt.xlim(tlim3)
         plt.savefig(fsave/f'Qscan_{data.ifo}.png', dpi = 200)
         plt.close(fig)
         

@@ -290,7 +290,7 @@ def event_scan(gps, sH1, sL1, sV1,
     tlim2 = [tmap - h_dur*2, tmap + h_dur*2]
     tlim3 = [tmap - h_dur*3, tmap + h_dur*3]
     cmap = plt.get_cmap(cmaptype)
-    tsnr = np.linspace(tlim[0], tlim[0], 600)
+    tsnr = np.linspace(tlim[0], tlim[1], 600)
     fout = np.logspace(np.log10(30), np.log10(1000), 600)
 
     # Step.4 Plot SNR time series.

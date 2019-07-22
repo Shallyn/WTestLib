@@ -308,9 +308,9 @@ def event_scan(gps, sH1, sL1, sV1,
         norm = BoundaryNorm(levels, ncolors=cmap.N, clip=True)
         
         idx_tpeak, idx_fpeak = get_2D_argpeak(Eng.T)
-        tpeak = tsnr[idx_tpeak]
-        fpeak = fout[idx_fpeak]
-        snrpeak = Eng.T[idx_tpeak, idx_fpeak]
+        tpeak = '%.2f'%tsnr[idx_tpeak]
+        fpeak = '%.1f'%fout[idx_fpeak]
+        snrpeak = '%.3f'%Eng.T[idx_tpeak, idx_fpeak]
         label = f'loudest snr = {snrpeak}, at t = {tpeak}, f = {fpeak}'
         
         fig = plt.figure(figsize = (10,5))
@@ -406,9 +406,9 @@ def event_scan(gps, sH1, sL1, sV1,
     
     # coh_SNRscan
     idx_tpeak_0, idx_fpeak_0 = get_2D_argpeak(coh_oscan)
-    tpeak = tout[idx_tpeak_0]
-    fpeak = fout[idx_fpeak_0]
-    snrpeak = coh_oscan[idx_tpeak_0, idx_fpeak_0]
+    tpeak = '%.2f'%tout[idx_tpeak_0]
+    fpeak = '%.1f'%fout[idx_fpeak_0]
+    snrpeak = '%.3f'%coh_oscan[idx_tpeak_0, idx_fpeak_0]
     label = f'loudest snr = {snrpeak}, at t = {tpeak}, f = {fpeak}'
     plot_wscan(tout, fout, coh_oscan.T, 
                cmap = cmap, norm = norm, 

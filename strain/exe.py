@@ -299,7 +299,7 @@ def event_scan(gps, sH1, sL1, sV1,
     
     # Step.5 Plot snr q scan spectrum.
     for data in sLIST:
-        sys.stderr.write(f'{LOG}:{data.ifo} epoch = {data.epoch}\n')
+        sys.stderr.write(f'{LOG}:{data.ifo} epoch = {data.epoch + tmpl.dtpeak}\n')
         func, xout, yout = snr_q_scanf(data.value, tmpl.template, 
                             data.fs, data.epoch + tmpl.dtpeak, 
                             cut=None, psd = data.psdfun_setted,

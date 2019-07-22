@@ -24,7 +24,7 @@ from ..coherent.skymap import mollview, graticule, MollweideProj
 from pathlib import Path
 from .snr_qTansform import snr_q_scanf
 from .detectors import time_delay
-from ..Utils import WARNING, LOG
+from ..Utils import WARNING, LOG, DEBUG
 from ..datasource.gracedb import GraceEvent, GraceSuperEvent
 from scipy.interpolate import interp1d
 from ..generator import dim_t
@@ -293,13 +293,16 @@ def event_scan(gps, sH1, sL1, sV1,
     tsnr = np.linspace(tlim3[0], tlim3[1], 1500)
     fout = np.logspace(np.log10(30), np.log10(1000), 600)
 
+    sys.stderr.write(f'{DEBUG}: tlim3 = {tlim3}\n')
+    sys.stderr.write(f'{DEBUG}: tpeak = {tmpl.dtpeak}\n')
+    sys.stderr.write(f'{DEBUG}: tmap = {tmap}\n')
+    
     # Step.4 Plot SNR time series.
     for SNR in snrLIST:
         SNR.plot(xrange = tlim, title = f'SNR {SNR.ifo}', fsave = fsave / f'fig_SNR_{SNR.ifo}.png')
     
     # Step.5 Plot snr q scan spectrum.
     for data in sLIST:
-        sys.stderr.write(f'{LOG}:{data.ifo} epoch = {data.epoch + tmpl.dtpeak}\n')
         func, xout, yout = snr_q_scanf(data.value, tmpl.template, 
                             data.fs, data.epoch + tmpl.dtpeak, 
                             cut=None, psd = data.psdfun_setted,

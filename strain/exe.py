@@ -327,7 +327,7 @@ def event_scan(gps, sH1, sL1, sV1,
         plt.yscale('log')
         plt.xlim(tlim)
         plt.savefig(fsave/f'Qscan_{data.ifo}.png', dpi = 200)
-        plt.close(fig)
+        plt.show()
         
         # plot_wscan(tsnr, fout, Eng, 
         #            cmap = cmap, norm = norm, 

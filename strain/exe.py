@@ -207,6 +207,10 @@ def main(argv = None):
     if approx is None:
         approx = get_proper_approx(m1, m2)
     fini = fini * dim_t(m1 + m2)
+    
+    for sifo in ['sH1', 'sL1', 'sV1']:
+        if sifo not in locals():
+            locals()[sifo] = None
     # Step.3 Call....
     return event_scan(gps = gps,
                       sH1 = locals()['sH1'],

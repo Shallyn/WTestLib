@@ -260,7 +260,7 @@ def event_scan(gps, sH1, sL1, sV1,
     psd_freqs = np.logspace(np.log10(1), np.log10(1500), 500)
     for strain in [sH1, sL1, sV1]:
         if strain is not None:
-            strain.plot(fsave = fsave / f'{strain.ifo}_data.png', 
+            strain.plot(fsave = fsave / f'data_{strain.ifo}.png', 
                         title = f'{strain.ifo} data',
                         ylabel = 'strain',
                         figsize = (12, 5))
@@ -327,7 +327,7 @@ def event_scan(gps, sH1, sL1, sV1,
         plt.yscale('log')
         plt.xlim(tlim)
         plt.savefig(fsave/f'Qscan_{data.ifo}.png', dpi = 200)
-        plt.show()
+        plt.close()
         
         # plot_wscan(tsnr, fout, Eng, 
         #            cmap = cmap, norm = norm, 

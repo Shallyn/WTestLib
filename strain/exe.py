@@ -302,6 +302,7 @@ def event_scan(gps, sH1, sL1, sV1,
         func = snr_q_scanf(data.value, tmpl.template, 
                            data.fs, data.epoch + tmpl.dtpeak, 
                            cut=None, psd = data.psdfun_setted,
+                           toutseg = tsnr,
                            qrange = qrange, retfunc = True, window = True)[0]
         Eng = np.abs(func(tsnr, fout))
         levels = MaxNLocator(nbins=pcolorbins).tick_values(Eng.min(), Eng.max())
@@ -317,7 +318,7 @@ def event_scan(gps, sH1, sL1, sV1,
         ax = fig.add_subplot(111)
         im = ax.pcolormesh(tsnr, fout, Eng, cmap = cmap, norm = norm)
         fig.colorbar(im, ax=ax)
-        plt.title(data.ifo)
+        plt.title(f'{data.ifo} snr Qscan')
         if track and ra is not None and de is not None:
             delay = time_delay(data.ifo, ra, de, tsnr[int(tsnr.size / 2)])
             plt.plot(track_x + delay, track_y, '-', color='#ba7b00', zorder=3, lw=1.5)

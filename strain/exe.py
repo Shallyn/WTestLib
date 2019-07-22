@@ -290,7 +290,7 @@ def event_scan(gps, sH1, sL1, sV1,
     tlim2 = [tmap - h_dur*2, tmap + h_dur*2]
     tlim3 = [tmap - h_dur*3, tmap + h_dur*3]
     cmap = plt.get_cmap(cmaptype)
-    tsnr = np.linspace(tlim[0], tlim[1], 600)
+    tsnr = np.linspace(tlim3[0], tlim3[1], 1500)
     fout = np.logspace(np.log10(30), np.log10(1000), 600)
 
     # Step.4 Plot SNR time series.
@@ -325,25 +325,25 @@ def event_scan(gps, sH1, sL1, sV1,
         plt.ylabel('frequency')
         plt.ylim([30, 1000])
         plt.yscale('log')
-        plt.xlim(tlim)
+        plt.xlim(tlim3)
         plt.savefig(fsave/f'Qscan_{data.ifo}.png', dpi = 200)
         plt.close()
         
-        # plot_wscan(tsnr, fout, Eng, 
-        #            cmap = cmap, norm = norm, 
-        #            figsize = (10,5), 
-        #            xlabel = label, ylabel = 'frequency', 
-        #            xlim = tlim2, ylim = [30, 1000], 
-        #            fsave = fsave/f'Qscan_{data.ifo}_zoom1.png', 
-        #            title = f'{data.ifo} snr Qscan')
+        plot_wscan(tsnr, fout, Eng, 
+                    cmap = cmap, norm = norm, 
+                    figsize = (10,5), 
+                    xlabel = label, ylabel = 'frequency', 
+                    xlim = tlim2, ylim = [30, 1000], 
+                    fsave = fsave/f'Qscan_{data.ifo}_zoom1.png', 
+                    title = f'{data.ifo} snr Qscan')
 
-        # plot_wscan(tsnr, fout, Eng, 
-        #            cmap = cmap, norm = norm, 
-        #            figsize = (10,5), 
-        #            xlabel = label, ylabel = 'frequency', 
-        #            xlim = tlim, ylim = [30, 1000], 
-        #            fsave = fsave/f'Qscan_{data.ifo}_zoom2.png', 
-        #            title = f'{data.ifo} snr Qscan')
+        plot_wscan(tsnr, fout, Eng, 
+                    cmap = cmap, norm = norm, 
+                    figsize = (10,5), 
+                    xlabel = label, ylabel = 'frequency', 
+                    xlim = tlim, ylim = [30, 1000], 
+                    fsave = fsave/f'Qscan_{data.ifo}_zoom2.png', 
+                    title = f'{data.ifo} snr Qscan')
 
         
     # Step.6 Plot coherent skymap
@@ -594,7 +594,7 @@ def plot_wscan(x, y, z, cmap, norm,
     plt.xlim(xlim)
     plt.yscale('log')
     plt.savefig(fsave ,dpi = 200)
-    plt.close(fig)
+    plt.close()
 
 def get_2D_argpeak(matrix):
     arg = np.where(matrix == np.max(matrix))

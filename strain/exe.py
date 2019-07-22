@@ -248,7 +248,7 @@ def event_scan(gps, sH1, sL1, sV1,
                     approx = approx,
                     srate = fs,
                     D = 100,
-                    duration = sH1.duration/2)
+                    duration = sH1.duration/3)
     track_x, track_y = tmpl.get_track(gps)
     tmpl.plot(fsave = fsave / 'template.png', 
               title = 'template',
@@ -293,14 +293,14 @@ def event_scan(gps, sH1, sL1, sV1,
     tsnr = np.linspace(tlim3[0], tlim3[1], 1500)
     fout = np.logspace(np.log10(30), np.log10(1000), 600)
 
-    sys.stderr.write(f'{DEBUG}: tlim3 = {tlim3}\n')
-    sys.stderr.write(f'{DEBUG}: tpeak = {tmpl.dtpeak}\n')
-    sys.stderr.write(f'{DEBUG}: tmap = {tmap}\n')
+    # sys.stderr.write(f'{DEBUG}: tlim3 = {tlim3}\n')
+    # sys.stderr.write(f'{DEBUG}: tpeak = {tmpl.dtpeak}\n')
+    # sys.stderr.write(f'{DEBUG}: tmap = {tmap}\n')
     
     # Step.4 Plot SNR time series.
     for SNR in snrLIST:
         SNR.plot(xrange = tlim, title = f'SNR {SNR.ifo}', fsave = fsave / f'fig_SNR_{SNR.ifo}.png')
-        sys.stderr.write(f'{DEBUG}: snr {SNR.ifo} epoch = {SNR.epoch}\n')
+        #sys.stderr.write(f'{DEBUG}: snr {SNR.ifo} epoch = {SNR.epoch}\n')
     
     # Step.5 Plot snr q scan spectrum.
     for data in sLIST:

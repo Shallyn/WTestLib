@@ -299,12 +299,18 @@ def event_scan(gps, sH1, sL1, sV1,
     
     # Step.5 Plot snr q scan spectrum.
     for data in sLIST:
-        func = snr_q_scanf(data.value, tmpl.template, 
-                           data.fs, data.epoch + tmpl.dtpeak, 
-                           cut=None, psd = data.psdfun_setted,
-                           toutseg = tsnr,
-                           qrange = qrange, retfunc = True, window = True)[0]
-        Eng = np.abs(func(tsnr, fout))
+        # func = snr_q_scanf(data.value, tmpl.template, 
+        #                     data.fs, data.epoch + tmpl.dtpeak, 
+        #                     cut=None, psd = data.psdfun_setted,
+        #                     qrange = qrange, retfunc = True, window = True)[0]
+        # Eng = np.abs(func(tsnr, fout))
+        x, y, Eng = snr_q_scanf(data.value, tmpl.template, 
+                            data.fs, data.epoch + tmpl.dtpeak, 
+                            cut=None, psd = data.psdfun_setted,
+                            toutseg = tsnr,
+                            qrange = qrange, retfunc = False, window = True)[0]
+        Eng = np.abs(Eng)
+        
         levels = MaxNLocator(nbins=pcolorbins).tick_values(Eng.min(), Eng.max())
         norm = BoundaryNorm(levels, ncolors=cmap.N, clip=True)
         
@@ -316,7 +322,7 @@ def event_scan(gps, sH1, sL1, sV1,
         
         fig = plt.figure(figsize = (10,5))
         ax = fig.add_subplot(111)
-        im = ax.pcolormesh(tsnr, fout, Eng, cmap = cmap, norm = norm)
+        im = ax.pcolormesh(x, y, Eng, cmap = cmap, norm = norm)
         fig.colorbar(im, ax=ax)
         plt.title(f'{data.ifo} snr Qscan')
         if track and ra is not None and de is not None:
@@ -330,21 +336,21 @@ def event_scan(gps, sH1, sL1, sV1,
         plt.savefig(fsave/f'Qscan_{data.ifo}.png', dpi = 200)
         plt.close()
         
-        plot_wscan(tsnr, fout, Eng, 
-                    cmap = cmap, norm = norm, 
-                    figsize = (10,5), 
-                    xlabel = label, ylabel = 'frequency', 
-                    xlim = tlim2, ylim = [30, 1000], 
-                    fsave = fsave/f'Qscan_{data.ifo}_zoom1.png', 
-                    title = f'{data.ifo} snr Qscan')
+        # plot_wscan(tsnr, fout, Eng, 
+        #             cmap = cmap, norm = norm, 
+        #             figsize = (10,5), 
+        #             xlabel = label, ylabel = 'frequency', 
+        #             xlim = tlim2, ylim = [30, 1000], 
+        #             fsave = fsave/f'Qscan_{data.ifo}_zoom1.png', 
+        #             title = f'{data.ifo} snr Qscan')
 
-        plot_wscan(tsnr, fout, Eng, 
-                    cmap = cmap, norm = norm, 
-                    figsize = (10,5), 
-                    xlabel = label, ylabel = 'frequency', 
-                    xlim = tlim, ylim = [30, 1000], 
-                    fsave = fsave/f'Qscan_{data.ifo}_zoom2.png', 
-                    title = f'{data.ifo} snr Qscan')
+        # plot_wscan(tsnr, fout, Eng, 
+        #             cmap = cmap, norm = norm, 
+        #             figsize = (10,5), 
+        #             xlabel = label, ylabel = 'frequency', 
+        #             xlim = tlim, ylim = [30, 1000], 
+        #             fsave = fsave/f'Qscan_{data.ifo}_zoom2.png', 
+        #             title = f'{data.ifo} snr Qscan')
 
         
     # Step.6 Plot coherent skymap

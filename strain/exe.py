@@ -282,7 +282,12 @@ def event_scan(gps, sH1, sL1, sV1,
             
             sLIST.append(strain)
             SNR = \
-            strain.matched_filter(tmpl.template, cut = [30,1000], window = True, psd = 'set', ret_complex = True, shift = tmpl.dtpeak)
+            strain.matched_filter(tmpl.template, 
+                                  cut = [30,1000], 
+                                  window = True, 
+                                  psd = 'set', 
+                                  ret_complex = True, 
+                                  shift = tmpl.dtpeak)
             index_gps = slice( int(((gps-0.5) - SNR.epoch) * SNR.fs) ,\
                                int(((gps+0.5) - SNR.epoch) * SNR.fs))
 
@@ -292,6 +297,7 @@ def event_scan(gps, sH1, sL1, sV1,
                 tmap = SNR.time[np.argmax(np.abs(SNR.value[index_gps]))]
     
     # Step.3 Plot setting.
+    sys.stderr.write(f'{DEBUG}:tmap = {tmap}\n')
     tpeak = gps - tmpl.dtpeak
     h_dur = min(0.5, tmpl.dtpeak)
     tlim = [tmap - h_dur, tmap + h_dur]

@@ -292,7 +292,7 @@ def event_scan(gps, sH1, sL1, sV1,
                                int(((gps+0.5) - SNR.epoch) * SNR.fs))
 
             snrLIST.append(SNR)
-            sys.stderr.write(f'{DEBUG}: tSNR {SNR.ifo} = {SNR.time[0]}, {SNR.time[-1]}\n')
+            sys.stderr.write(f'{DEBUG}: tSNR {SNR.ifo} = {SNR.time[index_gps][0]}, {SNR.time[index_gps][-1]}\n')
             if max(SNR.value[index_gps]) > tmpmax:
                 tmpmax = max(SNR.value[index_gps])
                 tmap = SNR.time[np.argmax(np.abs(SNR.value[index_gps]))]

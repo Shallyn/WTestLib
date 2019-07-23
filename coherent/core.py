@@ -20,7 +20,7 @@ except:
     sys.stderr.write(f'{WARNING}: cannot import PyGWCOH')
 
 from multiprocessing import Pool
-MP = True
+MP = False
 # LIST = [SNR_H1, SNR_L1, SNR_V1]
 # SNR_ifo = [channel, snrTimeSeries, sigma2, index]
 def utdk_times(LIST, ra_pix, de_pix, times, verbose = False):

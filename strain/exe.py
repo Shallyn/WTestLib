@@ -288,8 +288,8 @@ def event_scan(gps, sH1, sL1, sV1,
                                   psd = 'set', 
                                   ret_complex = True, 
                                   shift = tmpl.dtpeak)
-            index_gps = slice( int(((gps-0.5) - SNR.epoch) * SNR.fs) ,\
-                               int(((gps+0.5) - SNR.epoch) * SNR.fs))
+            index_gps = slice( int(((gps-1) - SNR.epoch) * SNR.fs) ,\
+                               int(((gps+1) - SNR.epoch) * SNR.fs))
 
             snrLIST.append(SNR)
             if max(SNR.value[index_gps]) > tmpmax:

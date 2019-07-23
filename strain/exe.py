@@ -54,7 +54,7 @@ def parseargs(argv):
     parser.add_option('--m2', type = 'float', help = 'mass2 of this event, for template generation.')
     parser.add_option('--s1z', type = 'float', help = 'spin1z of this event, for template generation.')
     parser.add_option('--s2z', type = 'float', help = 'spin2z of this event, for template generation.')
-    parser.add_option('--fini', type = 'float', default = 0.002, help = 'Initial frequency for template generation(natual dimension).')
+    parser.add_option('--fini', type = 'float', default = 0.003, help = 'Initial frequency for template generation(natual dimension).')
     parser.add_option('--approx', type = 'str', help = 'approx for template generation.')
     
     parser.add_option('--nside', type = 'int', default = DEFAULT_NSIDE, help = 'Nside for skymap pix.')

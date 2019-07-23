@@ -134,7 +134,7 @@ def Gpc_sngl(snr, ra, de, times, q):
     Gpc_matrix = np.zeros([ntime,npix,2],np.float)
     #Gpc_sigma  = np.zeros([ntime,npix,ndet,2],np.float)
     gps_time = times[int(ntime/2)]
-    sys.stderr.write(f'-----gps_time = {gps_time}\n')
+    #sys.stderr.write(f'-----gps_time = {gps_time}\n')
     detector = Detector(snr.ifo)
     for k in range(npix):
         rak = ra[k]

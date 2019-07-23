@@ -255,6 +255,7 @@ def event_scan(gps, sH1, sL1, sV1,
                     D = 100,
                     duration = sH1.duration/3)
     track_x, track_y = tmpl.get_track(gps)
+    tmpl_freq_max = max(track_y)
     tmpl.plot(fsave = fsave / 'template.png', 
               title = 'template',
               figsize = (12,5))
@@ -400,8 +401,13 @@ def event_scan(gps, sH1, sL1, sV1,
     if ra is not None and de is not None:
         x2,y2 = projector.ang2xy(np.array([np.pi/2 - de, ra + np.pi]))
         plt.plot(x2,y2,'r+')
-    plt.savefig(fsave/'Coherent_Skymap.png', dpi = 200)
-    plt.show()
+    plt.savefig(fsave/'Skymap_Coherent.png', dpi = 200)
+    plt.close()
+    
+    mollview(np.sqrt(null), title = 'null SNR')
+    graticule(coord='G',local = True)
+    plt.savefig(fsave/'Skymap_Null.png', dpi = 200)
+    plt.close()
     
     #
     #
@@ -536,7 +542,7 @@ def event_scan(gps, sH1, sL1, sV1,
                figsize = FIGSIZE_QSCAN, 
                xlabel = label, ylabel = 'frequency', 
                xlim = tlim3, ylim = [30,750], 
-               fsave = fsave/'null_oscan.png', 
+               fsave = fsave/'snrQscan_null.png', 
                title = 'NULL SNR wscan stream')
     
     plot_wscan(tout, fout, null_oscan.T, 
@@ -544,7 +550,7 @@ def event_scan(gps, sH1, sL1, sV1,
                figsize = FIGSIZE_QSCAN, 
                xlabel = label, ylabel = 'frequency', 
                xlim = tlim2, ylim = [30,750], 
-               fsave = fsave/'null_oscan_zoom1.png', 
+               fsave = fsave/'snrQscan_null_zoom1.png', 
                title = 'NULL SNR wscan stream')
 
     plot_wscan(tout, fout, null_oscan.T, 
@@ -552,7 +558,7 @@ def event_scan(gps, sH1, sL1, sV1,
                figsize = FIGSIZE_QSCAN, 
                xlabel = label, ylabel = 'frequency', 
                xlim = tlim, ylim = [30,750], 
-               fsave = fsave/'null_oscan_zoom2.png', 
+               fsave = fsave/'snrQscan_null_zoom2.png', 
                title = 'NULL SNR wscan stream')
 
     

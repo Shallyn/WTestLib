@@ -349,3 +349,4 @@ def snr_rhotf_vec(sLIST, ra, de, psi, times, freqs, tmpl, verbose = False, **kwa
     #                 series.snr_q_scan(tmpl = tmpl, toutseg = times, foutseg = freqs, psd = 'set', **kwargs)
     #             rho[i,j,k] = series.q_snrfunc(times[i] + dt[k], freqs[j])
     return rho
+

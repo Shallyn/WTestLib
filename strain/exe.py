@@ -287,8 +287,8 @@ def event_scan(gps, sH1, sL1, sV1,
             strain.matched_filter(tmpl.template, cut = [30,1000], window = True, psd = 'set', ret_complex = True, shift = tmpl.dtpeak)
             snrLIST.append(locals()[f'SNR_{strain.ifo}']) 
             if max(locals()['SNR_{}'.format(strain.ifo)][index_gps]) > tmpmax:
-                tmpmax = max(locals()['SNR_{}'.format(strain.ifo)])
-                tmap = locals()['SNR_{}'.format(strain.ifo)].time[np.argmax(np.abs(locals()[f'SNR_{strain.ifo}']))]
+                tmpmax = max(locals()['SNR_{}'.format(strain.ifo)][index_gps])
+                tmap = locals()['SNR_{}'.format(strain.ifo)].time[np.argmax(np.abs(locals()[f'SNR_{strain.ifo}'][index_gps]))]
     
     # Step.3 Plot setting.
     tpeak = gps - tmpl.dtpeak

@@ -19,6 +19,8 @@ except:
     GWCOH = False
     sys.stderr.write(f'{WARNING}: cannot import PyGWCOH')
 
+import multiprocessing as mp
+MP = True
 # LIST = [SNR_H1, SNR_L1, SNR_V1]
 # SNR_ifo = [channel, snrTimeSeries, sigma2, index]
 def utdk_times(LIST, ra_pix, de_pix, times, verbose = False):
@@ -39,14 +41,28 @@ def utdk_times(LIST, ra_pix, de_pix, times, verbose = False):
             sigma2_list.append(data.sigma2)
         Gpc_matrix = pg.Gpc_time_pix(ifo_list, ra_pix, de_pix, times, sigma2_list)
     else:
-        Gpc_matrix = Gpc(LIST, ra_pix, de_pix, times, verbose)
+        if not MP:
+            Gpc_matrix = Gpc(LIST, ra_pix, de_pix, times, verbose)
+        else:
+            # Using multiprocessing to speed up!
+            ndet = len(LIST)
+            npix = len(ra_pix)
+            ntime = len(times)
+            Gpc_matrix = np.zeros([ntime,npix,ndet,2],np.float)
+            q = mp.Queue()
+            jobs = []
+            for i in range(ndet):
+                p = mp.Process(target = Gpc_sngl, args = (LIST[i], ra_pix, de_pix, times, q))
+                jobs.append(p)
+                p.start()
+
     if verbose:
-        sys.stderr.write('--Calculating Gpc matrix: Done\n')
-        sys.stderr.write('--Do SVD on Gpc matrix...')
-    u,s,v = np.linalg.svd(Gpc_matrix)
-    if verbose:
-        sys.stderr.write('Done\n')
+        if not MP:
+            sys.stderr.write('--Calculating Gpc matrix: Done\n')
+        else:
+            sys.stderr.write('--Calculating Gpc matrix: hanging\n')
         sys.stderr.write('--Calculating rho_vec ...\n')
+        
     if GWCOH:
         rho = rho_vec_GWCOH(LIST, ra_pix, de_pix, times)
     else:
@@ -55,6 +71,23 @@ def utdk_times(LIST, ra_pix, de_pix, times, verbose = False):
         sys.stderr.write('--Calculating rho_vec: Done\n')
         sys.stderr.write('--Multiply u, rho...')
     utdk = np.zeros([ntime, npix, ndet, ndet], np.complex)
+    
+    if MP:
+        if verbose:
+            sys.stderr.write('--Waiting for Gpc matrix...')
+        for p in jobs:
+            p.join()
+        if verbose:
+            sys.stderr.write('Done\n')
+        for i, j in enumerate(jobs):
+            Gpc_matrix[:,:,i,:] = q.get()
+
+    if verbose:
+        sys.stderr.write('--Do SVD on Gpc matrix...')
+    u,s,v = np.linalg.svd(Gpc_matrix)
+    if verbose:
+        sys.stderr.write('Done\n')
+    
     for i in range(ndet):
         utdk[:,:,:,i] = np.multiply(u[:,:,:,i],rho[:,:,:])
     if verbose:
@@ -92,6 +125,26 @@ def Gpc(snr_set, ra, de, times, verbose = False):
         sys.stderr.write('\r')
     return Gpc_matrix
 
+#
+# Multiprocess for Gpc calculation...
+#
+def Gpc_sngl(snr, ra, de, times, q):
+    npix = len(ra)
+    ntime = len(times)
+    Gpc_matrix = np.zeros([ntime,npix,2],np.float)
+    #Gpc_sigma  = np.zeros([ntime,npix,ndet,2],np.float)
+    gps_time = times[int(ntime/2)]
+    detector = Detector(snr.ifo)
+    for k in range(npix):
+        rak = ra[k]
+        dek = de[k]
+        ar = detector.antenna_pattern(rak, dek, 0, gps_time)
+        Gpc_matrix[:,k,0] = ar[0] * np.sqrt(snr.sigma2)
+        Gpc_matrix[:,k,1] = ar[1] * np.sqrt(snr.sigma2)            
+    q.put(Gpc_matrix)
+#
+# End
+#
 
 def rho_vec(snr_set, ra, de, times, verbose = False):
     npix = len(ra)

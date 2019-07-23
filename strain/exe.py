@@ -357,8 +357,11 @@ def event_scan(gps, sH1, sL1, sV1,
                     fsave = fsave/f'Qscan_{data.ifo}_zoom2.png', 
                     title = f'{data.ifo} snr Qscan')
 
-        
+    #
+    #
     # Step.6 Plot coherent skymap
+    #
+    #
     npix=nside2npix(nside) # 12 * npix * npix
     theta,phi = pix2ang(nside,np.arange(npix))
     ra_pix = phi-np.pi
@@ -389,8 +392,12 @@ def event_scan(gps, sH1, sL1, sV1,
         plt.plot(x2,y2,'r+')
     plt.savefig(fsave/'Coherent_Skymap.png', dpi = 200)
     plt.show()
-
+    
+    #
+    #
     # Step.7 Plot coherent snr q scan spectrum
+    #
+    #
     if ra is not None and de is not None:
         max_de = np.pi / 2 - de
         max_ra = ra - np.pi

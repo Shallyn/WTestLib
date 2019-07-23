@@ -211,7 +211,6 @@ def main(argv = None):
     for sifo in ['sH1', 'sL1', 'sV1']:
         if sifo not in locals():
             locals()[sifo] = None
-    sys.stderr.write(f'{DEBUG}: gps = {gps}\n')
     # Step.3 Call....
     return event_scan(gps = gps,
                       sH1 = locals()['sH1'],
@@ -308,7 +307,8 @@ def event_scan(gps, sH1, sL1, sV1,
     
     # Step.4 Plot SNR time series.
     for SNR in snrLIST:
-        SNR.plot(xrange = tlim, title = f'SNR {SNR.ifo}', fsave = fsave / f'fig_SNR_{SNR.ifo}.png')
+        SNR.plot(xrange = tlim, title = f'SNR {SNR.ifo}', fsave = fsave / f'SNR_{SNR.ifo}_zoom.png')
+        SNR.plot(xrange = None, title = f'SNR {SNR.ifo}', fsave = fsave / f'SNR_{SNR.ifo}.png')
         #sys.stderr.write(f'{DEBUG}: snr {SNR.ifo} epoch = {SNR.epoch}\n')
     
     # Step.5 Plot snr q scan spectrum.

@@ -211,6 +211,7 @@ def main(argv = None):
     for sifo in ['sH1', 'sL1', 'sV1']:
         if sifo not in locals():
             locals()[sifo] = None
+    sys.stderr.write(f'{DEBUG}: gps = {gps}\n')
     # Step.3 Call....
     return event_scan(gps = gps,
                       sH1 = locals()['sH1'],

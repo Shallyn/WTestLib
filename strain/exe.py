@@ -292,12 +292,13 @@ def event_scan(gps, sH1, sL1, sV1,
                                int(((gps+0.5) - SNR.epoch) * SNR.fs))
 
             snrLIST.append(SNR)
+            sys.stderr.write(f'{DEBUG}: tSNR {SNR.ifo} = {SNR.time[0]}, {SNR.time[-1]}\n')
             if max(SNR.value[index_gps]) > tmpmax:
                 tmpmax = max(SNR.value[index_gps])
                 tmap = SNR.time[np.argmax(np.abs(SNR.value[index_gps]))]
     
     # Step.3 Plot setting.
-    sys.stderr.write(f'{DEBUG}:tmap = {tmap}\n')
+    # sys.stderr.write(f'{DEBUG}:tmap = {tmap}\n')
     tpeak = gps - tmpl.dtpeak
     h_dur = min(0.5, tmpl.dtpeak)
     tlim = [tmap - h_dur, tmap + h_dur]

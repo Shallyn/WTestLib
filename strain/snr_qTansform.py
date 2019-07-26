@@ -75,10 +75,20 @@ class snrQTile(QTile):
         # window[self._get_indices() + int(NFFT/2) - freq_indices] = sngl_window
         # window[self._get_indices() + int(NFFT/2) + freq_indices] = sngl_window
         # return window
+    @property
+    def padding(self):
+        """The `(left, right)` padding required for the IFFT
+
+        :type: `tuple` of `int`
+        """
+        pad = self.ntiles - self.windowsize
+        return (int((pad - 1)/2.), int((pad + 1)/2.))
             
     def transform(self, stilde, hrtilde, hitilde, psd, epoch = None, **kwargs):
-        hrwindowed = hrtilde * self.get_snr_window(hrtilde.size)
-        hiwindowed = hitilde * self.get_snr_window(hitilde.size)
+        hrwindowed = hrtilde[self._get_indices()] * self.get_snr_window(hrtilde.size)
+        hrwindowed = np.pad(hrwindowed, self.padding, mode = 'constant')
+        hiwindowed = hitilde[self._get_indices()] * self.get_snr_window(hitilde.size)
+        hiwindowed = np.pad(hiwindowed, self.padding, mode = 'constant')
         
         sigmasqr = 1 * (hrwindowed * hiwindowed.conjugate() / psd).sum() * self.sampling / hrtilde.size
         sigmasqi = 1 * (hiwindowed * hiwindowed.conjugate() / psd).sum() * self.sampling / hitilde.size

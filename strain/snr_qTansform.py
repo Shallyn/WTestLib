@@ -62,6 +62,13 @@ class snrQTile(QTile):
                              mismatch = mismatch)
     
     def get_snr_window(self, NFFT):
+        window = np.zeros(NFFT)
+        sngl_window = self.get_window()
+        freq_indices = int(self.frequency * self.duration)
+        window[self._get_indices() + freq_indices] = sngl_window
+        return window
+        
+    def get_window(self):
         wfrequencies = self._get_indices() / self.duration
         xfrequencies = wfrequencies * self.qprime / self.frequency
         # normalize and generate bi-square window
@@ -85,12 +92,12 @@ class snrQTile(QTile):
         return (int((pad - 1)/2.), int((pad + 1)/2.))
             
     def transform(self, stilde, hrtilde, hitilde, psd, epoch = None, **kwargs):
-        hrwindowed = hrtilde[self._get_indices()] * self.get_snr_window(hrtilde.size)
-        hrwindowed = np.pad(hrwindowed, self.padding, mode = 'constant')
-        hiwindowed = hitilde[self._get_indices()] * self.get_snr_window(hitilde.size)
-        hiwindowed = np.pad(hiwindowed, self.padding, mode = 'constant')
+        hrwindowed = hrtilde * self.get_snr_window(hrtilde.size)
+        # hrwindowed = np.pad(hrwindowed, self.padding, mode = 'constant')
+        hiwindowed = hitilde * self.get_snr_window(hitilde.size)
+        # hiwindowed = np.pad(hiwindowed, self.padding, mode = 'constant')
         
-        sigmasqr = 1 * (hrwindowed * hiwindowed.conjugate() / psd).sum() * self.sampling / hrtilde.size
+        sigmasqr = 1 * (hrwindowed * hrwindowed.conjugate() / psd).sum() * self.sampling / hrtilde.size
         sigmasqi = 1 * (hiwindowed * hiwindowed.conjugate() / psd).sum() * self.sampling / hitilde.size
         
         op_r = 2 * stilde * hrwindowed.conjugate()

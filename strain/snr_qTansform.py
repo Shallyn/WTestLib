@@ -39,13 +39,13 @@ class snrQTiling(QTiling):
             yield snrQPlane(q, self.frange, self.duration, self.sampling,
                          mismatch=self.mismatch)
             
-    def transform(self, stilde, htilde, psd, epoch = None, **kwargs):
+    def transform(self, stilde, hrtilde, hitilde, psd, epoch = None, **kwargs):
         weight = 1 + np.log10(self.qrange[1]/self.qrange[0]) / np.sqrt(2)
         nind, nplanes, peak, result = (0, 0, 0, None)
         for plane in self:
             nplanes += 1
             nind += sum([1 + row.ntiles * row.deltam for row in plane])
-            result = plane.transform(stilde, htilde, psd, epoch = epoch, **kwargs)
+            result = plane.transform(stilde, hrtilde, hitilde, psd, epoch = epoch, **kwargs)
             if result.peak['energy'] > peak:
                 out = result
                 peak = out.peak['energy']
@@ -62,19 +62,34 @@ class snrQTile(QTile):
                              mismatch = mismatch)
     
     def get_snr_window(self, NFFT):
-        window = np.zeros(NFFT)
-        sngl_window = self.get_window()
-        freq_indices = int(self.frequency * self.duration)
-        window[self._get_indices() + int(NFFT/2) - freq_indices] = sngl_window
-        window[self._get_indices() + int(NFFT/2) + freq_indices] = sngl_window
-        return window
+        wfrequencies = self._get_indices() / self.duration
+        xfrequencies = wfrequencies * self.qprime / self.frequency
+        # normalize and generate bi-square window
+        norm = self.ntiles / (self.duration * self.sampling) * (
+            315 * self.qprime / (128 * self.frequency)) ** (1/2.)
+        return (1 - xfrequencies ** 2) ** 2 * norm
+
+        # window = np.zeros(NFFT)
+        # sngl_window = self.get_window()
+        # freq_indices = int(self.frequency * self.duration)
+        # window[self._get_indices() + int(NFFT/2) - freq_indices] = sngl_window
+        # window[self._get_indices() + int(NFFT/2) + freq_indices] = sngl_window
+        # return window
             
-    def transform(self, stilde, htilde, psd, epoch = None, **kwargs):
-        hwindowed = htilde * self.get_snr_window(htilde.size)
-        sigmasq = 1 * (hwindowed * hwindowed.conjugate() / psd).sum() * self.sampling / htilde.size
-        optimal = stilde * hwindowed.conjugate()
-        optimal = np.fft.ifftshift(optimal)
-        snr = 2 * np.fft.ifft(optimal) * self.sampling / np.sqrt(np.abs(sigmasq))
+    def transform(self, stilde, hrtilde, hitilde, psd, epoch = None, **kwargs):
+        hrwindowed = hrtilde * self.get_snr_window(hrtilde.size)
+        hiwindowed = hitilde * self.get_snr_window(hitilde.size)
+        
+        sigmasqr = 1 * (hrwindowed * hiwindowed.conjugate() / psd).sum() * self.sampling / hrtilde.size
+        sigmasqi = 1 * (hiwindowed * hiwindowed.conjugate() / psd).sum() * self.sampling / hitilde.size
+        
+        op_r = 2 * stilde * hrwindowed.conjugate()
+        op_r_t = np.fft.irfft(op_r) / np.sqrt(np.abs(sigmasqr))
+        
+        op_i = 2 * stilde * hiwindowed.conjugate()
+        op_i_t = np.fft.irfft(op_i) / np.sqrt(np.abs(sigmasqi))
+        
+        snr = (op_r_t + 1.j*op_i_t) * self.sampling
         return epoch, 1./self.sampling, snr
         
 
@@ -97,11 +112,11 @@ class snrQPlane(QPlane):
             yield snrQTile(self.q, freq, self.duration, self.sampling,
                            mismatch=self.mismatch)
             
-    def transform(self, stilde, htilde, psd, epoch=None):
+    def transform(self, stilde, hrtilde, hitilde, psd, epoch=None):
         out = []
         for qtile in self:
             # get energy from transform
-            ret = qtile.transform(stilde, htilde, psd, epoch=epoch)
+            ret = qtile.transform(stilde, hrtilde, hitilde, psd, epoch=epoch)
             out.append(ret)
         return snrQGram(self, out)
 
@@ -213,12 +228,11 @@ def snr_q_scanf(data, ht,
     else:
         dwindow = 1
 
-    stilde = np.fft.fft(s * dwindow) / sampling
-    htilde = np.fft.fft(h * dwindow) / sampling
-    datafreq = np.fft.fftfreq(h.size) * sampling
+    stilde = np.fft.rfft(s * dwindow) / sampling
+    hrtilde = np.fft.rfft(h.real * dwindow) / sampling
+    hitilde = np.fft.rfft(h.imag * dwindow) / sampling
+    datafreq = np.fft.rfftfreq(h.size) * sampling
     df = datafreq[1] - datafreq[0]
-    sf = np.zeros(stilde.size, dtype = stilde.dtype)
-    hf = np.zeros(htilde.size, dtype = htilde.dtype)
 
     if cut is not None:
         fmin, fmax = cut
@@ -226,32 +240,23 @@ def snr_q_scanf(data, ht,
             fmin = min(abs(datafreq))
         if fmax > max(abs(datafreq)):
             fmax = max(abs(datafreq))
-        kmin_m = np.where( np.abs(datafreq - fmin) < df)[0][0]
-        kmin_p = np.where( np.abs(datafreq + fmin) < df)[0][0]
-        kmax_m = np.where( np.abs(datafreq - fmax) < df)[0][0]
-        kmax_p = np.where( np.abs(datafreq + fmax) < df)[0][0]
-        
-        sf[kmin_m:kmax_m] = stilde[kmin_m:kmax_m]
-        sf[kmin_p:kmax_p] = stilde[kmin_p:kmax_p]
-        hf[kmin_m:kmax_m] = htilde[kmin_m:kmax_m]
-        hf[kmin_p:kmax_p] = htilde[kmin_p:kmax_p]
-    else:
-        sf[:] = stilde[:]
-        hf[:] = htilde[:]
+        kmin = np.where( np.abs(datafreq - fmin) < df)[0][0]
+        kmax = np.where( np.abs(datafreq - fmax) < df)[0][0]
+        stilde[:kmin] = 0
+        stilde[kmax:] = 0
+        hrtilde[:kmin] = 0
+        hrtilde[kmax:] = 0
+        hitilde[:kmin] = 0
+        hitilde[kmax:] = 0
     
-    freqshift = np.fft.fftshift(datafreq)
     if psd is None:
         psd = get_psdfun(data, sampling)
     power_vec = psd(np.abs(datafreq))
-    psd_calc = psd(np.abs(freqshift))
-    sf /= power_vec
-    # Shift
-    hf = np.fft.fftshift(hf)
-    sf = np.fft.fftshift(sf)
+    stilde /= power_vec
     qgram, N = snrQTiling(duration, sampling, 
                           mismatch=mismatch, 
                           qrange=qrange,
-                          frange=frange).transform(sf, hf, psd_calc, epoch = epoch, **kwargs)
+                          frange=frange).transform(stilde, hrtilde, hitilde, power_vec, epoch = epoch, **kwargs)
     far = 1.5 * N * np.exp(-qgram.peak['energy']) / duration
     if retfunc:
         return qgram.interpolate(toutseg = toutseg, foutseg = foutseg, retfunc = retfunc)

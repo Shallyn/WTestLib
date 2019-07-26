@@ -386,6 +386,7 @@ def event_scan(gps, sH1, sL1, sV1,
     null = np.sum(utdka2[:,:,2:],axis=2)
     LLR = utdka2[:,:,0] + utdka2[:,:,1] # LOG(likelihood ratio) (4)
     coh_snr2 = LLR.max(axis=0)
+    null_snr2 = null.sum(axis = 0) / len(det_time)
     #coh_snr2 = LLR[int(det_time.size / 2),:]
     
     projector  = MollweideProj()

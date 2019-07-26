@@ -405,7 +405,7 @@ def event_scan(gps, sH1, sL1, sV1,
     plt.savefig(fsave/'Skymap_Coherent.png', dpi = 200)
     plt.close()
     
-    mollview(np.sqrt(null), title = 'null SNR')
+    mollview(np.sqrt(null_snr2), title = 'null SNR')
     graticule(coord='G',local = True)
     plt.savefig(fsave/'Skymap_Null.png', dpi = 200)
     plt.close()

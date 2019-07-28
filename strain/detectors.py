@@ -8,8 +8,7 @@ Created on Mon May 27 12:47:32 2019
 
 import numpy as np
 import astropy.time as at
-
-C_SI = 299792458
+from ..h22datatype import c_SI
 
 def gmst_accurate(gps_time):
     gmst = at.Time(gps_time, format='gps',
@@ -42,6 +41,7 @@ class ifoinfo(object):
         response[2,2] = (xdz **2 - ydz **2)/2
         self.response = response
 
+# distance in [m]
 #H1
 H1 = ifoinfo('H1', \
              location = [-2.16141492636e+06, \
@@ -108,7 +108,7 @@ class Detector(object):
         ehat_src[2] = np.sin(de)
         delta_xyz = gcloc - self.location
         delta_xyz.reshape(gcloc.shape)
-        return np.dot(ehat_src, delta_xyz) / C_SI
+        return np.dot(ehat_src, delta_xyz) / c_SI
     
     def antenna_pattern(self, ra, de, psi, gps):
         gmst = gmst_accurate(gps)

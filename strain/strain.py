@@ -97,6 +97,25 @@ class gwStrain(TimeSeriesBase):
     def psdfun_setted(self):
         return self._psdfun_setted
     
+    def get_horizon(self, tmpl, psd = None, fs = None):
+        if psd in ('self', None):
+            psd = self.psdfun()
+        if psd in ('set',):
+            psd = self._psdfun_setted
+        if fs is None:
+            fs = self.fs
+        h = np.asarray(tmpl)
+        htilde = np.fft.rfft(h.real)
+        hfreq = np.fft.rfftfreq(h.size, d = 1./fs)
+        power_vec = psd(hfreq)
+        ohh = 1*(htilde * htilde.conjugate()).sum()
+        ohh = np.abs(ohh)
+        ohf = 1*(htilde * htilde.conjugate() / power_vec).sum()
+        ohf = np.abs(ohf)
+        sig2 = ohf / ohh
+        return 1./np.sqrt(sig2)
+        
+    
     def plot(self, 
              xrange = None, 
              yrange = None, 
@@ -204,4 +223,3 @@ class gwStrain(TimeSeriesBase):
     #     self.q_dtenergy = self.q_energyfunc(self.q_time, self.q_freq)
     
 
-        

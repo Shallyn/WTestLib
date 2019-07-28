@@ -11,4 +11,5 @@
 from .pix import *
 from .skymap import *
 from .core import *
+from .cohcore import *
 

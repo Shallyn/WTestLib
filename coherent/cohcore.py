@@ -60,6 +60,8 @@ class gwStrainCOH(object):
         if hasattr(tmpl, 'fs') and tmpl.fs != self.fs:
             raise ValueError('Sample rate of template and strain data is not equal to each other.')
         
+        
+        
         r_min = 0
         r_max = 0 # TODO
         T_min = 0
@@ -74,6 +76,7 @@ class gwStrainCOH(object):
             
             horizon = strain.get_horizon(tmpl.template, psd = 'set', fs = self.fs)
             distance = horizon / 4
+            print(f'{strain.ifo} horizon = {horizon}')
             if distance > r_max:
                 r_max = distance
             

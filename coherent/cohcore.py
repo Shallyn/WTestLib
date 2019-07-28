@@ -74,7 +74,7 @@ class gwStrainCOH(object):
             if delay > T_max:
                 T_max = delay
             
-            horizon = strain.get_horizon(tmpl.template, psd = 'set', fs = self.fs)
+            horizon = strain.get_horizon(tmpl.template_norm, psd = 'set', fs = self.fs)
             distance = horizon / 4
             print(f'{strain.ifo} horizon = {horizon}')
             if distance > r_max:

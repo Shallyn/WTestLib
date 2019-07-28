@@ -13,6 +13,7 @@ from .detectors import Detector
 from .strain import gwStrain
 from . import signal as sgl
 from scipy.interpolate import interp1d
+from ..h22datatype import pc_SI
 
 #------------CMD to generate ifo template----------#
 def detector_strain(CMD_tmpl, 
@@ -159,6 +160,10 @@ class template(object):
     @property
     def time(self):
         return np.arange(0, len(self) * self.deltat, self.deltat)
+    
+    @property
+    def template_norm(self):
+        return self.template * self._D * pc_SI * 1e6
     
     def plot(self, 
              xrange = None, 

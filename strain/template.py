@@ -168,7 +168,7 @@ class template(object):
     def time(self):
         return np.arange(0, len(self) * self.deltat, self.deltat)
     
-    def get_horizon(self, psd, ret_SI = True):
+    def get_horizon(self, psd, ret_SI = False):
         h = self.template
         htilde = np.fft.rfft(h.real)
         hfreq = np.fft.rfftfreq(h.size, d = 1./self.fs)

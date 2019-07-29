@@ -9,6 +9,7 @@ Created on Mon Jul 22 19:14:28 2019
 import numpy as np
 from ..strain.strain import gwStrain
 from ..h22datatype import c_SI
+from ..strain.template import template
 
 #--------------------Combined Strain-------------------#
 class gwStrainCOH(object):
@@ -57,10 +58,11 @@ class gwStrainCOH(object):
 
     def get_localize_prob_func(self, tmpl,
                                distance_factor = 2):
-        if hasattr(tmpl, 'fs') and tmpl.fs != self.fs:
+        if not isinstance(tmpl, template):
+            raise TypeError('The type of tmpl should be strain.template.template.')
+            
+        if tmpl.fs != self.fs:
             raise ValueError('Sample rate of template and strain data is not equal to each other.')
-        
-        
         
         r_min = 0
         r_max = 0 # TODO
@@ -74,7 +76,7 @@ class gwStrainCOH(object):
             if delay > T_max:
                 T_max = delay
             
-            horizon = strain.get_horizon(tmpl.template_norm, psd = 'set', fs = self.fs)
+            horizon = tmpl.get_horizon(psd = strain.psdfun_setted)
             distance = horizon / 4
             print(f'{strain.ifo} horizon = {horizon}')
             if distance > r_max:

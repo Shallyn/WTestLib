@@ -78,6 +78,13 @@ class template(object):
                                    srate = fs,
                                    f_ini = self._fini,
                                    approx = self._approx)
+    @property
+    def distance(self):
+        return self._D
+    
+    @property
+    def distance_SI(self):
+        return self._D * pc_SI * 1e6
     
     @property
     def CMD(self):
@@ -161,10 +168,20 @@ class template(object):
     def time(self):
         return np.arange(0, len(self) * self.deltat, self.deltat)
     
-    @property
-    def template_norm(self):
-        return self.template * self._D * pc_SI * 1e6
-    
+    def get_horizon(self, psd, ret_SI = True):
+        h = self.template
+        htilde = np.fft.rfft(h.real)
+        hfreq = np.fft.rfftfreq(h.size, d = 1./self.fs)
+        power_vec = psd(hfreq)
+        ohf = 1*(htilde * htilde.conjugate() / power_vec).sum()
+        sig2 = np.abs(ohf)
+        rhor = self.distance_SI * np.sqrt(sig2)
+        if ret_SI:
+            return rhor
+        else:
+            return rhor / pc_SI / 1e6
+
+        
     def plot(self, 
              xrange = None, 
              yrange = None, 

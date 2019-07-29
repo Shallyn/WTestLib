@@ -172,8 +172,9 @@ class template(object):
         h = self.template
         htilde = np.fft.rfft(h.real) / self.fs
         hfreq = np.fft.rfftfreq(h.size, d = 1./self.fs)
+        df = hfreq[1] - hfreq[0]
         power_vec = psd(hfreq)
-        ohf = 1*(htilde * htilde.conjugate() / power_vec).sum()
+        ohf = 1*(htilde * htilde.conjugate() / power_vec).sum() * df
         sig2 = np.abs(ohf)
         rhor = self.distance_SI * np.sqrt(sig2)
         if ret_SI:

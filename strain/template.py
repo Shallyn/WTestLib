@@ -168,7 +168,7 @@ class template(object):
     def time(self):
         return np.arange(0, len(self) * self.deltat, self.deltat)
     
-    def get_horizon(self, psd, ret_SI = False):
+    def get_horizon(self, psd, ret_SI = True):
         h = self.template
         htilde = np.fft.rfft(h.real)
         hfreq = np.fft.rfftfreq(h.size, d = 1./self.fs)
@@ -179,6 +179,7 @@ class template(object):
         if ret_SI:
             return rhor
         else:
+            # In Mpc
             return rhor / pc_SI / 1e6
 
         

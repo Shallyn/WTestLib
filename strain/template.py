@@ -170,12 +170,10 @@ class template(object):
     
     def get_horizon(self, psd, ret_SI = True):
         h = self.template
-        htilde = np.fft.fft(h) / self.fs
-        #htilde = np.fft.rfft(h.real) / self.fs
-        hfreq = np.fft.fftfreq(h.size, d = 1./self.fs)
-        #hfreq = np.fft.rfftfreq(h.size, d = 1./self.fs)
+        htilde = np.fft.rfft(h.real) / self.fs
+        hfreq = np.fft.rfftfreq(h.size, d = 1./self.fs)
         df = hfreq[1] - hfreq[0]
-        power_vec = psd(np.abs(hfreq))
+        power_vec = psd(hfreq)
         ohf = 1*(htilde * htilde.conjugate() / power_vec).sum() * df
         sig2 = np.abs(ohf)
         rhor = self.distance_SI * np.sqrt(sig2)

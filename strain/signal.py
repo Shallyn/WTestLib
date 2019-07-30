@@ -160,6 +160,12 @@ def get_track(th, ht, epoch_peak, extra_index = 5):
     time = th - th[idx_peak] + epoch_peak
     return time[:idx_end], freq[:idx_end]
 
+def check_increasing(y):
+    dy = y[:-1] - y[1:]
+    if min(dy) <= 0:
+        return False
+    else:
+        return True
 
 def get_idx(x, var):
     return np.where(abs(x - var) == min(np.abs(x - var)))[0][0]

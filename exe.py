@@ -190,7 +190,7 @@ def modcomp(argv = None):
     fsave = savedir / 'all.csv'
     save_namecol(fsave, data = namecol)
     data = []
-    for i in range(np):
+    for i in range(nq):
         for j in range(ns1z):
             for k in range(ns2z):
                 for l in range(necc):

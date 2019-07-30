@@ -141,7 +141,7 @@ class snrQPlane(QPlane):
         # for each frequency, yield a QTile
         for freq in self._iter_frequencies():
             yield snrQTile(self.q, freq, self.duration, self.sampling,
-                           mismatch=self.mismatch, freq_shift = self.freq_timeshift(freq))
+                           mismatch=self.mismatch, shift = self.freq_timeshift(freq))
             
     def transform(self, stilde, hrtilde, hitilde, psd, epoch=None):
         out = []

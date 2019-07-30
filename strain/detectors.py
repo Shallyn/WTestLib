@@ -110,7 +110,7 @@ class Detector(object):
         delta_xyz.reshape(gcloc.shape)
         return np.dot(ehat_src, delta_xyz) / c_SI
     
-ri    def time_delay_from_earth_center_gmst(self, ra, de, gmst):
+    def time_delay_from_earth_center_gmst(self, ra, de, gmst):
         gcloc = np.array([0,0,0])
         gha = gmst - ra
         ehat_src = np.zeros(3, np.float)

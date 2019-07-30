@@ -240,7 +240,7 @@ class snrQGram(object):
 
 
 from . import template
-from .signal import check_increasing
+from .signal import check_increasing, plotit
 #----------------------------------------------#
 def snr_q_scanf(data, tmpl,
                 sampling, epoch, cut = None,
@@ -257,6 +257,7 @@ def snr_q_scanf(data, tmpl,
         raise TypeError('Type of variable tmpl should be strain.template.template')
     track_x, track_y = tmpl.get_track(0, extra_index = 0)
     track_x -= track_x[0]
+    plotit(track_x, track_y, xrange = None, yrange = None, title = 'aa', xlabel = 'time', ylabel = 'freq', save = 'testtrack.png')
     if not check_increasing(track_y):
         dy = np.gradient(track_y)
         idx_cut = np.where(np.abs(dy) == min(np.abs(dy)))[0][0]

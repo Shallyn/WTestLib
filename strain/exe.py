@@ -255,6 +255,8 @@ def event_scan(gps, sH1, sL1, sV1,
                     D = 100,
                     duration = sH1.duration/3)
     track_x, track_y = tmpl.get_track(gps)
+    wavefreq_max = max(track_y)
+    sys.stderr.write(f'{DEBUG}: freq_max = {wavefreq_max}.\n')
     tmpl.plot(fsave = fsave / 'template.png', 
               title = 'template',
               figsize = (12,5))

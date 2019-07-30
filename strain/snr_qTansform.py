@@ -259,7 +259,7 @@ def snr_q_scanf(data, tmpl,
     track_x -= track_x[0]
     if not check_increasing(track_y):
         dy = np.gradient(track_y)
-        idx_cut = np.where(np.abs(dy) == np.min(dy))[0][0]
+        idx_cut = np.where(np.abs(dy) == min(np.abs(dy)))[0][0]
         if dy[idx_cut] < 0:
             idx_cut -= 1
     track_x = track_x[:idx_cut]

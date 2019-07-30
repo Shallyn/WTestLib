@@ -151,12 +151,14 @@ def matched_filter_Real(s, h, fs, psdfun = None, cut = None, window = True):
     return op
 
 
-def get_track(th, ht, epoch_peak):
+def get_track(th, ht, epoch_peak, extra_index = 5):
     phi = np.unwrap(np.angle(ht))
     freq = np.gradient(phi) / np.gradient(th) / (2 * np.pi)
     idx_peak = np.argmax(np.abs(ht))
+    lth = len(ht)
+    idx_end = min(lth, idx_peak + extra_index)
     time = th - th[idx_peak] + epoch_peak
-    return time[:idx_peak + 5], freq[:idx_peak + 5]
+    return time[:idx_end], freq[:idx_end]
 
 
 def get_idx(x, var):

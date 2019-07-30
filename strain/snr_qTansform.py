@@ -23,12 +23,16 @@ class snrQTiling(QTiling):
     def __init__(self,duration, sampling,
                  qrange=DEFAULT_QRANGE,
                  frange=DEFAULT_FRANGE,
-                 mismatch=DEFAULT_MISMATCH):
+                 mismatch=DEFAULT_MISMATCH,
+                 fdelay = None):
         super(snrQTiling, self).__init__(duration = duration, 
                      sampling = sampling, 
                      qrange = qrange,
                      frange = frange,
                      mismatch=mismatch)
+        if fdelay is None:
+            fdelay = lambda x : 0
+        self._fdelay = fdelay
         
     def __iter__(self):
         """Iterate over this `QTiling`
@@ -37,7 +41,7 @@ class snrQTiling(QTiling):
         """
         for q in self._iter_qs():
             yield snrQPlane(q, self.frange, self.duration, self.sampling,
-                         mismatch=self.mismatch)
+                         mismatch=self.mismatch, fdelay = self._fdelay)
             
     def transform(self, stilde, hrtilde, hitilde, psd, epoch = None, **kwargs):
         weight = 1 + np.log10(self.qrange[1]/self.qrange[0]) / np.sqrt(2)
@@ -56,10 +60,11 @@ class snrQTiling(QTiling):
             
 class snrQTile(QTile):
     def __init__(self, q, frequency, duration, sampling,
-                 mismatch=DEFAULT_MISMATCH):
+                 mismatch=DEFAULT_MISMATCH, shift = 0):
         super(snrQTile, self).__init__(q = q, frequency = frequency,
                              duration = duration, sampling = sampling,
                              mismatch = mismatch)
+        self._shift = shift
     
     def get_snr_window(self, NFFT):
         window = np.zeros(NFFT)
@@ -91,7 +96,7 @@ class snrQTile(QTile):
         pad = self.ntiles - self.windowsize
         return (int((pad - 1)/2.), int((pad + 1)/2.))
             
-    def transform(self, stilde, hrtilde, hitilde, psd, epoch = None, **kwargs):
+    def transform(self, stilde, hrtilde, hitilde, psd, epoch = None):
         hrwindowed = hrtilde * self.get_snr_window(hrtilde.size)
         # hrwindowed = np.pad(hrwindowed, self.padding, mode = 'constant')
         hiwindowed = hitilde * self.get_snr_window(hitilde.size)
@@ -107,18 +112,25 @@ class snrQTile(QTile):
         op_i_t = np.fft.irfft(op_i) / np.sqrt(np.abs(sigmasqi))
         
         snr = (op_r_t + 1.j*op_i_t) * self.sampling
-        return epoch, 1./self.sampling, snr
+        return epoch + self._shift, 1./self.sampling, snr
         
 
 
 class snrQPlane(QPlane):
     def __init__(self, q, frange, duration, sampling,
-                 mismatch=DEFAULT_MISMATCH):
+                 mismatch=DEFAULT_MISMATCH, fdelay = None):
         super(snrQPlane, self).__init__(q = q, frange = frange,
                                          duration = duration,
                                          sampling = sampling,
                                          mismatch = mismatch)
-
+        if fdelay is None:
+            fdelay = lambda x : 0
+        self._fdelay = fdelay
+    
+    
+    def freq_timeshift(self, freq):
+        return self._fdelay(freq)
+    
     def __iter__(self):
         """Iterate over this `QPlane`
 
@@ -127,7 +139,7 @@ class snrQPlane(QPlane):
         # for each frequency, yield a QTile
         for freq in self._iter_frequencies():
             yield snrQTile(self.q, freq, self.duration, self.sampling,
-                           mismatch=self.mismatch)
+                           mismatch=self.mismatch, freq_shift = self.freq_timeshift(freq))
             
     def transform(self, stilde, hrtilde, hitilde, psd, epoch=None):
         out = []
@@ -162,11 +174,22 @@ class snrQGram(object):
     
     def interpolate(self, tres="<default>", fres="<default>",
                         toutseg = None, foutseg = None, retfunc = False):
-        t0 = self._LIST[0][0]
+        tini = 0
+        tend = np.inf
+        for qtile in self._LIST:
+            t0, dt, snr = qtile
+            t_final = t0 + dt*len(snr)
+            if t0 > tini:
+                tini = t0
+            
+            if t_final < tend:
+                tend = t_final
+            
+            
         dt = self._LIST[0][1]
         if toutseg is None or \
         (not isinstance(toutseg, list) and not isinstance(toutseg, np.ndarray)):
-            toutseg = (t0, t0 + self._LIST[0][2].size * dt)
+            toutseg = (tini, tend)
         if tres == "<default>":
             if len(toutseg) == 2:
                 tres = abs(toutseg[1] - toutseg[0]) / 1000.
@@ -216,9 +239,10 @@ class snrQGram(object):
 
 
 
-
+from .template import template
+from scipy.interpolate import InterpolatedUnivariateSpline as fitp
 #----------------------------------------------#
-def snr_q_scanf(data, ht,
+def snr_q_scanf(data, tmpl,
                 sampling, epoch, cut = None,
                 psd = None,
                 qrange = DEFAULT_QRANGE,
@@ -229,7 +253,12 @@ def snr_q_scanf(data, ht,
                 window = None,
                 retfunc = False,
                 **kwargs):
-    
+    if isinstance(tmpl, template):
+        raise TypeError('Type of variable tmpl should be strain.template.template')
+    track_x, track_y = tmpl.get_track(0, extra_index = 0)
+    track_x -= track_x[0]
+    func_freq_delay = fitp(track_y, track_x)
+    ht = tmpl.template
     Nt = data.size
     duration = Nt / sampling
     if len(ht) > Nt:
@@ -273,7 +302,10 @@ def snr_q_scanf(data, ht,
     qgram, N = snrQTiling(duration, sampling, 
                           mismatch=mismatch, 
                           qrange=qrange,
-                          frange=frange).transform(stilde, hrtilde, hitilde, power_vec, epoch = epoch, **kwargs)
+                          frange=frange,
+                          fdelay = func_freq_delay).transform(stilde, hrtilde, hitilde, power_vec, 
+                                                  epoch = epoch,
+                                                  **kwargs)
     far = 1.5 * N * np.exp(-qgram.peak['energy']) / duration
     if retfunc:
         return qgram.interpolate(toutseg = toutseg, foutseg = foutseg, retfunc = retfunc)

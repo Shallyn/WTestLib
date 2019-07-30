@@ -321,8 +321,8 @@ def event_scan(gps, sH1, sL1, sV1,
     
     # Step.5 Plot snr q scan spectrum.
     for data in sLIST:
-        func, xout, yout = snr_q_scanf(data.value, tmpl.template, 
-                            data.fs, data.epoch + tmpl.dtpeak, 
+        func, xout, yout = snr_q_scanf(data.value, tmpl, 
+                            data.fs, data.epoch, 
                             cut=None, psd = data.psdfun_setted,
                             qrange = qrange, retfunc = True, window = True)
         #sys.stderr.write(f'{LOG}:xout = {xout}\n')
@@ -428,9 +428,9 @@ def event_scan(gps, sH1, sL1, sV1,
     fout = np.logspace(np.log10(30), np.log10(1000), 500)
     coh_matrix = snr_cohTF(sLIST, max_ra, max_de, 0, 
                            tout, fout, 
-                           tmpl = tmpl.template, verbose = True, 
+                           tmpl = tmpl, verbose = True, 
                            qrange = qrange, frange = frange, 
-                           mismatch = mismatch, shift = tmpl.dtpeak)
+                           mismatch = mismatch)
     ucoh2 = np.multiply(coh_matrix, coh_matrix.conjugate()).real
     coh_oscan = np.sqrt(ucoh2[:,:,0] + ucoh2[:,:,1])
     coh_oscan_01 = np.sqrt(ucoh2[:,:,0])

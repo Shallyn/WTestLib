@@ -188,11 +188,11 @@ class gwStrain(TimeSeriesBase):
         return SNRstrain
 
     #FIXME
-    def snr_q_scan(self, tmpl, cut = None, window = True, psd = None, shift = 0, **kwargs):
+    def snr_q_scan(self, tmpl, cut = None, window = True, psd = None, **kwargs):
         if psd in ('set',) and self._psdfun_setted is not False:
             psd = self._psdfun_setted
-        ret = snr_q_scanf(data = self.value, ht = tmpl, window = window, psd = psd,
-                          sampling = self.fs, epoch = self.epoch + shift, retfunc = True ,**kwargs)
+        ret = snr_q_scanf(data = self.value, tmpl = tmpl, window = window, psd = psd,
+                          sampling = self.fs, epoch = self.epoch, retfunc = True ,**kwargs)
         self.q_snrfunc = ret[0]
         self.q_snrtime = ret[1]
         self.q_snrfreq = ret[2]

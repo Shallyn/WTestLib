@@ -11,7 +11,7 @@ from ..strain.strain import gwStrain
 from ..h22datatype import c_SI
 from ..strain.template import template
 from ..strain.detectors import gmst_accurate, Detector
-from .strain import signal as sgl
+from ..strain import signal as sgl
 
 #--------------------Combined Strain-------------------#
 class gwStrainCOH(object):

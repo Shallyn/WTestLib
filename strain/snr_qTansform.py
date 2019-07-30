@@ -255,9 +255,9 @@ def snr_q_scanf(data, tmpl,
                 **kwargs):
     if not isinstance(tmpl, template.template):
         raise TypeError('Type of variable tmpl should be strain.template.template')
-    track_x, track_y = tmpl.get_track(0, extra_index = 0)
-    track_x -= track_x[0]
-    func_freq_delay = fitp(track_y, track_x)
+    # track_x, track_y = tmpl.get_track(0, extra_index = 0)
+    # track_x -= track_x[0]
+    # func_freq_delay = fitp(track_y, track_x)
     func_freq_delay = tmpl.get_time_shift
     ht = tmpl.template
     Nt = data.size

@@ -13,7 +13,7 @@ from .signal import get_psdfun, padinsert, cutinsert
 from scipy import signal
 import warnings, sys
 import matplotlib.pyplot as plt
-from .template import template
+from . import template
 from scipy.interpolate import InterpolatedUnivariateSpline as fitp
 
 

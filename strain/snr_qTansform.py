@@ -259,12 +259,9 @@ def snr_q_scanf(data, tmpl,
     track_x -= track_x[0]
     if not check_increasing(track_y):
         dy = np.gradient(track_y)
-        plotit(track_x, dy, xrange = None, yrange = None, title = 'aa', xlabel = 'time', ylabel = 'freq', save = 'testtrack.png')
-        idx_cut = np.where(np.abs(dy) == min(np.abs(dy)))[0][0]
-        if dy[idx_cut] < 0:
-            idx_cut -= 1
-    track_x = track_x[:idx_cut]
-    track_y = track_y[:idx_cut]
+        idx_cut = np.where(dy > 0)[0]
+    track_x = track_x[idx_cut]
+    track_y = track_y[idx_cut]
     func_freq_delay = fitp(track_y, track_x)
     ht = tmpl.template
     Nt = data.size

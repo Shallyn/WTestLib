@@ -187,7 +187,7 @@ class template(object):
     def get_time_shift(self, freq):
         track_x, track_y = self.track
         track_x -= track_x[0]
-        idx = np.where(np.abs(track_y - freq) == np.min(track_y - freq))[0][0]
+        idx = np.where(np.abs(track_y - freq) == np.min(np.abs(track_y - freq)))[0][0]
         return track_x[idx]
         
     def get_horizon(self, psd, ret_SI = True):

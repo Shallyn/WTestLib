@@ -111,7 +111,7 @@ def main(argv = None):
     return 0
 
 #-------------Resave------------#
-from .SXS import resave_results
+from .SXS import resave_results, add_csv, save_namecol
 def resave_main(argv=None):
     parser = OptionParser(description='Resave results.')
     parser.add_option('--source', type = 'str', default = '.', help = 'Path for row data.')
@@ -181,6 +181,22 @@ def modcomp(argv = None):
     # shape of ret:[nq, ns1z, ns2z, necc]
     ret = Comp.compare(q, s1z, s2z, ecc, Mtotal, D, f_ini, srate, timeout, jobtag)
     # 1. save all
+    nq, ns1z, ns2z, necc = ret.shape
+    namecol = [['#mass ratio',
+               '#spin1z',
+               '#spin2z',
+               '#ecc',
+               '#FF']]
+    fsave = savedir / 'all.csv'
+    save_namecol(fsave, data = namecol)
+    data = []
+    for i in range(np):
+        for j in range(ns1z):
+            for k in range(ns2z):
+                for l in range(necc):
+                    data.append([q[i], s1z[j], s2z[k], ecc[l], ret[i,j,k,l]])
+    add_csv(fsave, data)
+    
     # np.savetxt(savedir / 'all.txt', ret)
     from .Utils import plot_marker
     # 2. plot

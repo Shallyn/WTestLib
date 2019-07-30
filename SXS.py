@@ -621,10 +621,11 @@ DEFAULT_NAMECOL = ['#SXS id',
             '#ecc_fit',
             '#tpeak_move_fit',
             '#Status']
-def save_namecol(filename):
+def save_namecol(filename, data = None):
     file = codecs.open(filename, 'wb', "gbk")
     writer = csv.writer(file)
-    data = [DEFAULT_NAMECOL]
+    if data is None:
+        data = [DEFAULT_NAMECOL]
     writer.writerows(data)
     file.close()
     

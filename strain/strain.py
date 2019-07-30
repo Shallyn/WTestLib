@@ -135,6 +135,8 @@ class gwStrain(TimeSeriesBase):
             s, h = sgl.cutinsert(self.value, h)
         elif len(h) < self.Nt:
             s,h = sgl.padinsert(self.value, h)
+        else:
+            s = self.value
         if psd in ('self',):
             psd = self.psdfun()
         if psd in ('set',):
@@ -156,6 +158,8 @@ class gwStrain(TimeSeriesBase):
             s, h = sgl.cutinsert(self.value, h)
         elif len(h) < self.Nt:
             s,h = sgl.padinsert(self.value, h)
+        else:
+            s = self.value
         if psd is 'self':
             psd = self.psdfun()
         snr = sgl.matched_filter_Real(s, h, fs = self.fs, psdfun = psd, cut = cut, window = window)

@@ -144,6 +144,18 @@ class template(object):
             return len(self._ht)
         else:
             return 0
+    
+    @property
+    def htilde_real(self):
+        return np.fft.rfft(self.real)
+    
+    @property
+    def htilde_imag(self):
+        return np.fft.rfft(self.imag)
+    
+    @property
+    def rfftfreq(self):
+        return np.fft.rfftfreq(len(self), d = 1./self.fs)
         
     def get_track(self, tpeak):
         return sgl.get_track(self.time, self.template, tpeak)

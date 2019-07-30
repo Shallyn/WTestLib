@@ -110,6 +110,18 @@ class Detector(object):
         delta_xyz.reshape(gcloc.shape)
         return np.dot(ehat_src, delta_xyz) / c_SI
     
+ri    def time_delay_from_earth_center_gmst(self, ra, de, gmst):
+        gcloc = np.array([0,0,0])
+        gha = gmst - ra
+        ehat_src = np.zeros(3, np.float)
+        ehat_src[0] = np.cos(de) * np.cos(gha)
+        ehat_src[1] = np.cos(de) * (-np.sin(gha))
+        ehat_src[2] = np.sin(de)
+        delta_xyz = gcloc - self.location
+        delta_xyz.reshape(gcloc.shape)
+        return np.dot(ehat_src, delta_xyz) / c_SI
+
+    
     def antenna_pattern(self, ra, de, psi, gps):
         gmst = gmst_accurate(gps)
         D = self.response
@@ -136,5 +148,27 @@ class Detector(object):
         Fplus = (x * dx - y * dy).sum()
         Fcross = (x * dy + y * dx).sum()
         return Fplus, Fcross
+    
+    def amplitude_modulation(self, ra, de, gmst):
+        gha = gmst - ra
+        D = self.response
+        cosgha = np.cos(gha)
+        singha = np.sin(gha)
+        cosdec = np.cos(de)
+        sindec = np.sin(de)
 
+        x0 = -singha
+        x1 = -cosgha
+        x2 = 0
+        x = np.array([x0, x1, x2])
 
+        dx = np.dot(D, x)
+
+        y0 =  -cosgha * sindec
+        y1 =  singha * sindec
+        y2 =  cosdec
+        y = np.array([y0, y1, y2])
+        dy = np.dot(D, y)
+        Gplus = (x * dx - y * dy).sum()
+        Gcross = (x * dy + y * dx).sum()
+        return Gplus, Gcross

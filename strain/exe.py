@@ -256,7 +256,6 @@ def event_scan(gps, sH1, sL1, sV1,
                     duration = sH1.duration/3)
     track_x, track_y = tmpl.get_track(gps)
     wavefreq_max = max(track_y)
-    sys.stderr.write(f'{DEBUG}: freq_max = {wavefreq_max}.\n')
     tmpl.plot(fsave = fsave / 'template.png', 
               title = 'template',
               figsize = (12,5))
@@ -397,7 +396,7 @@ def event_scan(gps, sH1, sL1, sV1,
     x1,y1 = projector.ang2xy(np.array([max_de, max_ra]))
     
     #plot
-    mollview(np.sqrt(coh_snr2),title='Coherent SNR')
+    mollview(np.sqrt(coh_snr2),title=f'Coherent SNR, max = ({max_ra},{max_de})')
     graticule(coord='G',local=True)
     plt.plot(x1,y1,'rx')
     if ra is not None and de is not None:

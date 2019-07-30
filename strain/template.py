@@ -180,6 +180,16 @@ class template(object):
     def time(self):
         return np.arange(0, len(self) * self.deltat, self.deltat)
     
+    @property
+    def track(self):
+        return self.get_track(self, 0, 0)
+    
+    def get_time_shift(self, freq):
+        track_x, track_y = self.track
+        track_x -= track_x[0]
+        idx = np.where(np.abs(track_y - freq) == np.min(track_y - freq))[0][0]
+        return track_x[idx]
+        
     def get_horizon(self, psd, ret_SI = True):
         h = self.template
         htilde = np.fft.rfft(h.real) / self.fs

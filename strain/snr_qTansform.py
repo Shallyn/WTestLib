@@ -13,7 +13,6 @@ from .signal import get_psdfun, padinsert, cutinsert
 from scipy import signal
 import warnings, sys
 import matplotlib.pyplot as plt
-from . import template
 from scipy.interpolate import InterpolatedUnivariateSpline as fitp
 
 
@@ -241,7 +240,7 @@ class snrQGram(object):
         
 
 
-
+from . import template
 #----------------------------------------------#
 def snr_q_scanf(data, tmpl,
                 sampling, epoch, cut = None,
@@ -254,7 +253,7 @@ def snr_q_scanf(data, tmpl,
                 window = None,
                 retfunc = False,
                 **kwargs):
-    if isinstance(tmpl, template):
+    if not isinstance(tmpl, template):
         raise TypeError('Type of variable tmpl should be strain.template.template')
     track_x, track_y = tmpl.get_track(0, extra_index = 0)
     track_x -= track_x[0]

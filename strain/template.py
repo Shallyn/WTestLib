@@ -182,7 +182,7 @@ class template(object):
     
     @property
     def track(self):
-        return self.get_track(self, 0, 0)
+        return self.get_track(0, 0)
     
     def get_time_shift(self, freq):
         track_x, track_y = self.track

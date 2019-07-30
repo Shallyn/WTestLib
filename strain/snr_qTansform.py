@@ -13,6 +13,9 @@ from .signal import get_psdfun, padinsert, cutinsert
 from scipy import signal
 import warnings, sys
 import matplotlib.pyplot as plt
+from .template import template
+from scipy.interpolate import InterpolatedUnivariateSpline as fitp
+
 
 DEFAULT_FRANGE = (30, 1200)
 DEFAULT_MISMATCH = 0.2
@@ -239,8 +242,6 @@ class snrQGram(object):
 
 
 
-from .template import template
-from scipy.interpolate import InterpolatedUnivariateSpline as fitp
 #----------------------------------------------#
 def snr_q_scanf(data, tmpl,
                 sampling, epoch, cut = None,

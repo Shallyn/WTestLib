@@ -157,8 +157,8 @@ class template(object):
     def rfftfreq(self):
         return np.fft.rfftfreq(len(self), d = 1./self.fs)
         
-    def get_track(self, tpeak):
-        return sgl.get_track(self.time, self.template, tpeak)
+    def get_track(self, tpeak, extra_index = 5):
+        return sgl.get_track(self.time, self.template, tpeak, extra_index = extra_index)
     
     @property
     def deltat(self):

@@ -429,7 +429,8 @@ def event_scan(gps, sH1, sL1, sV1,
         
     tout = np.linspace(tlim3[0], tlim3[1], 1500)
     fout = np.logspace(np.log10(flim[0]), np.log10(flim[1]), 500)
-    fticks = np.logspace(np.log10(flim[0]), np.log10(flim[1]), 5)
+    fticksloc = np.logspace(np.log10(flim[0]), np.log10(flim[1]), 5)
+    fticks = (fticksloc, fticksloc.tolist())
     
     coh_matrix = snr_cohTF(sLIST, max_ra, max_de, 0, 
                            tout, fout, 
@@ -560,7 +561,7 @@ def event_scan(gps, sH1, sL1, sV1,
         fpeak = '%.1f'%fout[idx_fpeak_0]
         label3 = f'null snr = {nullsnr}, at geocent gps = {tpeak}, f = {fpeak}| geocent gps since {tlim3[0]}'
         label2 = f'null snr = {nullsnr}, at geocent gps = {tpeak}, f = {fpeak}| geocent gps since {tlim2[0]}'
-        label1 = f'null snr = {nullsnr}, at geocent gps = {tpeak}, f = {fpeak}| geocent gps since {tlim1[0]}'
+        label1 = f'null snr = {nullsnr}, at geocent gps = {tpeak}, f = {fpeak}| geocent gps since {tlim[0]}'
 
         # null
         plot_wscan(tout, fout, null_oscan.T, 

@@ -650,7 +650,7 @@ def plot_wscan(x, y, z, cmap, norm,
                xlabel = None, ylabel = None,
                xlim = None, ylim = None,
                xticks = None, yticks = None,
-               fsave, title):
+               fsave = None, title = None):
     fig = plt.figure(figsize = figsize)
     ax = fig.add_subplot(111)
     im = ax.pcolormesh(x, y, z, cmap = cmap, norm = norm)

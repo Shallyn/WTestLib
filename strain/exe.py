@@ -429,6 +429,7 @@ def event_scan(gps, sH1, sL1, sV1,
         
     tout = np.linspace(tlim3[0], tlim3[1], 1500)
     fout = np.logspace(np.log10(flim[0]), np.log10(flim[1]), 500)
+    fticks = np.logspace(np.log10(flim[0]), np.log10(flim[1]), 5)
     
     coh_matrix = snr_cohTF(sLIST, max_ra, max_de, 0, 
                            tout, fout, 
@@ -449,28 +450,34 @@ def event_scan(gps, sH1, sL1, sV1,
     tpeak = '%.2f'%tout[idx_tpeak_0]
     fpeak = '%.1f'%fout[idx_fpeak_0]
     snrpeak = '%.3f'%coh_oscan[idx_tpeak_0, idx_fpeak_0]
-    label = f'loudest snr = {snrpeak}, at geocent gps = {tpeak}, f = {fpeak}'
+    label3 = f'loudest snr = {snrpeak}, at geocent gps = {tpeak}, f = {fpeak}| geocent gps since {tlim3[0]}'
+    label2 = f'loudest snr = {snrpeak}, at geocent gps = {tpeak}, f = {fpeak}| geocent gps since {tlim2[0]}'
+    label1 = f'loudest snr = {snrpeak}, at geocent gps = {tpeak}, f = {fpeak}| geocent gps since {tlim[0]}'
+
     plot_wscan(tout, fout, coh_oscan.T, 
                cmap = cmap, norm = norm, 
                figsize = FIGSIZE_QSCAN, 
-               xlabel = label, ylabel = 'frequency', 
+               xlabel = label3, ylabel = 'frequency', 
                xlim = tlim3, ylim = flim, 
+               yticks = fticks,
                fsave = fsave/'snrQscan_coh.png', 
                title = 'Coherent SNR wscan')
     
     plot_wscan(tout, fout, coh_oscan.T, 
                cmap = cmap, norm = norm, 
                figsize = FIGSIZE_QSCAN, 
-               xlabel = label, ylabel = 'frequency', 
+               xlabel = label2, ylabel = 'frequency', 
                xlim = tlim2, ylim = flim, 
+               yticks = fticks,
                fsave = fsave/'snrQscan_coh_zoom1.png', 
                title = 'Coherent SNR wscan')
 
     plot_wscan(tout, fout, coh_oscan.T, 
                cmap = cmap, norm = norm, 
                figsize = FIGSIZE_QSCAN, 
-               xlabel = label, ylabel = 'frequency', 
+               xlabel = label1, ylabel = 'frequency', 
                xlim = tlim, ylim = flim, 
+               yticks = fticks,
                fsave = fsave/'snrQscan_coh_zoom2.png', 
                title = 'Coherent SNR wscan')
 
@@ -478,30 +485,35 @@ def event_scan(gps, sH1, sL1, sV1,
     tpeak = '%.2f'%tout[idx_tpeak]
     fpeak = '%.1f'%fout[idx_fpeak]
     snrpeak = '%.3f'%coh_oscan_01[idx_tpeak, idx_fpeak]
-    label = f'loudest snr = {snrpeak}, at geocent gps = {tpeak}, f = {fpeak}'
+    label3 = f'loudest snr = {snrpeak}, at geocent gps = {tpeak}, f = {fpeak}| geocent gps since {tlim3[0]}'
+    label2 = f'loudest snr = {snrpeak}, at geocent gps = {tpeak}, f = {fpeak}| geocent gps since {tlim2[0]}'
+    label1 = f'loudest snr = {snrpeak}, at geocent gps = {tpeak}, f = {fpeak}| geocent gps since {tlim[0]}'
 
     # coh_SNRscan1
     plot_wscan(tout, fout, coh_oscan_01.T, 
                cmap = cmap, norm = norm, 
                figsize = FIGSIZE_QSCAN, 
-               xlabel = label, ylabel = 'frequency', 
+               xlabel = label3, ylabel = 'frequency', 
                xlim = tlim3, ylim = flim, 
+               yticks = fticks,
                fsave = fsave/'snrQscan_coh_01.png', 
                title = 'Coherent SNR wscan stream 01')
     
     plot_wscan(tout, fout, coh_oscan_01.T, 
                cmap = cmap, norm = norm, 
                figsize = FIGSIZE_QSCAN, 
-               xlabel = label, ylabel = 'frequency', 
+               xlabel = label2, ylabel = 'frequency', 
                xlim = tlim2, ylim = flim, 
+               yticks = fticks,
                fsave = fsave/'snrQscan_coh_01_zoom1.png', 
                title = 'Coherent SNR wscan stream 01')
 
     plot_wscan(tout, fout, coh_oscan_01.T, 
                cmap = cmap, norm = norm, 
                figsize = FIGSIZE_QSCAN, 
-               xlabel = label, ylabel = 'frequency', 
+               xlabel = label1, ylabel = 'frequency', 
                xlim = tlim, ylim = flim, 
+               yticks = fticks,
                fsave = fsave/'snrQscan_coh_01_zoom2.png', 
                title = 'Coherent SNR wscan stream 01')
     
@@ -509,30 +521,35 @@ def event_scan(gps, sH1, sL1, sV1,
     tpeak = '%.2f'%tout[idx_tpeak]
     fpeak = '%.1f'%fout[idx_fpeak]
     snrpeak = '%.3f'%coh_oscan_02[idx_tpeak, idx_fpeak]
-    label = f'loudest snr = {snrpeak}, at geocent gps = {tpeak}, f = {fpeak}'
+    label3 = f'loudest snr = {snrpeak}, at geocent gps = {tpeak}, f = {fpeak}| geocent gps since {tlim3[0]}'
+    label2 = f'loudest snr = {snrpeak}, at geocent gps = {tpeak}, f = {fpeak}| geocent gps since {tlim2[0]}'
+    label1 = f'loudest snr = {snrpeak}, at geocent gps = {tpeak}, f = {fpeak}| geocent gps since {tlim[0]}'
 
     # coh_SNRscan2
     plot_wscan(tout, fout, coh_oscan_02.T, 
                cmap = cmap, norm = norm, 
                figsize = FIGSIZE_QSCAN, 
-               xlabel = label, ylabel = 'frequency', 
+               xlabel = label3, ylabel = 'frequency', 
                xlim = tlim3, ylim = flim, 
+               yticks = fticks,
                fsave = fsave/'snrQscan_coh_02.png', 
                title = 'Coherent SNR wscan stream 02')
     
     plot_wscan(tout, fout, coh_oscan_02.T, 
                cmap = cmap, norm = norm, 
                figsize = FIGSIZE_QSCAN, 
-               xlabel = label, ylabel = 'frequency', 
+               xlabel = label2, ylabel = 'frequency', 
                xlim = tlim2, ylim = flim, 
+               yticks = fticks,
                fsave = fsave/'snrQscan_coh_02_zoom1.png', 
                title = 'Coherent SNR wscan stream 02')
 
     plot_wscan(tout, fout, coh_oscan_02.T, 
                cmap = cmap, norm = norm, 
                figsize = FIGSIZE_QSCAN, 
-               xlabel = label, ylabel = 'frequency', 
+               xlabel = label1, ylabel = 'frequency', 
                xlim = tlim, ylim = flim, 
+               yticks = fticks,
                fsave = fsave/'snrQscan_coh_02_zoom2.png', 
                title = 'Coherent SNR wscan stream 02')
     
@@ -541,30 +558,35 @@ def event_scan(gps, sH1, sL1, sV1,
         nullsnr = null_oscan[idx_tpeak_0, idx_fpeak_0]
         tpeak = '%.2f'%tout[idx_tpeak_0]
         fpeak = '%.1f'%fout[idx_fpeak_0]
-        label = f'null snr = {nullsnr}, at geocent gps = {tpeak}, f = {fpeak}'
-    
+        label3 = f'null snr = {nullsnr}, at geocent gps = {tpeak}, f = {fpeak}| geocent gps since {tlim3[0]}'
+        label2 = f'null snr = {nullsnr}, at geocent gps = {tpeak}, f = {fpeak}| geocent gps since {tlim2[0]}'
+        label1 = f'null snr = {nullsnr}, at geocent gps = {tpeak}, f = {fpeak}| geocent gps since {tlim1[0]}'
+
         # null
         plot_wscan(tout, fout, null_oscan.T, 
                    cmap = cmap, norm = norm, 
                    figsize = FIGSIZE_QSCAN, 
-                   xlabel = label, ylabel = 'frequency', 
+                   xlabel = label3, ylabel = 'frequency', 
                    xlim = tlim3, ylim = flim, 
+                   yticks = fticks,
                    fsave = fsave/'snrQscan_null.png', 
                    title = 'NULL SNR wscan stream')
         
         plot_wscan(tout, fout, null_oscan.T, 
                    cmap = cmap, norm = norm, 
                    figsize = FIGSIZE_QSCAN, 
-                   xlabel = label, ylabel = 'frequency', 
+                   xlabel = label2, ylabel = 'frequency', 
                    xlim = tlim2, ylim = flim, 
+                   yticks = fticks,
                    fsave = fsave/'snrQscan_null_zoom1.png', 
                    title = 'NULL SNR wscan stream')
     
         plot_wscan(tout, fout, null_oscan.T, 
                    cmap = cmap, norm = norm, 
                    figsize = FIGSIZE_QSCAN, 
-                   xlabel = label, ylabel = 'frequency', 
+                   xlabel = label1, ylabel = 'frequency', 
                    xlim = tlim, ylim = flim, 
+                   yticks = fticks,
                    fsave = fsave/'snrQscan_null_zoom2.png', 
                    title = 'NULL SNR wscan stream')
 
@@ -624,8 +646,10 @@ def event_scan(gps, sH1, sL1, sV1,
     return 0
         
 def plot_wscan(x, y, z, cmap, norm,
-               figsize, xlabel, ylabel,
-               xlim, ylim, 
+               figsize, 
+               xlabel = None, ylabel = None,
+               xlim = None, ylim = None,
+               xticks = None, yticks = None,
                fsave, title):
     fig = plt.figure(figsize = figsize)
     ax = fig.add_subplot(111)
@@ -636,6 +660,8 @@ def plot_wscan(x, y, z, cmap, norm,
     plt.ylabel(ylabel)
     plt.ylim(ylim)
     plt.xlim(xlim)
+    plt.xticks(xticks)
+    plt.yticks(yticks)
     plt.yscale('log')
     plt.savefig(fsave ,dpi = 200)
     plt.close()

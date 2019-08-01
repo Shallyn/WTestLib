@@ -431,7 +431,8 @@ def event_scan(gps, sH1, sL1, sV1,
     flim = [frange[0], frange[1]]
     tout = np.linspace(tlim3[0], tlim3[1], 1500)
     fout = np.logspace(np.log10(flim[0]), np.log10(flim[1]), 500)
-    fticks = np.logspace(np.log10(flim[0]), np.log10(flim[1]))
+    fticksval = np.logspace(np.log10(flim[0]), np.log10(flim[1]), 5)
+    fticks = (fticksval, ['%.1f'%_freq for _freq in fticksval])
     
     coh_matrix = snr_cohTF(sLIST, max_ra, max_de, 0, 
                            tout, fout, 

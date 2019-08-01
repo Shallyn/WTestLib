@@ -661,9 +661,9 @@ def plot_wscan(x, y, z, cmap, norm,
     plt.ylabel(ylabel)
     plt.ylim(ylim)
     plt.xlim(xlim)
+    plt.yscale('log')
     plt.xticks(xticks)
     plt.yticks(yticks)
-    plt.yscale('log')
     plt.savefig(fsave ,dpi = 200)
     plt.close()
 

@@ -383,10 +383,9 @@ def event_scan(gps, sH1, sL1, sV1,
     det_time = np.linspace(tlim[0],tlim[1],ntime)
     umx = utdk_times(snrLIST, ra_pix, de_pix, det_time, verbose = True)
     utdka2 = np.multiply(umx,umx.conj()).real
-    null = np.sum(utdka2[:,:,2:],axis=2)
+    
     LLR = utdka2[:,:,0] + utdka2[:,:,1] # LOG(likelihood ratio) (4)
     coh_snr2 = LLR.max(axis=0)
-    null_snr2 = null.sum(axis = 0) / len(det_time)
     #coh_snr2 = LLR[int(det_time.size / 2),:]
     
     projector  = MollweideProj()
@@ -405,10 +404,13 @@ def event_scan(gps, sH1, sL1, sV1,
     plt.savefig(fsave/'Skymap_Coherent.png', dpi = 200)
     plt.close()
     
-    mollview(np.sqrt(null_snr2), title = 'null SNR')
-    graticule(coord='G',local = True)
-    plt.savefig(fsave/'Skymap_Null.png', dpi = 200)
-    plt.close()
+    if utdka2.shape[2] > 2:
+        null = np.sum(utdka2[:,:,2:],axis=2)
+        null_snr2 = null.sum(axis = 0) / len(det_time)
+        mollview(np.sqrt(null_snr2), title = 'null SNR')
+        graticule(coord='G',local = True)
+        plt.savefig(fsave/'Skymap_Null.png', dpi = 200)
+        plt.close()
     
     #
     #
@@ -434,7 +436,6 @@ def event_scan(gps, sH1, sL1, sV1,
     coh_oscan = np.sqrt(ucoh2[:,:,0] + ucoh2[:,:,1])
     coh_oscan_01 = np.sqrt(ucoh2[:,:,0])
     coh_oscan_02 = np.sqrt(ucoh2[:,:,1])
-    null_oscan = np.sqrt(np.sum(ucoh2[:,:,2:], axis = 2))
     
     #plot
     levels = MaxNLocator(nbins=pcolorbins).tick_values(coh_oscan.min(), coh_oscan.max())
@@ -531,36 +532,38 @@ def event_scan(gps, sH1, sL1, sV1,
                xlim = tlim, ylim = [30,750], 
                fsave = fsave/'snrQscan_coh_02_zoom2.png', 
                title = 'Coherent SNR wscan stream 02')
-
-    nullsnr = null_oscan[idx_tpeak_0, idx_fpeak_0]
-    tpeak = '%.2f'%tout[idx_tpeak_0]
-    fpeak = '%.1f'%fout[idx_fpeak_0]
-    label = f'null snr = {nullsnr}, at t = {tpeak}, f = {fpeak}'
-
-    # null
-    plot_wscan(tout, fout, null_oscan.T, 
-               cmap = cmap, norm = norm, 
-               figsize = FIGSIZE_QSCAN, 
-               xlabel = label, ylabel = 'frequency', 
-               xlim = tlim3, ylim = [30,750], 
-               fsave = fsave/'snrQscan_null.png', 
-               title = 'NULL SNR wscan stream')
     
-    plot_wscan(tout, fout, null_oscan.T, 
-               cmap = cmap, norm = norm, 
-               figsize = FIGSIZE_QSCAN, 
-               xlabel = label, ylabel = 'frequency', 
-               xlim = tlim2, ylim = [30,750], 
-               fsave = fsave/'snrQscan_null_zoom1.png', 
-               title = 'NULL SNR wscan stream')
-
-    plot_wscan(tout, fout, null_oscan.T, 
-               cmap = cmap, norm = norm, 
-               figsize = FIGSIZE_QSCAN, 
-               xlabel = label, ylabel = 'frequency', 
-               xlim = tlim, ylim = [30,750], 
-               fsave = fsave/'snrQscan_null_zoom2.png', 
-               title = 'NULL SNR wscan stream')
+    if ucoh2.shape[2] > 2:
+        null_oscan = np.sqrt(np.sum(ucoh2[:,:,2:], axis = 2))
+        nullsnr = null_oscan[idx_tpeak_0, idx_fpeak_0]
+        tpeak = '%.2f'%tout[idx_tpeak_0]
+        fpeak = '%.1f'%fout[idx_fpeak_0]
+        label = f'null snr = {nullsnr}, at t = {tpeak}, f = {fpeak}'
+    
+        # null
+        plot_wscan(tout, fout, null_oscan.T, 
+                   cmap = cmap, norm = norm, 
+                   figsize = FIGSIZE_QSCAN, 
+                   xlabel = label, ylabel = 'frequency', 
+                   xlim = tlim3, ylim = [30,750], 
+                   fsave = fsave/'snrQscan_null.png', 
+                   title = 'NULL SNR wscan stream')
+        
+        plot_wscan(tout, fout, null_oscan.T, 
+                   cmap = cmap, norm = norm, 
+                   figsize = FIGSIZE_QSCAN, 
+                   xlabel = label, ylabel = 'frequency', 
+                   xlim = tlim2, ylim = [30,750], 
+                   fsave = fsave/'snrQscan_null_zoom1.png', 
+                   title = 'NULL SNR wscan stream')
+    
+        plot_wscan(tout, fout, null_oscan.T, 
+                   cmap = cmap, norm = norm, 
+                   figsize = FIGSIZE_QSCAN, 
+                   xlabel = label, ylabel = 'frequency', 
+                   xlim = tlim, ylim = [30,750], 
+                   fsave = fsave/'snrQscan_null_zoom2.png', 
+                   title = 'NULL SNR wscan stream')
 
     
     # fig = plt.figure(figsize=(10,5))

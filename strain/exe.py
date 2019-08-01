@@ -31,7 +31,7 @@ from ..generator import dim_t
 
 DEFAULT_NSIDE = 32
 DEFAULT_QRANGE = (7,8)
-DEFAULT_FRANGE = (30, 1200)
+DEFAULT_FRANGE = (20, 1200)
 DEFAULT_PCOLORBINS = 100
 DEFAULT_CMAP = 'jet'
 DEFAULT_MISMATCH = 0.1
@@ -284,7 +284,7 @@ def event_scan(gps, sH1, sL1, sV1,
             sLIST.append(strain)
             SNR = \
             strain.matched_filter(tmpl.template, 
-                                  cut = [30,1000], 
+                                  cut = [20,1000], 
                                   window = True, 
                                   psd = 'set', 
                                   ret_complex = True, 
@@ -426,7 +426,7 @@ def event_scan(gps, sH1, sL1, sV1,
         max_de = np.pi/2 - max_de[0]
         
     tout = np.linspace(tlim3[0], tlim3[1], 1500)
-    fout = np.logspace(np.log10(30), np.log10(1000), 500)
+    fout = np.logspace(np.log10(20), np.log10(1000), 500)
     coh_matrix = snr_cohTF(sLIST, max_ra, max_de, 0, 
                            tout, fout, 
                            tmpl = tmpl, verbose = True, 

@@ -334,7 +334,7 @@ def event_scan(gps, sH1, sL1, sV1,
         tpeak = '%.2f'%tsnr[idx_tpeak]
         fpeak = '%.1f'%fout[idx_fpeak]
         snrpeak = '%.3f'%Eng.T[idx_tpeak, idx_fpeak]
-        label = f'loudest snr = {snrpeak}, at t = {tpeak}, f = {fpeak}'
+        label = f'loudest snr = {snrpeak}, at detector gps = {tpeak}, f = {fpeak}'
         
         fig = plt.figure(figsize = FIGSIZE_QSCAN)
         ax = fig.add_subplot(111)
@@ -446,7 +446,7 @@ def event_scan(gps, sH1, sL1, sV1,
     tpeak = '%.2f'%tout[idx_tpeak_0]
     fpeak = '%.1f'%fout[idx_fpeak_0]
     snrpeak = '%.3f'%coh_oscan[idx_tpeak_0, idx_fpeak_0]
-    label = f'loudest snr = {snrpeak}, at t = {tpeak}, f = {fpeak}'
+    label = f'loudest snr = {snrpeak}, at geocent gps = {tpeak}, f = {fpeak}'
     plot_wscan(tout, fout, coh_oscan.T, 
                cmap = cmap, norm = norm, 
                figsize = FIGSIZE_QSCAN, 
@@ -475,7 +475,7 @@ def event_scan(gps, sH1, sL1, sV1,
     tpeak = '%.2f'%tout[idx_tpeak]
     fpeak = '%.1f'%fout[idx_fpeak]
     snrpeak = '%.3f'%coh_oscan_01[idx_tpeak, idx_fpeak]
-    label = f'loudest snr = {snrpeak}, at t = {tpeak}, f = {fpeak}'
+    label = f'loudest snr = {snrpeak}, at geocent gps = {tpeak}, f = {fpeak}'
 
     # coh_SNRscan1
     plot_wscan(tout, fout, coh_oscan_01.T, 
@@ -506,7 +506,7 @@ def event_scan(gps, sH1, sL1, sV1,
     tpeak = '%.2f'%tout[idx_tpeak]
     fpeak = '%.1f'%fout[idx_fpeak]
     snrpeak = '%.3f'%coh_oscan_02[idx_tpeak, idx_fpeak]
-    label = f'loudest snr = {snrpeak}, at t = {tpeak}, f = {fpeak}'
+    label = f'loudest snr = {snrpeak}, at geocent gps = {tpeak}, f = {fpeak}'
 
     # coh_SNRscan2
     plot_wscan(tout, fout, coh_oscan_02.T, 
@@ -538,7 +538,7 @@ def event_scan(gps, sH1, sL1, sV1,
         nullsnr = null_oscan[idx_tpeak_0, idx_fpeak_0]
         tpeak = '%.2f'%tout[idx_tpeak_0]
         fpeak = '%.1f'%fout[idx_fpeak_0]
-        label = f'null snr = {nullsnr}, at t = {tpeak}, f = {fpeak}'
+        label = f'null snr = {nullsnr}, at geocent gps = {tpeak}, f = {fpeak}'
     
         # null
         plot_wscan(tout, fout, null_oscan.T, 

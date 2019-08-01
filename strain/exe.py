@@ -28,6 +28,7 @@ from ..Utils import WARNING, LOG, DEBUG
 from ..datasource.gracedb import GraceEvent, GraceSuperEvent
 from scipy.interpolate import interp1d
 from ..generator import dim_t
+from matplotlib.ticker import MultipleLocator, FormatStrFormatter
 
 DEFAULT_NSIDE = 32
 DEFAULT_QRANGE = (7,8)
@@ -429,7 +430,7 @@ def event_scan(gps, sH1, sL1, sV1,
         
     tout = np.linspace(tlim3[0], tlim3[1], 1500)
     fout = np.logspace(np.log10(flim[0]), np.log10(flim[1]), 500)
-    fticks = np.logspace(np.log10(flim[0]), np.log10(flim[1]), 5)
+    fLocator   = MultipleLocator(20)
     
     coh_matrix = snr_cohTF(sLIST, max_ra, max_de, 0, 
                            tout, fout, 
@@ -459,8 +460,8 @@ def event_scan(gps, sH1, sL1, sV1,
                figsize = FIGSIZE_QSCAN, 
                xlabel = label3, ylabel = 'frequency', 
                xlim = tlim3, ylim = flim, 
-               yticks = fticks,
                fsave = fsave/'snrQscan_coh.png', 
+               ytickloc = fLocator,
                title = 'Coherent SNR wscan')
     
     plot_wscan(tout, fout, coh_oscan.T, 
@@ -468,8 +469,8 @@ def event_scan(gps, sH1, sL1, sV1,
                figsize = FIGSIZE_QSCAN, 
                xlabel = label2, ylabel = 'frequency', 
                xlim = tlim2, ylim = flim, 
-               yticks = fticks,
                fsave = fsave/'snrQscan_coh_zoom1.png', 
+               ytickloc = fLocator,
                title = 'Coherent SNR wscan')
 
     plot_wscan(tout, fout, coh_oscan.T, 
@@ -477,8 +478,8 @@ def event_scan(gps, sH1, sL1, sV1,
                figsize = FIGSIZE_QSCAN, 
                xlabel = label1, ylabel = 'frequency', 
                xlim = tlim, ylim = flim, 
-               yticks = fticks,
                fsave = fsave/'snrQscan_coh_zoom2.png', 
+               ytickloc = fLocator,
                title = 'Coherent SNR wscan')
 
     idx_tpeak, idx_fpeak = get_2D_argpeak(coh_oscan_01)
@@ -495,8 +496,8 @@ def event_scan(gps, sH1, sL1, sV1,
                figsize = FIGSIZE_QSCAN, 
                xlabel = label3, ylabel = 'frequency', 
                xlim = tlim3, ylim = flim, 
-               yticks = fticks,
                fsave = fsave/'snrQscan_coh_01.png', 
+               ytickloc = fLocator,
                title = 'Coherent SNR wscan stream 01')
     
     plot_wscan(tout, fout, coh_oscan_01.T, 
@@ -504,8 +505,8 @@ def event_scan(gps, sH1, sL1, sV1,
                figsize = FIGSIZE_QSCAN, 
                xlabel = label2, ylabel = 'frequency', 
                xlim = tlim2, ylim = flim, 
-               yticks = fticks,
                fsave = fsave/'snrQscan_coh_01_zoom1.png', 
+               ytickloc = fLocator,
                title = 'Coherent SNR wscan stream 01')
 
     plot_wscan(tout, fout, coh_oscan_01.T, 
@@ -513,8 +514,8 @@ def event_scan(gps, sH1, sL1, sV1,
                figsize = FIGSIZE_QSCAN, 
                xlabel = label1, ylabel = 'frequency', 
                xlim = tlim, ylim = flim, 
-               yticks = fticks,
                fsave = fsave/'snrQscan_coh_01_zoom2.png', 
+               ytickloc = fLocator,
                title = 'Coherent SNR wscan stream 01')
     
     idx_tpeak, idx_fpeak = get_2D_argpeak(coh_oscan_02)
@@ -531,7 +532,7 @@ def event_scan(gps, sH1, sL1, sV1,
                figsize = FIGSIZE_QSCAN, 
                xlabel = label3, ylabel = 'frequency', 
                xlim = tlim3, ylim = flim, 
-               yticks = fticks,
+               ytickloc = fLocator,
                fsave = fsave/'snrQscan_coh_02.png', 
                title = 'Coherent SNR wscan stream 02')
     
@@ -540,7 +541,7 @@ def event_scan(gps, sH1, sL1, sV1,
                figsize = FIGSIZE_QSCAN, 
                xlabel = label2, ylabel = 'frequency', 
                xlim = tlim2, ylim = flim, 
-               yticks = fticks,
+               ytickloc = fLocator,
                fsave = fsave/'snrQscan_coh_02_zoom1.png', 
                title = 'Coherent SNR wscan stream 02')
 
@@ -549,7 +550,7 @@ def event_scan(gps, sH1, sL1, sV1,
                figsize = FIGSIZE_QSCAN, 
                xlabel = label1, ylabel = 'frequency', 
                xlim = tlim, ylim = flim, 
-               yticks = fticks,
+               ytickloc = fLocator,
                fsave = fsave/'snrQscan_coh_02_zoom2.png', 
                title = 'Coherent SNR wscan stream 02')
     
@@ -568,8 +569,8 @@ def event_scan(gps, sH1, sL1, sV1,
                    figsize = FIGSIZE_QSCAN, 
                    xlabel = label3, ylabel = 'frequency', 
                    xlim = tlim3, ylim = flim, 
-                   yticks = fticks,
                    fsave = fsave/'snrQscan_null.png', 
+                   ytickloc = fLocator,
                    title = 'NULL SNR wscan stream')
         
         plot_wscan(tout, fout, null_oscan.T, 
@@ -577,8 +578,8 @@ def event_scan(gps, sH1, sL1, sV1,
                    figsize = FIGSIZE_QSCAN, 
                    xlabel = label2, ylabel = 'frequency', 
                    xlim = tlim2, ylim = flim, 
-                   yticks = fticks,
                    fsave = fsave/'snrQscan_null_zoom1.png', 
+                   ytickloc = fLocator,
                    title = 'NULL SNR wscan stream')
     
         plot_wscan(tout, fout, null_oscan.T, 
@@ -586,8 +587,8 @@ def event_scan(gps, sH1, sL1, sV1,
                    figsize = FIGSIZE_QSCAN, 
                    xlabel = label1, ylabel = 'frequency', 
                    xlim = tlim, ylim = flim, 
-                   yticks = fticks,
                    fsave = fsave/'snrQscan_null_zoom2.png', 
+                   ytickloc = fLocator,
                    title = 'NULL SNR wscan stream')
 
     
@@ -649,7 +650,7 @@ def plot_wscan(x, y, z, cmap, norm,
                figsize, 
                xlabel = None, ylabel = None,
                xlim = None, ylim = None,
-               xticks = None, yticks = None,
+               ytickloc = None,
                fsave = None, title = None):
     fig = plt.figure(figsize = figsize)
     ax = fig.add_subplot(111)
@@ -661,8 +662,7 @@ def plot_wscan(x, y, z, cmap, norm,
     plt.ylim(ylim)
     plt.xlim(xlim)
     plt.yscale('log')
-    plt.xticks(xticks)
-    plt.yticks(yticks)
+    ax.yaxis.set_major_locator(ytickloc)
     plt.savefig(fsave ,dpi = 200)
     plt.close()
 

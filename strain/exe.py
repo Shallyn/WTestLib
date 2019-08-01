@@ -657,7 +657,8 @@ def plot_wscan(x, y, z, cmap, norm,
     plt.ylim(ylim)
     plt.xlim(xlim)
     plt.yscale('log')
-    plt.yticks(yticks)
+    if isinstance(yticks, tuple):
+        plt.yticks(*yticks)
     plt.savefig(fsave ,dpi = 200)
     plt.close()
 

@@ -428,8 +428,8 @@ def event_scan(gps, sH1, sL1, sV1,
         max_de = np.pi/2 - max_de[0]
         
     tout = np.linspace(tlim3[0], tlim3[1], 1500)
-    fout = np.logspace(np.log10(20), np.log10(1000), 500)
-    flim = [fout[0], fout[-1]]
+    fout = np.logspace(np.log10(flim[0]), np.log10(flim[1]), 500)
+    
     coh_matrix = snr_cohTF(sLIST, max_ra, max_de, 0, 
                            tout, fout, 
                            tmpl = tmpl, verbose = True, 

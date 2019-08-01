@@ -320,7 +320,6 @@ def event_scan(gps, sH1, sL1, sV1,
         #sys.stderr.write(f'{DEBUG}: snr {SNR.ifo} epoch = {SNR.epoch}\n')
     
     # Step.5 Plot snr q scan spectrum.
-    flim = [frange[0], frange[1]]
     for data in sLIST:
         func, xout, yout = snr_q_scanf(data.value, tmpl, 
                             data.fs, data.epoch, 
@@ -328,6 +327,7 @@ def event_scan(gps, sH1, sL1, sV1,
                             qrange = qrange, frange = frange, 
                             retfunc = True, window = True)
         #sys.stderr.write(f'{LOG}:xout = {xout}\n')
+        flim = [yout[0], yout[1]]
         Eng = np.abs(func(tsnr, fout))
         
         levels = MaxNLocator(nbins=pcolorbins).tick_values(Eng.min(), Eng.max())
@@ -427,7 +427,7 @@ def event_scan(gps, sH1, sL1, sV1,
         max_de,max_ra = pix2ang(nside,np.argmax(coh_snr2))
         max_ra = max_ra[0] - np.pi
         max_de = np.pi/2 - max_de[0]
-        
+    flim = [frange[0], frange[1]]
     tout = np.linspace(tlim3[0], tlim3[1], 1500)
     fout = np.logspace(np.log10(flim[0]), np.log10(flim[1]), 500)
     fticks = np.logspace(np.log10(flim[0]), np.log10(flim[1]))
@@ -460,7 +460,7 @@ def event_scan(gps, sH1, sL1, sV1,
                xlim = tlim3, ylim = flim, 
                fsave = fsave/'snrQscan_coh.png', 
                yticks = fticks,
-               title = 'Coherent SNR wscan')
+               title = 'Coherent SNR qscan')
     
     plot_wscan(tout, fout, coh_oscan.T, 
                cmap = cmap, norm = norm, 
@@ -469,7 +469,7 @@ def event_scan(gps, sH1, sL1, sV1,
                xlim = tlim2, ylim = flim, 
                fsave = fsave/'snrQscan_coh_zoom1.png', 
                yticks = fticks,
-               title = 'Coherent SNR wscan')
+               title = 'Coherent SNR qscan')
 
     plot_wscan(tout, fout, coh_oscan.T, 
                cmap = cmap, norm = norm, 
@@ -478,7 +478,7 @@ def event_scan(gps, sH1, sL1, sV1,
                xlim = tlim, ylim = flim, 
                fsave = fsave/'snrQscan_coh_zoom2.png', 
                yticks = fticks,
-               title = 'Coherent SNR wscan')
+               title = 'Coherent SNR qscan')
 
     idx_tpeak, idx_fpeak = get_2D_argpeak(coh_oscan_01)
     tpeak = '%.2f'%tout[idx_tpeak]
@@ -494,7 +494,7 @@ def event_scan(gps, sH1, sL1, sV1,
                xlim = tlim3, ylim = flim, 
                fsave = fsave/'snrQscan_coh_01.png', 
                yticks = fticks,
-               title = 'Coherent SNR wscan stream 01')
+               title = 'Coherent SNR qscan stream 01')
     
     plot_wscan(tout, fout, coh_oscan_01.T, 
                cmap = cmap, norm = norm, 
@@ -503,7 +503,7 @@ def event_scan(gps, sH1, sL1, sV1,
                xlim = tlim2, ylim = flim, 
                fsave = fsave/'snrQscan_coh_01_zoom1.png', 
                yticks = fticks,
-               title = 'Coherent SNR wscan stream 01')
+               title = 'Coherent SNR qscan stream 01')
 
     plot_wscan(tout, fout, coh_oscan_01.T, 
                cmap = cmap, norm = norm, 
@@ -512,7 +512,7 @@ def event_scan(gps, sH1, sL1, sV1,
                xlim = tlim, ylim = flim, 
                fsave = fsave/'snrQscan_coh_01_zoom2.png', 
                yticks = fticks,
-               title = 'Coherent SNR wscan stream 01')
+               title = 'Coherent SNR qscan stream 01')
     
     idx_tpeak, idx_fpeak = get_2D_argpeak(coh_oscan_02)
     tpeak = '%.2f'%tout[idx_tpeak]
@@ -528,7 +528,7 @@ def event_scan(gps, sH1, sL1, sV1,
                xlim = tlim3, ylim = flim, 
                yticks = fticks,
                fsave = fsave/'snrQscan_coh_02.png', 
-               title = 'Coherent SNR wscan stream 02')
+               title = 'Coherent SNR qscan stream 02')
     
     plot_wscan(tout, fout, coh_oscan_02.T, 
                cmap = cmap, norm = norm, 
@@ -537,7 +537,7 @@ def event_scan(gps, sH1, sL1, sV1,
                xlim = tlim2, ylim = flim, 
                yticks = fticks,
                fsave = fsave/'snrQscan_coh_02_zoom1.png', 
-               title = 'Coherent SNR wscan stream 02')
+               title = 'Coherent SNR qscan stream 02')
 
     plot_wscan(tout, fout, coh_oscan_02.T, 
                cmap = cmap, norm = norm, 
@@ -546,7 +546,7 @@ def event_scan(gps, sH1, sL1, sV1,
                xlim = tlim, ylim = flim, 
                yticks = fticks,
                fsave = fsave/'snrQscan_coh_02_zoom2.png', 
-               title = 'Coherent SNR wscan stream 02')
+               title = 'Coherent SNR qscan stream 02')
     
     if ucoh2.shape[2] > 2:
         null_oscan = np.sqrt(np.sum(ucoh2[:,:,2:], axis = 2))
@@ -563,7 +563,7 @@ def event_scan(gps, sH1, sL1, sV1,
                    xlim = tlim3, ylim = flim, 
                    fsave = fsave/'snrQscan_null.png', 
                    yticks = fticks,
-                   title = 'NULL SNR wscan stream')
+                   title = 'NULL SNR qscan stream')
         
         plot_wscan(tout, fout, null_oscan.T, 
                    cmap = cmap, norm = norm, 
@@ -572,7 +572,7 @@ def event_scan(gps, sH1, sL1, sV1,
                    xlim = tlim2, ylim = flim, 
                    fsave = fsave/'snrQscan_null_zoom1.png', 
                    yticks = fticks,
-                   title = 'NULL SNR wscan stream')
+                   title = 'NULL SNR qscan stream')
     
         plot_wscan(tout, fout, null_oscan.T, 
                    cmap = cmap, norm = norm, 
@@ -581,7 +581,7 @@ def event_scan(gps, sH1, sL1, sV1,
                    xlim = tlim, ylim = flim, 
                    fsave = fsave/'snrQscan_null_zoom2.png', 
                    yticks = fticks,
-                   title = 'NULL SNR wscan stream')
+                   title = 'NULL SNR qscan stream')
 
     
     # fig = plt.figure(figsize=(10,5))

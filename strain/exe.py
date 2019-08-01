@@ -306,6 +306,10 @@ def event_scan(gps, sH1, sL1, sV1,
     tlim2 = [tmap - h_dur*2, tmap + h_dur*2]
     tlim3 = [tmap - h_dur*3, tmap + h_dur*3]
     flim = [frange[0], frange[1]]
+    
+    fticksval = np.logspace(np.log10(flim[0]), np.log10(flim[1]), 5)
+    fticks = (fticksval, ['%.1f'%_freq for _freq in fticksval])
+
     cmap = plt.get_cmap(cmaptype)
     tsnr = np.linspace(tlim3[0], tlim3[1], 1500)
     fout = np.logspace(np.log10(flim[0]), np.log10(flim[1]), 600)
@@ -352,6 +356,7 @@ def event_scan(gps, sH1, sL1, sV1,
         plt.ylim(flim)
         plt.yscale('log')
         plt.xlim(tlim3)
+        plt.yticks(*fticks)
         plt.savefig(fsave/f'Qscan_{data.ifo}.png', dpi = 200)
         plt.close()
         
@@ -360,6 +365,7 @@ def event_scan(gps, sH1, sL1, sV1,
                     figsize = FIGSIZE_QSCAN, 
                     xlabel = label, ylabel = 'frequency', 
                     xlim = tlim2, ylim = flim, 
+                    yticks=fticks,
                     fsave = fsave/f'Qscan_{data.ifo}_zoom1.png', 
                     title = f'{data.ifo} snr Qscan')
 
@@ -368,6 +374,7 @@ def event_scan(gps, sH1, sL1, sV1,
                     figsize = FIGSIZE_QSCAN, 
                     xlabel = label, ylabel = 'frequency', 
                     xlim = tlim, ylim = flim, 
+                    yticks=fticks,
                     fsave = fsave/f'Qscan_{data.ifo}_zoom2.png', 
                     title = f'{data.ifo} snr Qscan')
 
@@ -430,8 +437,6 @@ def event_scan(gps, sH1, sL1, sV1,
         
     tout = np.linspace(tlim3[0], tlim3[1], 1500)
     fout = np.logspace(np.log10(flim[0]), np.log10(flim[1]), 500)
-    fticksval = np.logspace(np.log10(flim[0]), np.log10(flim[1]), 5)
-    fticks = (fticksval, ['%.1f'%_freq for _freq in fticksval])
     
     coh_matrix = snr_cohTF(sLIST, max_ra, max_de, 0, 
                            tout, fout, 

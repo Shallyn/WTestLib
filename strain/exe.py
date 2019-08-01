@@ -305,9 +305,10 @@ def event_scan(gps, sH1, sL1, sV1,
     tlim = [tmap - h_dur, tmap + h_dur]
     tlim2 = [tmap - h_dur*2, tmap + h_dur*2]
     tlim3 = [tmap - h_dur*3, tmap + h_dur*3]
+    flim = [frange[0], frange[1]]
     cmap = plt.get_cmap(cmaptype)
     tsnr = np.linspace(tlim3[0], tlim3[1], 1500)
-    fout = np.logspace(np.log10(30), np.log10(1000), 600)
+    fout = np.logspace(np.log10(flim[0]), np.log10(flim[1]), 600)
 
     # sys.stderr.write(f'{DEBUG}: tlim3 = {tlim3}\n')
     # sys.stderr.write(f'{DEBUG}: tpeak = {tmpl.dtpeak}\n')
@@ -327,7 +328,6 @@ def event_scan(gps, sH1, sL1, sV1,
                             qrange = qrange, frange = frange, 
                             retfunc = True, window = True)
         #sys.stderr.write(f'{LOG}:xout = {xout}\n')
-        flim = [yout[0], yout[1]]
         Eng = np.abs(func(tsnr, fout))
         
         levels = MaxNLocator(nbins=pcolorbins).tick_values(Eng.min(), Eng.max())
@@ -428,7 +428,6 @@ def event_scan(gps, sH1, sL1, sV1,
         max_ra = max_ra[0] - np.pi
         max_de = np.pi/2 - max_de[0]
         
-    flim = [frange[0], frange[1]]
     tout = np.linspace(tlim3[0], tlim3[1], 1500)
     fout = np.logspace(np.log10(flim[0]), np.log10(flim[1]), 500)
     fticksval = np.logspace(np.log10(flim[0]), np.log10(flim[1]), 5)

@@ -319,11 +319,13 @@ def event_scan(gps, sH1, sL1, sV1,
         #sys.stderr.write(f'{DEBUG}: snr {SNR.ifo} epoch = {SNR.epoch}\n')
     
     # Step.5 Plot snr q scan spectrum.
+    flim = [frange[0], frange[1]]
     for data in sLIST:
         func, xout, yout = snr_q_scanf(data.value, tmpl, 
                             data.fs, data.epoch, 
                             cut=None, psd = data.psdfun_setted,
-                            qrange = qrange, retfunc = True, window = True)
+                            qrange = qrange, frange = frange, 
+                            retfunc = True, window = True)
         #sys.stderr.write(f'{LOG}:xout = {xout}\n')
         Eng = np.abs(func(tsnr, fout))
         
@@ -346,7 +348,7 @@ def event_scan(gps, sH1, sL1, sV1,
             plt.plot(track_x + delay, track_y, '-', color='#ba7b00', zorder=3, lw=1.5)
         plt.xlabel(label)
         plt.ylabel('frequency')
-        plt.ylim([30, 1000])
+        plt.ylim(flim)
         plt.yscale('log')
         plt.xlim(tlim3)
         plt.savefig(fsave/f'Qscan_{data.ifo}.png', dpi = 200)
@@ -356,7 +358,7 @@ def event_scan(gps, sH1, sL1, sV1,
                     cmap = cmap, norm = norm, 
                     figsize = FIGSIZE_QSCAN, 
                     xlabel = label, ylabel = 'frequency', 
-                    xlim = tlim2, ylim = [30, 1000], 
+                    xlim = tlim2, ylim = flim, 
                     fsave = fsave/f'Qscan_{data.ifo}_zoom1.png', 
                     title = f'{data.ifo} snr Qscan')
 
@@ -364,7 +366,7 @@ def event_scan(gps, sH1, sL1, sV1,
                     cmap = cmap, norm = norm, 
                     figsize = FIGSIZE_QSCAN, 
                     xlabel = label, ylabel = 'frequency', 
-                    xlim = tlim, ylim = [30, 1000], 
+                    xlim = tlim, ylim = flim, 
                     fsave = fsave/f'Qscan_{data.ifo}_zoom2.png', 
                     title = f'{data.ifo} snr Qscan')
 
@@ -427,6 +429,7 @@ def event_scan(gps, sH1, sL1, sV1,
         
     tout = np.linspace(tlim3[0], tlim3[1], 1500)
     fout = np.logspace(np.log10(20), np.log10(1000), 500)
+    flim = [fout[0], fout[-1]]
     coh_matrix = snr_cohTF(sLIST, max_ra, max_de, 0, 
                            tout, fout, 
                            tmpl = tmpl, verbose = True, 
@@ -451,7 +454,7 @@ def event_scan(gps, sH1, sL1, sV1,
                cmap = cmap, norm = norm, 
                figsize = FIGSIZE_QSCAN, 
                xlabel = label, ylabel = 'frequency', 
-               xlim = tlim3, ylim = [30,750], 
+               xlim = tlim3, ylim = flim, 
                fsave = fsave/'snrQscan_coh.png', 
                title = 'Coherent SNR wscan')
     
@@ -459,7 +462,7 @@ def event_scan(gps, sH1, sL1, sV1,
                cmap = cmap, norm = norm, 
                figsize = FIGSIZE_QSCAN, 
                xlabel = label, ylabel = 'frequency', 
-               xlim = tlim2, ylim = [30,750], 
+               xlim = tlim2, ylim = flim, 
                fsave = fsave/'snrQscan_coh_zoom1.png', 
                title = 'Coherent SNR wscan')
 
@@ -467,7 +470,7 @@ def event_scan(gps, sH1, sL1, sV1,
                cmap = cmap, norm = norm, 
                figsize = FIGSIZE_QSCAN, 
                xlabel = label, ylabel = 'frequency', 
-               xlim = tlim, ylim = [30,750], 
+               xlim = tlim, ylim = flim, 
                fsave = fsave/'snrQscan_coh_zoom2.png', 
                title = 'Coherent SNR wscan')
 
@@ -482,7 +485,7 @@ def event_scan(gps, sH1, sL1, sV1,
                cmap = cmap, norm = norm, 
                figsize = FIGSIZE_QSCAN, 
                xlabel = label, ylabel = 'frequency', 
-               xlim = tlim3, ylim = [30,750], 
+               xlim = tlim3, ylim = flim, 
                fsave = fsave/'snrQscan_coh_01.png', 
                title = 'Coherent SNR wscan stream 01')
     
@@ -490,7 +493,7 @@ def event_scan(gps, sH1, sL1, sV1,
                cmap = cmap, norm = norm, 
                figsize = FIGSIZE_QSCAN, 
                xlabel = label, ylabel = 'frequency', 
-               xlim = tlim2, ylim = [30,750], 
+               xlim = tlim2, ylim = flim, 
                fsave = fsave/'snrQscan_coh_01_zoom1.png', 
                title = 'Coherent SNR wscan stream 01')
 
@@ -498,7 +501,7 @@ def event_scan(gps, sH1, sL1, sV1,
                cmap = cmap, norm = norm, 
                figsize = FIGSIZE_QSCAN, 
                xlabel = label, ylabel = 'frequency', 
-               xlim = tlim, ylim = [30,750], 
+               xlim = tlim, ylim = flim, 
                fsave = fsave/'snrQscan_coh_01_zoom2.png', 
                title = 'Coherent SNR wscan stream 01')
     
@@ -513,7 +516,7 @@ def event_scan(gps, sH1, sL1, sV1,
                cmap = cmap, norm = norm, 
                figsize = FIGSIZE_QSCAN, 
                xlabel = label, ylabel = 'frequency', 
-               xlim = tlim3, ylim = [30,750], 
+               xlim = tlim3, ylim = flim, 
                fsave = fsave/'snrQscan_coh_02.png', 
                title = 'Coherent SNR wscan stream 02')
     
@@ -521,7 +524,7 @@ def event_scan(gps, sH1, sL1, sV1,
                cmap = cmap, norm = norm, 
                figsize = FIGSIZE_QSCAN, 
                xlabel = label, ylabel = 'frequency', 
-               xlim = tlim2, ylim = [30,750], 
+               xlim = tlim2, ylim = flim, 
                fsave = fsave/'snrQscan_coh_02_zoom1.png', 
                title = 'Coherent SNR wscan stream 02')
 
@@ -529,7 +532,7 @@ def event_scan(gps, sH1, sL1, sV1,
                cmap = cmap, norm = norm, 
                figsize = FIGSIZE_QSCAN, 
                xlabel = label, ylabel = 'frequency', 
-               xlim = tlim, ylim = [30,750], 
+               xlim = tlim, ylim = flim, 
                fsave = fsave/'snrQscan_coh_02_zoom2.png', 
                title = 'Coherent SNR wscan stream 02')
     
@@ -545,7 +548,7 @@ def event_scan(gps, sH1, sL1, sV1,
                    cmap = cmap, norm = norm, 
                    figsize = FIGSIZE_QSCAN, 
                    xlabel = label, ylabel = 'frequency', 
-                   xlim = tlim3, ylim = [30,750], 
+                   xlim = tlim3, ylim = flim, 
                    fsave = fsave/'snrQscan_null.png', 
                    title = 'NULL SNR wscan stream')
         
@@ -553,7 +556,7 @@ def event_scan(gps, sH1, sL1, sV1,
                    cmap = cmap, norm = norm, 
                    figsize = FIGSIZE_QSCAN, 
                    xlabel = label, ylabel = 'frequency', 
-                   xlim = tlim2, ylim = [30,750], 
+                   xlim = tlim2, ylim = flim, 
                    fsave = fsave/'snrQscan_null_zoom1.png', 
                    title = 'NULL SNR wscan stream')
     
@@ -561,7 +564,7 @@ def event_scan(gps, sH1, sL1, sV1,
                    cmap = cmap, norm = norm, 
                    figsize = FIGSIZE_QSCAN, 
                    xlabel = label, ylabel = 'frequency', 
-                   xlim = tlim, ylim = [30,750], 
+                   xlim = tlim, ylim = flim, 
                    fsave = fsave/'snrQscan_null_zoom2.png', 
                    title = 'NULL SNR wscan stream')
 

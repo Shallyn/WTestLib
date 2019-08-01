@@ -16,7 +16,7 @@ import matplotlib.pyplot as plt
 from scipy.interpolate import InterpolatedUnivariateSpline as fitp
 
 
-DEFAULT_FRANGE = (30, 1200)
+DEFAULT_FRANGE = (20, 1200)
 DEFAULT_MISMATCH = 0.2
 DEFAULT_QRANGE = (4, 64)
 

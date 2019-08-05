@@ -174,6 +174,9 @@ class GraceSuperEvent(object):
     def __iter__(self):
         for gid in self._GraceID_list:
             yield gid
+            
+    def __len__(self):
+        return len(self._GraceID_list)
     
     @property
     def SGraceID(self):

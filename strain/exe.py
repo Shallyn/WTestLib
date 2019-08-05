@@ -330,7 +330,8 @@ def event_scan(gps, sH1, sL1, sV1,
                             data.fs, data.epoch, 
                             cut=None, psd = data.psdfun_setted,
                             qrange = qrange, frange = frange, 
-                            retfunc = True, window = True)
+                            retfunc = True, window = True,
+                            mismatch = mismatch)
         #sys.stderr.write(f'{LOG}:xout = {xout}\n')
         Eng = np.abs(func(tsnr, fout))
         

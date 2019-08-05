@@ -141,7 +141,20 @@ class snrQPlane(QPlane):
         for freq in self._iter_frequencies():
             yield snrQTile(self.q, freq, self.duration, self.sampling,
                            mismatch=self.mismatch, shift = self.freq_timeshift(freq))
-            
+
+    def _iter_frequencies(self):
+        minf, maxf = self.frange
+        fcum_mismatch = log(maxf / minf) * (2 + self.q**2)**(1/2.) / 2.
+        nfreq = int(max(1, ceil(fcum_mismatch / self.deltam)))
+        fstep = fcum_mismatch / nfreq
+        fstepmin = 1 / self.duration
+        # for each frequency, yield a QTile
+        for i in range(nfreq):
+            yield (minf *
+                   exp(2 / (2 + self.q**2)**(1/2.) * (i + .5) * fstep) //
+                   fstepmin * fstepmin)
+
+
     def transform(self, stilde, hrtilde, hitilde, psd, epoch=None):
         out = []
         for qtile in self:

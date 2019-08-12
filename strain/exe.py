@@ -25,7 +25,7 @@ from pathlib import Path
 from .snr_qTansform import snr_q_scanf
 from .detectors import time_delay
 from ..Utils import WARNING, LOG, DEBUG
-from ..datasource.gracedb import GraceEvent, GraceSuperEvent
+from ..datasource.gracedb import GraceEvent, GraceSuperEvent, find_strain_all
 from scipy.interpolate import interp1d
 from ..generator import dim_t
 from matplotlib.ticker import Locator, FormatStrFormatter
@@ -229,6 +229,188 @@ def main(argv = None):
                       pcolorbins = pcolorbins,
                       cmaptype = cmaptype,
                       mismatch = mismatch)
+    
+#-----------------------------------------------#
+#                                               #
+#                   Injection                   #
+#                                               #
+#-----------------------------------------------#
+def parseargs_inj(argv):
+    parser = OptionParser(description='Waveform Comparation With SXS')
+    parser.add_option('--ra', type = 'float', help = 'ra of this event, if added, will use this value.')
+    parser.add_option('--de', type = 'float', help = 'dec of this event, if added, will use this value.')
+    
+    parser.add_option('--stepback', type = 'int', default = 15, help = 'Used for GraceDB data load.')
+    parser.add_option('--stepforward', type = 'int', default = 15, help = 'Used for GraceDB data load.')
+    
+    parser.add_option('--gps', type = 'float', help = 'gps trigger time for this event.')
+    parser.add_option('--sample-rate', type = 'int', default = 4096, help = 'sample rate used.')
+    
+    parser.add_option('--m1', type = 'float', help = 'mass1 of this event, for template generation.')
+    parser.add_option('--m2', type = 'float', help = 'mass2 of this event, for template generation.')
+    parser.add_option('--s1z', type = 'float', help = 'spin1z of this event, for template generation.')
+    parser.add_option('--s2z', type = 'float', help = 'spin2z of this event, for template generation.')
+    parser.add_option('--fini', type = 'float', default = 0.003, help = 'Initial frequency for template generation(natual dimension).')
+    parser.add_option('--approx', type = 'str', help = 'approx for template generation.')
+    parser.add_option('--snr', type = 'float', default = 9.0, help = 'Expected coherent SNR')
+    
+    parser.add_option('--nside', type = 'int', default = DEFAULT_NSIDE, help = 'Nside for skymap pix.')
+    parser.add_option('--minq', type = 'int', default = DEFAULT_QRANGE[0], help = 'min Q.')
+    parser.add_option('--maxq', type = 'int', default = DEFAULT_QRANGE[1], help = 'max Q.')
+    parser.add_option('--minf', type = 'float', default = DEFAULT_FRANGE[0], help = 'min Frequency.')
+    parser.add_option('--maxf', type = 'float', default = DEFAULT_FRANGE[1], help = 'max Frequency.')
+    parser.add_option('--mismatch', type = 'float', default = DEFAULT_MISMATCH, help = 'mismatch for qscan.')
+    parser.add_option('--cmap', type = 'str', default = DEFAULT_CMAP, help = 'Plot color map type.')
+    parser.add_option('--pcolorbins', type = 'int', default = DEFAULT_PCOLORBINS, help = 'color bins for pcolor mesh plot.')
+    
+    parser.add_option('--datadir', type = 'str', help = 'dir for data saving.')
+    parser.add_option('--prefix', type = 'str', default = '.', help = 'prefix for results saving.')
+    parser.add_option('--ref', type = 'str', help = 'prefix for reference psd.')
+    parser.add_option('--ref-psd', type = 'str', help = 'prefix for reference psd, preferred.')
+    parser.add_option('--channel', type = 'str', default = 'GATED', help = 'channel type, if local data used.')
+    
+    parser.add_option('--notrack', action = 'store_true', help = 'If added, will plot track.')
+    args = parser.parse_args(argv)
+    return args
+
+def main_inj(argv = None):
+    args, empty = parseargs(argv)
+    ra = args.ra
+    de = args.de
+    
+    gps = args.gps
+    sback = args.stepback
+    sfwd = args.stepforward
+    fs = args.sample_rate
+    
+    m1 = args.m1
+    m2 = args.m2
+    s1z = args.s1z
+    s2z = args.s2z
+    fini = args.fini
+    approx = args.approx
+    psi = 0
+    phic = 0
+    snr = args.snr
+    
+    nside = args.nside
+    qrange = (args.minq, args.maxq)
+    frange = (args.minf, args.maxf)
+    mismatch = args.mismatch
+    cmaptype = args.cmap
+    pcolorbins = args.pcolorbins
+    
+    datadir = args.datadir
+    prefix = args.prefix
+    ref = args.ref
+    refpsd = args.ref_psd
+    channel = args.channel
+    notrack = args.notrack
+    if notrack:
+        track = False
+    else:
+        track = True
+    if approx is None:
+        approx = get_proper_approx(m1, m2)
+    fini = fini * dim_t(m1 + m2)
+    
+    # Check data
+    if refpsd is not None:
+        fdict_refpsd = sngl_load_file(refpsd, channel)    
+    elif ref is not None:
+        fdict_ref = sngl_load_file(ref, channel)
+    else:
+        sys.stderr.write(f'{WARNING}:No ref psd, exit.\n')
+        return -1;
+    
+    if m1 is None or \
+        m2 is None or\
+        s1z is None or \
+        s2z is None:
+        sys.stderr.write(f'{WARNING}:Input parameters is insufficient, exit.\n')
+        return -1
+    else:
+        tmpl = template(m1 = m1,
+                        m2 = m2,
+                        s1z = s1z,
+                        s2z = s2z,
+                        fini = fini,
+                        approx = approx,
+                        srate = fs,
+                        D = 100,
+                        duration = None)
+    
+    # Get Data and make injection
+    tstart = gps - sback
+    tend = gps + sfwd
+    try:
+        datadict = find_strain_all(gps_start = tstart, 
+                                   gps_end = tend, 
+                                   channel = channel, 
+                                   fs = fs)
+        for key in datadict:
+            tmp = datadict[key]
+            sys.stderr.write(f'{LOG}:Load {key} data, duration = {tmp.duration}\n')
+            locals()[f's{key}'] = tmp
+    except:
+        sys.stderr.write(f'{WARNING}:Failed to load data, exit\n')
+        return -1
+    
+    SNR = 0
+    for ifo in datadict:
+        if refpsd is not None:
+            datapsd = np.loadtxt(fdict_refpsd[ifo])
+            psd = interp1d(datapsd[0,:], datapsd[1,:])
+        else:
+            refdata = np.loadtxt(fdict_ref[ifo])
+            psd = get_psdfun(refdata[:,1], fs = fs)
+        locals()[f'n{ifo}'].set_psd(psd)
+        horizon = tmpl.get_horizon(psd = psd, ret_SI = False)
+        SNR += horizon**2
+    
+    Distance = np.sqrt(SNR) / snr
+    
+    for ifo in datadict:
+        locals()[f's{ifo}'] = \
+        tmpl.construct_detector_strain(ifo, ra=ra, de=de,
+                                       t_inj=gps,
+                                       psi = psi, phic = phic,
+                                       D = Distance, 
+                                       noise=locals()[f'n{ifo}'])
+        
+    for sifo in ['sH1', 'sL1', 'sV1']:
+        if sifo not in locals():
+            locals()[sifo] = None
+    
+    
+    return event_scan(gps = gps,
+                      sH1 = locals()['sH1'],
+                      sL1 = locals()['sL1'],
+                      sV1 = locals()['sV1'],
+                      m1 = m1, m2 = m2,
+                      s1z = s1z, s2z = s2z,
+                      fini = fini, approx = approx, fs = fs,
+                      prefix = prefix,
+                      ra = ra, de = de,
+                      track = track,
+                      nside = nside,
+                      qrange = qrange,
+                      frange = frange,
+                      pcolorbins = pcolorbins,
+                      cmaptype = cmaptype,
+                      mismatch = mismatch)
+
+
+
+
+
+
+
+#-----------------------------------------------#
+#                                               #
+#                     Core                      #
+#                                               #
+#-----------------------------------------------#
 
 def event_scan(gps, sH1, sL1, sV1,
                m1, m2, s1z, s2z, fini, approx, fs,

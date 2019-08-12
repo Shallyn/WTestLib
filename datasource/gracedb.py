@@ -138,7 +138,14 @@ class GraceEvent(object):
             gws = gwStrainSRC(ifo, tstart, tend, channel = f'{ifo}_{channel}')
             ret[f'{ifo}'] = gws.load_data(fs)
         return ret
-        
+    
+def find_strain_all(gps_start, gps_end, channel = 'GATED', fs = 4096):
+    ret = dict()
+    for ifo in ['H1','L1','V1']:
+        gws = gwStrainSRC(ifo, gps_start, gps_end, channel = f'{ifo}_{channel}')
+        ret[f'{ifo}'] = gws.load_data(fs)
+        sys.stderr.write(f'{WARNING}:Failed to load {ifo} data {gps_start} .. {gps_end}\n')
+    return ret
 
 class DetTable(object):
     def __init__(self, table):

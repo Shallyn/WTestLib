@@ -53,41 +53,43 @@ def loaddata(filename, idx_cut = 0):
 
 
 #---------CLASS--------#
-class h22base(object):
-    def __init__(self, time, hreal, himag, srate, verbose = False):
+
+    
+
+
+class ModeBase(object):
+    def __init__(self, time, hreal, himag):
         time = np.asarray(time)
         self._time = time - time[0]
-        self._h22 = np.asarray(hreal) + 1.j * np.asarray(himag)
-        if verbose:
-            sys.stderr.write(f'{LOG}:Resampling...\n')
-        self.resample(srate)
-        if verbose:
-            sys.stderr.write(f'{LOG}:Resampling...Done\n')
-        self._verbose = verbose
+        self._mode = np.asarray(hreal) + 1.j * np.asarray(himag)
             
     @property
     def time(self):
         return self._time
     
     @property
-    def h22(self):
-        return self._h22
+    def dot(self):
+        return np.gradient(self._mode) / np.gradient(self.time)
+    
+    @property
+    def value(self):
+        return self._mode
     
     @property
     def real(self):
-        return self._h22.real
+        return self._mode.real
     
     @property
     def imag(self):
-        return self._h22.imag
+        return self._mode.imag
     
     @property
     def amp(self):
-        return np.abs(self._h22)
+        return np.abs(self._mode)
     
     @property
     def phase(self):
-        return np.abs(np.unwrap(np.angle(self._h22)))
+        return np.abs(np.unwrap(np.angle(self._mode)))
     
     @property
     def frequency(self):
@@ -103,50 +105,31 @@ class h22base(object):
     
     @property
     def duration(self):
-        return self.time[-1] - self.time[0]
+        return self._time[-1] - self._time[0]
     
-    @property
-    def h22f(self):
-        return np.fft.fft(self._h22)
-    
-    @property
-    def fftfreq(self):
-        return np.fft.fftfreq(len(self._h22), 1./self._srate)
-
-    @property
-    def itp_h22(self):
-        return interp1d_complex(self._time, self._h22)
-    
-    @property
-    def srate(self):
-        return self._srate
-
-    def resample(self, srate):
-        self._srate = srate
-        new_time = np.arange(self._time[0], self._time[-1], 1./self._srate)
-        self._h22 = self.itp_h22(new_time)
-        self._time = new_time
-        
-    def pad(self, pad_width, mode, **kwargs):
-        self._h22 = np.pad(self._h22, pad_width, mode, **kwargs)
-        self._time = np.arange(self._time[0], self._h22.size / self._srate, 1./self._srate)
-
     def apply(self, tc, phic):
         self._time -= tc
-        self._h22 *= np.exp(-1.j*phic)
-        
-    def saveh22(self, fname, **kwargs):
-        data = np.stack([self.time, self.real, self.imag], axis = 1)
-        np.savetxt(fname, data, **kwargs)
+        self._mode *= np.exp(-1.j*phic)
+    
+    @property
+    def interpolate(self):
+        return interp1d_complex(self._time, self._mode)
+    
+    @property
+    def conjvalue(self):
+        return self._mode.conjugate()
+    
+    def conjugate(self):
+        return ModeBase(self.time, self.real, -self.imag)
 
     def copy(self):
-        return h22base(self._time.copy(), self._h22.copy().real, self._h22.copy().imag, self._srate, self._verbose)
+        return ModeBase(self._time.copy(), self._mode.copy().real, self._mode.copy().imag)
         
     def __str__(self):
-        return '{}'.format(self._h22)
+        return '{}'.format(self._mode)
     
     def __len__(self):
-        return len(self._h22)
+        return len(self._mode)
     
     def __repr__(self):
         return self.__str__()
@@ -155,12 +138,12 @@ class h22base(object):
         return self.__str__()
         
     def __iter__(self):
-        for x in self._h22:
+        for x in self._mode:
             yield x
     
     def __getitem__(self, key):
         if isinstance(key, int) or isinstance(key, np.integer):
-            return self._h22[key]
+            return self._mode[key]
         return self._getslice(key)
 
     def __setitem__(self, key, value):
@@ -170,6 +153,48 @@ class h22base(object):
         if index.start is not None and index.start < 0:
             raise ValueError(('Negative start index ({}) is not supported').format(index.start))        
         return h22base(self._time[index], self.real[index], self.imag[index], self._srate, self._verbose)
+    
+    def __del__(self):
+        del self._time
+        del self._mode
+
+class h22base(ModeBase):
+    def __init__(self, time, hreal, himag, srate, verbose = False):
+        super(h22base, self).__init__(time, hreal, himag)
+        if verbose:
+            sys.stderr.write(f'{LOG}:Resampling...\n')
+        self.resample(srate)
+        if verbose:
+            sys.stderr.write(f'{LOG}:Resampling...Done\n')
+        self._verbose = verbose
+
+    @property
+    def h22f(self):
+        return np.fft.fft(self._mode)
+    
+    @property
+    def fftfreq(self):
+        return np.fft.fftfreq(len(self._mode), 1./self._srate)
+
+    
+    @property
+    def srate(self):
+        return self._srate
+
+    def resample(self, srate):
+        self._srate = srate
+        new_time = np.arange(self._time[0], self._time[-1], 1./self._srate)
+        self._mode = self.interpolate(new_time)
+        self._time = new_time
+
+    def pad(self, pad_width, mode, **kwargs):
+        self._mode = np.pad(self._mode, pad_width, mode, **kwargs)
+        self._time = np.arange(self._time[0], self._mode.size / self._srate, 1./self._srate)
+        
+    def saveh22(self, fname, **kwargs):
+        data = np.stack([self.time, self.real, self.imag], axis = 1)
+        np.savetxt(fname, data, **kwargs)
+
 
 
 def h22_alignment(wfA, wfB):

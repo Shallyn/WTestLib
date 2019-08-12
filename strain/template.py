@@ -205,6 +205,7 @@ class template(object):
             # In Mpc
             return rhor / pc_SI / 1e6
 
+
         
     def plot(self, 
              xrange = None, 
@@ -228,12 +229,15 @@ class template(object):
                    figsize = figsize)
     
     
-    def construct_detector_strain(self, ifo, ra, de, psi, t_inj, noise = None):
+    def construct_detector_strain(self, ifo, ra, de, t_inj,
+                                  psi = 0, phic = 0,
+                                  D = None, noise = None):
         if self.STATE is not CEV.SUCCESS:
             return None
         det = Detector(ifo)
         ap = det.antenna_pattern(ra, de, psi, gps = t_inj)
-        strain = self.real * ap[0] + self.imag * ap[1]
+        wf = (self.distance/D) * self.template * np.exp(1.j*phic)
+        strain = wf.real * ap[0] + wf.imag * ap[1]
         t_start = t_inj - np.abs(strain).argmax() / self.fs
         t_end = t_start + len(strain) / self.fs
         if not isinstance(noise, gwStrain):

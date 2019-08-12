@@ -107,6 +107,7 @@ class SXSObject(object):
         self.final_kick_vx = fkv[0]
         self.final_kick_vy = fkv[1]
         self.final_kick_vz = fkv[2]
+        self.initial_ADM_energy = pms['initial_ADM_energy']
         
     @property
     def SXSnum(self):

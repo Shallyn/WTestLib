@@ -574,7 +574,7 @@ def event_scan(gps, sH1, sL1, sV1,
     de_pix = -theta+np.pi/2
     
     ntime = 100
-    ndet = len(snrLIST)
+    # ndet = len(snrLIST)
     det_time = np.linspace(tlim[0],tlim[1],ntime)
     umx = utdk_times(snrLIST, ra_pix, de_pix, det_time, verbose = True)
     utdka2 = np.multiply(umx,umx.conj()).real
@@ -594,7 +594,7 @@ def event_scan(gps, sH1, sL1, sV1,
     graticule(coord='G',local=True)
     plt.plot(x1,y1,'rx')
     if ra is not None and de is not None:
-        x2,y2 = projector.ang2xy(np.array([np.pi/2 - de, ra + np.pi]))
+        x2,y2 = projector.ang2xy(np.array([de, ra]))
         plt.plot(x2,y2,'r+')
     plt.savefig(fsave/'Skymap_Coherent.png', dpi = 200)
     plt.close()
@@ -613,8 +613,8 @@ def event_scan(gps, sH1, sL1, sV1,
     #
     #
     if ra is not None and de is not None:
-        max_de = np.pi / 2 - de
-        max_ra = ra - np.pi
+        max_de = de
+        max_ra = ra
     else:
         max_de,max_ra = pix2ang(nside,np.argmax(coh_snr2))
         max_ra = max_ra[0] - np.pi

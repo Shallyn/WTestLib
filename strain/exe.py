@@ -274,7 +274,7 @@ def parseargs_inj(argv):
     return args
 
 def main_inj(argv = None):
-    args, empty = parseargs(argv)
+    args, empty = parseargs_inj(argv)
     ra = args.ra
     de = args.de
     

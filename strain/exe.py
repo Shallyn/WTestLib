@@ -326,7 +326,9 @@ def main_inj(argv = None):
     if m1 is None or \
         m2 is None or\
         s1z is None or \
-        s2z is None:
+        s2z is None or \
+        ra is None or \
+        de is None:
         sys.stderr.write(f'{WARNING}:Input parameters is insufficient, exit.\n')
         return -1
     else:

@@ -362,12 +362,11 @@ def main_inj(argv = None):
     for ifo in datadict:
         if refpsd is not None:
             datapsd = np.loadtxt(fdict_refpsd[ifo])
-            psd = interp1d(datapsd[0,:], datapsd[1,:])
+            locals()[f'{ifo}psd'] = interp1d(datapsd[0,:], datapsd[1,:])
         else:
             refdata = np.loadtxt(fdict_ref[ifo])
-            psd = get_psdfun(refdata[:,1], fs = fs)
-        locals()[f'n{ifo}'].set_psd(psd)
-        horizon = tmpl.get_horizon(psd = psd, ret_SI = False)
+            locals()[f'{ifo}psd'] = get_psdfun(refdata[:,1], fs = fs)
+        horizon = tmpl.get_horizon(psd = locals()[f'{ifo}psd'], ret_SI = False)
         SNR += horizon**2
     
     Distance = np.sqrt(SNR) / snr
@@ -379,6 +378,7 @@ def main_inj(argv = None):
                                        psi = psi, phic = phic,
                                        D = Distance, 
                                        noise=locals()[f'n{ifo}'])
+        locals()[f's{ifo}'].set_psd(locals()[f'{ifo}psd'])
         
     for sifo in ['sH1', 'sL1', 'sV1']:
         if sifo not in locals():

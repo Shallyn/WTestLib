@@ -612,13 +612,13 @@ def event_scan(gps, sH1, sL1, sV1,
     # Step.7 Plot coherent snr q scan spectrum
     #
     #
-    if ra is not None and de is not None:
-        max_de = de
-        max_ra = ra
-    else:
-        max_de,max_ra = pix2ang(nside,np.argmax(coh_snr2))
-        max_ra = max_ra[0] - np.pi
-        max_de = np.pi/2 - max_de[0]
+    # if ra is not None and de is not None:
+    #     max_de = de
+    #     max_ra = ra
+    # else:
+    max_de,max_ra = pix2ang(nside,np.argmax(coh_snr2))
+    max_ra = max_ra[0] - np.pi
+    max_de = np.pi/2 - max_de[0]
         
     tout = np.linspace(tlim3[0], tlim3[1], 1500)
     fout = np.logspace(np.log10(flim[0]), np.log10(flim[1]), 500)

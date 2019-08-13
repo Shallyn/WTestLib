@@ -238,7 +238,7 @@ class template(object):
         ap = det.antenna_pattern(ra, de, psi, gps = t_inj)
         wf = (self.distance/D) * self.template * np.exp(1.j*phic)
         strain = wf.real * ap[0] + wf.imag * ap[1]
-        t_start = t_inj - np.abs(strain).argmax() / self.fs
+        t_start = t_inj - np.abs(wf).argmax() / self.fs
         t_end = t_start + len(strain) / self.fs
         if not isinstance(noise, gwStrain):
             return gwStrain(strain, epoch = t_start, fs = self.fs, ifo = ifo)
@@ -247,6 +247,8 @@ class template(object):
                 return noise
             if self.fs != noise.fs:
                 th, strain = sgl.resample(self.time, strain, noise.fs)
+            else:
+                th = self.time
             fs = noise.fs
             if t_start < noise.epoch:
                 strain = strain[int((noise.epoch-t_start)*fs):]

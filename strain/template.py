@@ -236,6 +236,8 @@ class template(object):
             return None
         det = Detector(ifo)
         ap = det.antenna_pattern(ra, de, psi, gps = t_inj)
+        dt = det.time_delay_from_earth_center(ra, de, t_inj)
+        t_inj += dt
         wf = (self.distance/D) * self.template * np.exp(1.j*phic)
         strain = wf.real * ap[0] + wf.imag * ap[1]
         t_start = t_inj - np.abs(wf).argmax() / self.fs

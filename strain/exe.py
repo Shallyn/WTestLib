@@ -353,7 +353,7 @@ def main_inj(argv = None):
         for key in datadict:
             tmp = datadict[key]
             sys.stderr.write(f'{LOG}:Load {key} data, duration = {tmp.duration}\n')
-            locals()[f's{key}'] = tmp
+            locals()[f'n{key}'] = tmp
     except:
         sys.stderr.write(f'{WARNING}:Failed to load data, exit\n')
         return -1

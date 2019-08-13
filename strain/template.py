@@ -12,7 +12,7 @@ from ..Utils import cmd_stdout_cev, CEV
 from .detectors import Detector
 from .strain import gwStrain
 from . import signal as sgl
-from scipy.interpolate import interp1d
+from scipy.interpolate import InterpolatedUnivariateSpline
 from ..h22datatype import pc_SI
 
 #------------CMD to generate ifo template----------#
@@ -258,7 +258,8 @@ class template(object):
                 strain = strain[:int((t_end - noise.epoch - noise.duration)*fs)]
                 th = th[:int((t_end - noise.epoch - noise.duration)*fs)]
                 t_end = noise.epoch + noise.duration
-            itp_strain = interp1d(th, strain)
+            th = th - th[0] + t_start
+            itp_strain = InterpolatedUnivariateSpline(th, strain)
             idx_start = int((t_start - noise.epoch) * fs)
             idx_end = int((t_end - noise.epoch) * fs)
             val = noise.value

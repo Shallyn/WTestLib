@@ -594,7 +594,7 @@ def event_scan(gps, sH1, sL1, sV1,
     graticule(coord='G',local=True)
     plt.plot(x1,y1,'rx')
     if ra is not None and de is not None:
-        x2,y2 = projector.ang2xy(np.array([np.pi/2 - de, np.pi - ra]))
+        x2,y2 = projector.ang2xy(np.array([np.pi/2 - de, np.pi + ra]))
         plt.plot(x2,y2,'r+')
     plt.savefig(fsave/'Skymap_Coherent.png', dpi = 200)
     plt.close()

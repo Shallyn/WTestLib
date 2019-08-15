@@ -136,9 +136,9 @@ class GraceEvent(object):
         ret = dict()
         for ifo in self._ifos:
             gws = gwStrainSRC(ifo, tstart, tend, channel = f'{ifo}_{channel}')
-            data = gws.load_data
+            data = gws.load_data(fs)
             if not isinstance(data, CEV):
-                ret[f'{ifo}'] = gws.load_data(fs)
+                ret[f'{ifo}'] = data
         return ret
     
 def find_strain_all(gps_start, gps_end, channel = 'GATED', fs = 4096):

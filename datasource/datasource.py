@@ -53,6 +53,17 @@ class gwStrainSRC(object):
             return ret
         sys.stderr.write(f'{WARNING}:Failed to find data...\n')
         return CEV.GEN_FAIL
+
+def load_data_from_ifo(tstart, tend, ifos, channel = 'GATED', fs = 4096):
+    sys.stderr.write(f'{LOG}:Load data {tstart} .. {tend}\n')
+    ret = dict()
+    for ifo in ifos:
+        gws = gwStrainSRC(ifo, tstart, tend, channel = f'{ifo}_{channel}')
+        data = gws.load_data(fs)
+        if not isinstance(data, CEV):
+            ret[f'{ifo}'] = data
+    return ret
+    
             
 class shmseg(object):
     def __init__(self, name, channel, epoch, fs = 16384):

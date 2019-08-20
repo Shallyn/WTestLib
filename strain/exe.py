@@ -26,6 +26,7 @@ from .snr_qTansform import snr_q_scanf
 from .detectors import time_delay
 from ..Utils import WARNING, LOG, DEBUG
 from ..datasource.gracedb import GraceEvent, GraceSuperEvent, find_strain_all
+from ..datasource.datasource import load_data_from_ifo
 from scipy.interpolate import interp1d
 from ..generator import dim_t
 from matplotlib.ticker import Locator, FormatStrFormatter
@@ -118,47 +119,74 @@ def main(argv = None):
     
     if refpsd is not None:
         fdict_refpsd = sngl_load_file(refpsd, channel)
+    elif ref is not None:
+        fdict_ref = sngl_load_file(ref, channel)
+    elif datadir is not None:
+        fdict_ref = sngl_load_file(datadir, channel)
+    else:
+        raise Exception(f'No reference psd')
+
 
     track = args.track
     # Step.2 load data...
     
     if graceid is None and Sgraceid is None:
-        if datadir is None or \
+        if (datadir is None and gps is None) or \
             m1 is None or \
             m2 is None or\
             s1z is None or \
             s2z is None:
             sys.stderr.write(f'{WARNING}:Input parameters is insufficient, exit.\n')
             return -1
-        fdict = sngl_load_file(datadir, channel)
-        if ref is None:
-            fdict_ref = sngl_load_file(datadir, channel)
-        else:
-            fdict_ref = sngl_load_file(ref, channel)
-        
-        # load data, make gwStrain, set psd.
-        for ifo in ['H1', 'L1', 'V1']:
-            if ifo not in fdict:
-                locals()[f's{ifo}'] = None
-            else:
-                src = np.loadtxt(fdict[ifo])
-                datatime = src[:,0]
-                fs_new = int(1./(datatime[1] - datatime[0]))
-                if fs_new != fs:
-                    resample = True
+        if datadir is not None:
+            fdict = sngl_load_file(datadir, channel)
+            # load data, make gwStrain, set psd.
+            for ifo in ['H1', 'L1', 'V1']:
+                if ifo not in fdict:
+                    locals()[f's{ifo}'] = None
                 else:
-                    resample = False
+                    src = np.loadtxt(fdict[ifo])
+                    datatime = src[:,0]
+                    fs_new = int(1./(datatime[1] - datatime[0]))
+                    if fs_new != fs:
+                        resample = True
+                    else:
+                        resample = False
+                    if refpsd is not None:
+                        datapsd = np.loadtxt(fdict_refpsd[ifo])
+                        psd = interp1d(datapsd[0,:], datapsd[1,:])
+                    else:
+                        refdata = np.loadtxt(fdict_ref[ifo])
+                        psd = get_psdfun(refdata[:,1], fs = fs)
+                    if np.max(src[:,1]) > 0:
+                        locals()[f's{ifo}'] = gwStrain(src[:,1], epoch = src[:,0][0], ifo = ifo, fs = fs)
+                        if resample:
+                            locals()[f's{ifo}'] = locals()[f's{ifo}'].resample(fs)
+                        locals()[f's{ifo}'].set_psd(psd)
+        else:
+            # load data by gps
+            t_start = gps - sback
+            t_end = gps + sfwd
+            try:
+                datadict = load_data_from_ifo(t_start, t_end, ifos, channel = channel, fs = fs)
+                for key in datadict:
+                    tmp = datadict[key]
+                    sys.stderr.write(f'{LOG}:Load {key} data, duration = {tmp.duration}\n')
+                    locals()[f's{key}'] = tmp
+            except:
+                sys.stderr.write(f'{WARNING}:Failed to load data, exit\n')
+                return -1
+
+            for ifo in datadict:
                 if refpsd is not None:
                     datapsd = np.loadtxt(fdict_refpsd[ifo])
                     psd = interp1d(datapsd[0,:], datapsd[1,:])
                 else:
                     refdata = np.loadtxt(fdict_ref[ifo])
                     psd = get_psdfun(refdata[:,1], fs = fs)
-                if np.max(src[:,1]) > 0:
-                    locals()[f's{ifo}'] = gwStrain(src[:,1], epoch = src[:,0][0], ifo = ifo, fs = fs)
-                    if resample:
-                        locals()[f's{ifo}'] = locals()[f's{ifo}'].resample(fs)
-                    locals()[f's{ifo}'].set_psd(psd)
+                locals()[f's{ifo}'].set_psd(psd)
+
+
     else:
         if refpsd is None:
             sys.stderr.write(f'{WARNING}:No ref psd, exit.\n')
@@ -170,11 +198,16 @@ def main(argv = None):
             else:
                 Gevt = GraceSuperEvent(SGraceID=Sgraceid, verbose = True).Preferred_GraceEvent
             sngl = Gevt.get_sngl('L1')
-            m1 = sngl.mass1
-            m2 = sngl.mass2
-            s1z = sngl.spin1z
-            s2z = sngl.spin2z
-            gps = Gevt.end_time
+            if m1 is None:
+                m1 = sngl.mass1
+            if m2 is None:
+                m2 = sngl.mass2
+            if s1z is None:
+                s1z = sngl.spin1z
+            if s2z is None:
+                s2z = sngl.spin2z
+            if gps is None:
+                gps = Gevt.end_time
             sys.stderr.write(f'{LOG}:Parameters:\n\t\
                              m1 = {m1}\n\t\
                              m2 = {m2}\n\t\

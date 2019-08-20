@@ -434,6 +434,7 @@ def event_scan(gps, sH1, sL1, sV1,
     for strain in [sH1, sL1, sV1]:
         if strain is not None:
             tdur = strain.duration
+    sys.stderr.write(f'{LOG}:Generating template...\n')
     tmpl = template(m1 = m1,
                     m2 = m2,
                     s1z = s1z,
@@ -443,6 +444,7 @@ def event_scan(gps, sH1, sL1, sV1,
                     srate = fs,
                     D = 100,
                     duration = tdur/3)
+    sys.stderr.write(f'{LOG}:Generation complete, duration = {tmpl.duration} s\n')
     track_x, track_y = tmpl.get_track(gps)
     wavefreq_max = max(track_y)
     tmpl.plot(fsave = fsave / 'template.png', 

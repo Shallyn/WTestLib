@@ -184,15 +184,12 @@ def main(argv = None):
                 ifos = ['H1', 'L1', 'V1']
             t_start = gps - sback
             t_end = gps + sfwd
-            try:
-                datadict = load_data_from_ifo(t_start, t_end, ifos, channel = channel, fs = fs)
-                for key in datadict:
-                    tmp = datadict[key]
-                    sys.stderr.write(f'{LOG}:Load {key} data, duration = {tmp.duration}\n')
-                    locals()[f's{key}'] = tmp
-            except:
-                sys.stderr.write(f'{WARNING}:Failed to load data, exit\n')
-                return -1
+            
+            datadict = load_data_from_ifo(t_start, t_end, ifos, channel = channel, fs = fs)
+            for key in datadict:
+                tmp = datadict[key]
+                sys.stderr.write(f'{LOG}:Load {key} data, duration = {tmp.duration}\n')
+                locals()[f's{key}'] = tmp
 
             for ifo in datadict:
                 if refpsd is not None:

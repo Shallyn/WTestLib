@@ -47,7 +47,7 @@ class template(object):
             for i in range(1,5):
                 fs_retry = int(self._srate * i)
                 state, data = cmd_stdout_cev(self.fCMD(fs_retry), name_out = 'template')
-                if len(data) != 0:
+                if data is not None and len(data) != 0:
                     fail = False
                     self._STATE = state
                     break

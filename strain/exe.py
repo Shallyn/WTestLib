@@ -492,7 +492,7 @@ def event_scan(gps, sH1, sL1, sV1,
     h_dur = min(0.5, tmpl.dtpeak)
     tlim = [tmap - h_dur, tmap + h_dur]
     tlim2 = [tmap - h_dur*2, tmap + h_dur*2]
-    tlim3 = [tmap - h_dur*3, tmap + h_dur*3]
+    tlim3 = [tmap - min(tdur/2.2, h_dur*30), tmap + h_dur*3]
     flim = [frange[0], frange[1]]
     
     fticksval = np.logspace(np.log10(flim[0]), np.log10(flim[1]), 5)

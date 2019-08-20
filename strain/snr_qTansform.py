@@ -98,20 +98,20 @@ class snrQTile(QTile):
         pad = self.ntiles - self.windowsize
         return (int((pad - 1)/2.), int((pad + 1)/2.))
             
-    def transform(self, stilde, hrtilde, hitilde, psd, epoch = None):
+    def transform(self, stilde, hrtilde, hitilde, psd, epoch = None, sigmasq=1):
         hrwindowed = hrtilde * self.get_snr_window(hrtilde.size)
         # hrwindowed = np.pad(hrwindowed, self.padding, mode = 'constant')
         hiwindowed = hitilde * self.get_snr_window(hitilde.size)
         # hiwindowed = np.pad(hiwindowed, self.padding, mode = 'constant')
         
-        sigmasqr = 1 * (hrwindowed * hrwindowed.conjugate() / psd).sum() * self.sampling / hrtilde.size
-        sigmasqi = 1 * (hiwindowed * hiwindowed.conjugate() / psd).sum() * self.sampling / hitilde.size
+        # sigmasqr = 1 * (hrwindowed * hrwindowed.conjugate() / psd).sum() * self.sampling / hrtilde.size
+        # sigmasqi = 1 * (hiwindowed * hiwindowed.conjugate() / psd).sum() * self.sampling / hitilde.size
         
         op_r = 2 * stilde * hrwindowed.conjugate()
-        op_r_t = np.fft.irfft(op_r) / np.sqrt(np.abs(sigmasqr))
+        op_r_t = np.fft.irfft(op_r) / np.sqrt(np.abs(sigmasq))
         
         op_i = 2 * stilde * hiwindowed.conjugate()
-        op_i_t = np.fft.irfft(op_i) / np.sqrt(np.abs(sigmasqi))
+        op_i_t = np.fft.irfft(op_i) / np.sqrt(np.abs(sigmasq))
         
         snr = (op_r_t + 1.j*op_i_t) * self.sampling
         return epoch + self._shift, 1./self.sampling, snr
@@ -155,11 +155,11 @@ class snrQPlane(QPlane):
                    fstepmin * fstepmin)
 
 
-    def transform(self, stilde, hrtilde, hitilde, psd, epoch=None):
+    def transform(self, stilde, hrtilde, hitilde, psd, epoch=None, **kwargs):
         out = []
         for qtile in self:
             # get energy from transform
-            ret = qtile.transform(stilde, hrtilde, hitilde, psd, epoch=epoch)
+            ret = qtile.transform(stilde, hrtilde, hitilde, psd, epoch=epoch, **kwargs)
             out.append(ret)
         return snrQGram(self, out)
 
@@ -313,12 +313,14 @@ def snr_q_scanf(data, tmpl,
         psd = get_psdfun(data, sampling)
     power_vec = psd(np.abs(datafreq))
     stilde /= power_vec
+    sigmasq = 1 * (hrtilde * hrtilde.conjugate() / power_vec).sum() * sampling / hrtilde.size
+
     qgram, N = snrQTiling(duration, sampling, 
                           mismatch=mismatch, 
                           qrange=qrange,
                           frange=frange,
                           fdelay = func_freq_delay).transform(stilde, hrtilde, hitilde, power_vec, 
-                                                  epoch = epoch,
+                                                  epoch = epoch, sigmasq = sigmasq,
                                                   **kwargs)
     far = 1.5 * N * np.exp(-qgram.peak['energy']) / duration
     if retfunc:

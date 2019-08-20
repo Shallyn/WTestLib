@@ -38,7 +38,7 @@ class template(object):
         self._approx = approx
         self._D = D
         state, data = cmd_stdout_cev(self.CMD, name_out = 'template')
-        if len(data) == 0:
+        if data is None or len(data) == 0:
             state = CEV.GEN_FAIL
         self._STATE = state
         if state is not CEV.SUCCESS:

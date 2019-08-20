@@ -429,7 +429,11 @@ def event_scan(gps, sH1, sL1, sV1,
     if not fsave.exists():
         fsave.mkdir(parents=True)
     
-    # Step.1 Making Template    
+    # Step.1 Making Template
+    tdur = 0
+    for strain in [sH1, sL1, sV1]:
+        if strain is not None:
+            tdur = strain.duration
     tmpl = template(m1 = m1,
                     m2 = m2,
                     s1z = s1z,
@@ -438,7 +442,7 @@ def event_scan(gps, sH1, sL1, sV1,
                     approx = approx,
                     srate = fs,
                     D = 100,
-                    duration = 10)
+                    duration = tdur/3)
     track_x, track_y = tmpl.get_track(gps)
     wavefreq_max = max(track_y)
     tmpl.plot(fsave = fsave / 'template.png', 

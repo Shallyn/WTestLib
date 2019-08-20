@@ -98,14 +98,14 @@ class snrQTile(QTile):
         pad = self.ntiles - self.windowsize
         return (int((pad - 1)/2.), int((pad + 1)/2.))
             
-    def transform(self, stilde, hrtilde, hitilde, psd, epoch = None, sigmasq=1):
+    def transform(self, stilde, hrtilde, hitilde, psd, epoch = None):
         hrwindowed = hrtilde * self.get_snr_window(hrtilde.size)
         # hrwindowed = np.pad(hrwindowed, self.padding, mode = 'constant')
         hiwindowed = hitilde * self.get_snr_window(hitilde.size)
         # hiwindowed = np.pad(hiwindowed, self.padding, mode = 'constant')
         
-        # sigmasqr = 1 * (hrwindowed * hrwindowed.conjugate() / psd).sum() * self.sampling / hrtilde.size
-        # sigmasqi = 1 * (hiwindowed * hiwindowed.conjugate() / psd).sum() * self.sampling / hitilde.size
+        sigmasqr = 1 * (hrwindowed * hrwindowed.conjugate() / psd).sum() * self.sampling / hrtilde.size
+        sigmasqi = 1 * (hiwindowed * hiwindowed.conjugate() / psd).sum() * self.sampling / hitilde.size
         
         op_r = 2 * stilde * hrwindowed.conjugate()
         op_r_t = np.fft.irfft(op_r) / np.sqrt(np.abs(sigmasq))
@@ -313,14 +313,14 @@ def snr_q_scanf(data, tmpl,
         psd = get_psdfun(data, sampling)
     power_vec = psd(np.abs(datafreq))
     stilde /= power_vec
-    sigmasq = 1 * (hrtilde * hrtilde.conjugate() / power_vec).sum() * sampling / hrtilde.size
+    # sigmasq = 1 * (hrtilde * hrtilde.conjugate() / power_vec).sum() * sampling / hrtilde.size
 
     qgram, N = snrQTiling(duration, sampling, 
                           mismatch=mismatch, 
                           qrange=qrange,
                           frange=frange,
                           fdelay = func_freq_delay).transform(stilde, hrtilde, hitilde, power_vec, 
-                                                  epoch = epoch, sigmasq = sigmasq,
+                                                  epoch = epoch,
                                                   **kwargs)
     far = 1.5 * N * np.exp(-qgram.peak['energy']) / duration
     if retfunc:

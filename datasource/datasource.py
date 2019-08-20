@@ -10,7 +10,7 @@ from gwpy.timeseries import TimeSeries
 from pathlib import Path
 from ..strain.strain import gwStrain
 import numpy as np
-from ..Utils import CEV, WARNING, DEBUG
+from ..Utils import CEV, WARNING, DEBUG, LOG
 import sys
 
 channel_dict = {'H1_CALIB':'H1:GDS-CALIB_STRAIN', 'H1_GATED':'H1:GDS-GATED_STRAIN', 'H1_IDQ': 'H1:IDQ-PGLITCH_OVL_16_4096' ,\

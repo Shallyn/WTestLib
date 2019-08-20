@@ -49,6 +49,10 @@ def parseargs(argv):
     parser.add_option('--stepback', type = 'int', default = 15, help = 'Used for GraceDB data load.')
     parser.add_option('--stepforward', type = 'int', default = 15, help = 'Used for GraceDB data load.')
     
+    parser.add_option('--H1', action = 'store_true', help = 'Add detector')
+    parser.add_option('--L1', action = 'store_true', help = 'Add detector')
+    parser.add_option('--V1', action = 'store_true', help = 'Add detector')
+
     parser.add_option('--gps', type = 'float', help = 'gps trigger time for this event.')
     parser.add_option('--sample-rate', type = 'int', default = 4096, help = 'sample rate used.')
     
@@ -103,6 +107,17 @@ def main(argv = None):
     s2z = args.s2z
     fini = args.fini
     approx = args.approx
+
+    if not args.H1 and not args.L1 and not args.V1:
+        ifos = None
+    else:
+        ifos = []
+        if args.H1:
+            ifos.append('H1')
+        if args.L1:
+            ifos.append('L1')
+        if args.V1:
+            ifos.append('V1')
     
     nside = args.nside
     qrange = (args.minq, args.maxq)
@@ -165,6 +180,8 @@ def main(argv = None):
                         locals()[f's{ifo}'].set_psd(psd)
         else:
             # load data by gps
+            if ifos is None:
+                ifos = ['H1', 'L1', 'V1']
             t_start = gps - sback
             t_end = gps + sfwd
             try:

@@ -108,10 +108,10 @@ class snrQTile(QTile):
         sigmasqi = 1 * (hiwindowed * hiwindowed.conjugate() / psd).sum() * self.sampling / hitilde.size
         
         op_r = 2 * stilde * hrwindowed.conjugate()
-        op_r_t = np.fft.irfft(op_r) / np.sqrt(np.abs(sigmasq))
+        op_r_t = np.fft.irfft(op_r) / np.sqrt(np.abs(sigmasqr))
         
         op_i = 2 * stilde * hiwindowed.conjugate()
-        op_i_t = np.fft.irfft(op_i) / np.sqrt(np.abs(sigmasq))
+        op_i_t = np.fft.irfft(op_i) / np.sqrt(np.abs(sigmasqi))
         
         snr = (op_r_t + 1.j*op_i_t) * self.sampling
         return epoch + self._shift, 1./self.sampling, snr

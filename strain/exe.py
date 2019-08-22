@@ -78,6 +78,10 @@ def parseargs(argv):
     parser.add_option('--ref-psd', type = 'str', help = 'prefix for reference psd, preferred.')
     parser.add_option('--channel', type = 'str', default = 'GATED', help = 'channel type, if local data used.')
     
+    parser.add_option('--vetostart', type = 'float', help = 'gps start for veto')
+    parser.add_option('--vetoend', type = 'float', help = 'gps end for veto')
+
+    
     parser.add_option('--track', action = 'store_true', help = 'If added, will plot track.')
     args = parser.parse_args(argv)
     return args
@@ -131,6 +135,9 @@ def main(argv = None):
     ref = args.ref
     refpsd = args.ref_psd
     channel = args.channel
+    
+    vetostart = args.vetostart
+    vetoend = args.vetoend
     
     if refpsd is not None:
         fdict_refpsd = sngl_load_file(refpsd, channel)
@@ -259,6 +266,8 @@ def main(argv = None):
     for sifo in ['sH1', 'sL1', 'sV1']:
         if sifo not in locals():
             locals()[sifo] = None
+        elif vetostart not in (None,) and vetoend not in (None,):
+            locals()[sifo].veto(vetostart, vetoend)
     # Step.3 Call....
     return event_scan(gps = gps,
                       sH1 = locals()['sH1'],

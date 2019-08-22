@@ -96,7 +96,12 @@ class gwStrain(TimeSeriesBase):
     @property
     def psdfun_setted(self):
         return self._psdfun_setted
-            
+    
+    def veto(self, start, end):
+        idx_start = int((start - self.epoch) * self.fs)
+        idx_end = int((end - self.epoch) * self.fs)
+        self._value[idx_start:idx_end] = 0
+        
     
     def plot(self, 
              xrange = None, 

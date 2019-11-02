@@ -666,10 +666,9 @@ def parse_ecc(ecc, maxecc):
         elip_max = min(0.6, ecc + 0.1)
         elip_min = max(0, ecc - 0.1)
 
-    ecc_range = [elip_min, elip_max]
     print(ecc_range)
     if maxecc > 0 and maxecc > 3*elip_max:
-        ecc_range[1] = elip_max * 0.2 
+        ecc_range[1] = min(elip_max * 2, maxecc)
     elif maxecc > 0:
         ecc_range[1] = maxecc
 

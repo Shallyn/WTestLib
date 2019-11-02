@@ -223,7 +223,7 @@ class SXSh22(SXSparameters, h22base):
                       srcloc = self._srcloc, srcloc_all = self._srcloc_all,
                       table = self._table, f_ini = self._f_ini, 
                       srate = self._srate, Mtotal = self._Mtotal, D = self._D,
-                      verbose = self._verbose)
+                      verbose = False)
     
     @property
     def dim_t(self):

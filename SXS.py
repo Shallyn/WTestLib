@@ -667,7 +667,10 @@ def parse_ecc(ecc, maxecc):
     else:
         elip_max = min(0.6, ecc + 0.1)
         elip_min = max(0, ecc - 0.1)
-    return [elip_min, elip_max]
+
+    ecc_range = [elip_min, elip_max]
+
+    return ecc_range
     
 
 DEFAULT_NAMECOL = ['#SXS id',

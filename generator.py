@@ -46,7 +46,7 @@ def CMD_SEOBNREv1(exe,
             --spin1z {s1z} --spin2z {s2z} \
             --distance {D} --e0 {ecc} \
             --f-min {f_ini} --sample-rate {srate} \
-            --output --debug-e0 2'
+            --output'
     return CMD
 
 # Type 03: For SEOBNREv4:
@@ -85,6 +85,25 @@ def CMD_new_SEOBNRE(exe,
             --approx={approx} --inclination=0'
     return CMD
 
+def CMD_new_SEOBNREv4HM(exe,
+                        m1,
+                        m2,
+                        s1z,
+                        s2z,
+                        D,
+                        srate,
+                        f_ini,
+                        approx,
+                        modeL,
+                        modeM):
+    CMD = f'{exe} --m1={m1} --m2={m2} \
+            --spin1z={s1z} --spin2z={s2z} \
+            --distance={D} --sample-rate={srate} \
+            --f-min={f_ini} --mode-only \
+            --approx={approx} --model={modeL} \
+            --modem={modeM} --inclination=0'
+    return CMD
+
 
 # Classifier
 class Generator(object):
@@ -100,13 +119,14 @@ class Generator(object):
         self._verbose = verbose
     
     def _choose_CMD(self):
+        self._HM = False
         for case in switch(self._approx):
             if case('EOBNRv1') or \
                 case('EOBNRv4') or \
                 case('SEOBNRv1') or \
                 case('SEOBNRv2') or \
                 case('SEOBNRv4'):
-                self._CMD = lambda m1, m2, s1z, s2z, D, ecc, srate, f_ini : \
+                self._CMD = lambda m1, m2, s1z, s2z, D, ecc, srate, f_ini, L, M : \
                     CMD_lalsim_inspiral(exe = self._exe,
                                         m1 = m1,
                                         m2 = m2,
@@ -124,7 +144,7 @@ class Generator(object):
                 self._allow_ecc = False
                 break
             if case('SEOBNREv1'):
-                self._CMD = lambda m1, m2, s1z, s2z, D, ecc, srate, f_ini : \
+                self._CMD = lambda m1, m2, s1z, s2z, D, ecc, srate, f_ini, L, M : \
                     CMD_SEOBNREv1(exe = self._exe, 
                                   m1 = m1, 
                                   m2 = m2,
@@ -142,7 +162,7 @@ class Generator(object):
                 self._allow_ecc = True
                 break
             if case('SEOBNREv4'):
-                self._CMD = lambda m1, m2, s1z, s2z, D, ecc, srate, f_ini : \
+                self._CMD = lambda m1, m2, s1z, s2z, D, ecc, srate, f_ini, L, M : \
                     CMD_SEOBNREv4(exe = self._exe,
                                   m1 = m1,
                                   m2 = m2,
@@ -163,7 +183,7 @@ class Generator(object):
                 case('new_SEOBNREv2') or \
                 case('new_SEOBNREv4'):
                 self._approx = self._approx.split('_')[-1]
-                self._CMD = lambda m1, m2, s1z, s2z, D, ecc, srate, f_ini : \
+                self._CMD = lambda m1, m2, s1z, s2z, D, ecc, srate, f_ini, L, M : \
                     CMD_new_SEOBNRE(exe = self._exe,
                                     m1 = m1,
                                     m2 = m2,
@@ -181,6 +201,28 @@ class Generator(object):
                 self._pretreat = _pretreat
                 self._allow_ecc = True
                 break
+            
+            if case('SEOBNREv4HM'):
+                self._CMD = lambda m1, m2, s1z, s2z, D, ecc, srate, f_ini, L, M : \
+                    CMD_new_SEOBNREv4HM(exe = self._exe,
+                                        m1 = m1,
+                                        m2 = m2,
+                                        s1z = s1z,
+                                        s2z = s2z,
+                                        D = D,
+                                        srate = srate,
+                                        f_ini = f_ini,
+                                        approx = self._approx,
+                                        modeL = L,
+                                        modeM = M)
+                def _pretreat(hr, hi, r, M):
+                    hr *= dim_h(r, M)
+                    hi *= dim_h(r, M)
+                    return hr, hi
+                self._pretreat = _pretreat
+                self._allow_ecc = False
+                self._HM = True
+                break
 
             raise ValueError('Unsupported approx: {}'.format(self._approx))
     
@@ -191,6 +233,10 @@ class Generator(object):
     @property
     def approx(self):
         return self._approx
+    
+    @property
+    def HM(self):
+        return self._HM
         
     def __call__(self, 
                  m1, 
@@ -201,6 +247,8 @@ class Generator(object):
                  ecc,
                  srate,
                  f_ini,
+                 L,
+                 M,
                  timeout = 60,
                  jobtag = '_test'):
         EXE = self._CMD(m1 = m1,
@@ -210,7 +258,9 @@ class Generator(object):
                         D = D,
                         ecc = ecc,
                         srate = srate,
-                        f_ini = f_ini )
+                        f_ini = f_ini,
+                        L = L,
+                        M = M)
         cev, ret =  cmd_stdout_cev(EXE, 
                             timeout = timeout,
                             name_out = jobtag)

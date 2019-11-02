@@ -12,6 +12,7 @@ import numpy as np
 from .SXS import SXSh22, save_namecol
 from pathlib import Path
 from optparse import OptionParser
+from .psd import DetectorPSD
 
 
 #-----Parse args-----#
@@ -25,6 +26,7 @@ def parseargs(argv):
     # --prefix: dir for saving
     from .SXS import DEFAULT_TABLE
     from .SXS import DEFAULT_SRCLOC
+    from .SXS import DEFAULT_SRCLOC_ALL
     parser = OptionParser(description='Waveform Comparation With SXS')
     parser.add_option('--executable', type = 'str', default = 'lalsim-inspiral', help = 'Exe command')
     parser.add_option('--jobtag', type = 'str', default = '_test', help = 'Jobtag for the code run')
@@ -38,6 +40,11 @@ def parseargs(argv):
     parser.add_option('--maxecc', type = 'float', default = 0, help = 'If zero, will automatically set ecc search range.')
     parser.add_option('--table', type = 'str', default = str(DEFAULT_TABLE), help = 'Path of SXS table.')
     parser.add_option('--srcloc', type = 'str', default = str(DEFAULT_SRCLOC), help = 'Path of SXS waveform data.')
+    parser.add_option('--srcloc-all', type = 'str', default = str(DEFAULT_SRCLOC_ALL), help = 'Path of SXS waveform data all modes')
+    parser.add_option('--modeL', type = 'int', help = 'mode L for HM')
+    parser.add_option('--modeM', type = 'int', help = 'mode M for HM')
+    parser.add_option('--psd', type = 'str', help = 'Detector psd.')
+    parser.add_option('--flow', type = 'float', default = 0, help = 'Lower frequency cut off for psd.')
     args = parser.parse_args(argv)
     return args
 
@@ -57,6 +64,11 @@ def main(argv = None):
     maxecc = args.maxecc
     table = args.table
     srcloc = args.srcloc
+    srcloc_all = args.srcloc_all
+    psd = DetectorPSD(args.psd, flow = args.flow)
+    
+    modeL = args.modeL
+    modeM = args.modeM
         
     savedir = prefix / approx
     verbose = args.verbose
@@ -82,11 +94,14 @@ def main(argv = None):
             Sprefix.mkdir()
         
         s = SXSh22(SXSnum, f_ini = fini, 
+                   modeL = modeL,
+                   modeM = modeM, 
                    table = table,
                    srcloc = srcloc,
+                   srcloc_all = srcloc_all,
                    verbose = verbose, 
                    ishertz = ishertz)
-        ge = s.construct_generator(approx, exe)
+        ge = s.construct_generator(approx, exe, psd = psd)
         ret = ge.get_overlap(jobtag = jobtag, maxecc = maxecc)
         
 

@@ -132,7 +132,7 @@ def Progress_with_bar(itr,N):
 def Progress(itr,N, remarks = ''):
     pcg_str = '%.2f'%min( 100, float(101*itr/N)) 
     sys.stderr.write('\r')
-    sys.stderr.write(pcg_str+ '%|'+remarks)
+    sys.stderr.write(remarks + '|' + pcg_str+ '%|')
     sys.stderr.flush()
     time.sleep(0.02)
     

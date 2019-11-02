@@ -105,12 +105,8 @@ class ModeBase(object):
     
     @property
     def duration(self):
-        return self._time[-1] - self._time[0]
-    
-    def apply(self, tc, phic):
-        self._time -= tc
-        self._mode *= np.exp(-1.j*phic)
-    
+        return self.time[-1] - self.time[0]
+        
     @property
     def interpolate(self):
         return interp1d_complex(self._time, self._mode)
@@ -176,6 +172,9 @@ class h22base(ModeBase):
     def fftfreq(self):
         return np.fft.fftfreq(len(self._mode), 1./self._srate)
 
+    def apply(self, tc, phic):
+        self._time -= tc
+        self._mode *= np.exp(1.j*phic)
     
     @property
     def srate(self):

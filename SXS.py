@@ -12,10 +12,10 @@ from .Utils import switch, CEV, LOG, WARNING, CEV_parse_value, MESSAGE, plot_com
 from .h22datatype import dim_h, dim_t, h22base, h22_alignment
 from pathlib import Path
 from .generator import Generator, self_adaptivor
-import csv,codecs
-
+import csv,codecs,h5py
 
 DEFAULT_SRCLOC = Path('/Users/drizl/Documents/2018/SEOBNRE/Program_Test/SXS_Data_txt')
+DEFAULT_SRCLOC_ALL = Path('/Users/drizl/Documents/2018/SEOBNRE/Program_Test/SXS_Data')
 DEFAULT_TABLE = Path('/Users/drizl/Documents/2018/SEOBNRE/Program_Test/table_data.json')
 DEFAULT_SXS_PLOT_LINESTYLE = '-'
 DEFAULT_SXS_PLOT_COLOR = 'red'
@@ -33,7 +33,30 @@ def loadSXStxtdata(SXSnum, srcloc):
     filename = srcpath / f'BBH_{SXSnum}.txt'
     t, hr, hi = np.loadtxt(filename)
     return t, hr, hi
-    
+
+def loadSXSdataLM(SXSnum, srcloc, modeL, modeM):
+    srcloc = Path(srcloc)
+    file = srcloc / f'BBH_{SXSnum}.h5'
+    f = h5py.File(file,'r')
+    for key in f.keys():
+        if (key != 'OutermostExtraction.dir'):
+            dir_key = key
+            break
+    time = None
+    hreal = None
+    himag = None
+    modeL = int(modeL)
+    modeM = int(modeM)
+    modekey = f'Y_l{modeL}_m{modeM}.dat'
+    if modekey in f[dir_key]:
+        Data = f[dir_key][modekey][:,:]
+        time = Data[:,0]
+        time -= time[0]
+        hreal = Data[:,1]
+        himag = Data[:,2]
+    f.close()
+    return time, hreal, himag
+
 #-----------------GET WAVEFORM PARAMETERS----------------#    
 def get_SXS_parameters(SXSnum, pmsName, 
                              srcloc = DEFAULT_SRCLOC,
@@ -114,7 +137,7 @@ class SXSObject(object):
         return self._SXSnum
 
 class SXSparameters(SXSObject):
-    def __init__(self, SXSnum, table, f_ini = 0, Mtotal = 16, D = 100, verbose = False, ishertz = False):
+    def __init__(self, SXSnum, table, f_ini = 0, Mtotal = 40, D = 100, verbose = False, ishertz = False):
         if verbose:
             sys.stderr.write(f'{LOG}:Initialize SXSObject...\n')
         super(SXSparameters, self).__init__(SXSnum, table, verbose = verbose)
@@ -161,17 +184,27 @@ class SXSh22(SXSparameters, h22base):
     #              f_ini = 0, srate = 16384, Mtotal = 16, D = 100, verbose = False):
     #     SXSparameters.__new__(cls, SXSnum, table, f_ini, Mtotal, D, verbose = verbose)
     
-    def __init__(self, SXSnum, srcloc = DEFAULT_SRCLOC, table = DEFAULT_TABLE , 
-                 f_ini = 0, srate = 16384, Mtotal = 16, D = 100, verbose = False, ishertz = False):
+    def __init__(self, SXSnum, modeL = None, modeM = None,
+                 srcloc = DEFAULT_SRCLOC, srcloc_all = DEFAULT_SRCLOC_ALL, 
+                 table = DEFAULT_TABLE , 
+                 f_ini = 0, srate = 16384, Mtotal = 40, D = 100, verbose = False, ishertz = False):
         if verbose:
             sys.stderr.write(f'{LOG}:Initialize SXSparameters...\n')
         SXSparameters.__init__(self, SXSnum, table, f_ini, Mtotal, D, verbose = verbose, ishertz = ishertz)
         if verbose:
             sys.stderr.write(f'{LOG}:Initialize SXSparameters...Done\n')
             sys.stderr.write(f'{LOG}:Loading SXS template from srcloc...')
-        t, hr, hi = loadSXStxtdata(SXSnum, srcloc)
+        self._modeL = modeL
+        self._modeM = modeM
+        if modeL is not None and modeM is not None:
+            t, hr, hi = loadSXSdataLM(SXSnum, srcloc_all, modeL, modeM)
+            if t is None:
+                raise ValueError(f'Mode {modeL} {modeM} is not available.')
+        else:
+            t, hr, hi = loadSXStxtdata(SXSnum, srcloc)
         t /= dim_t(Mtotal)
         self._srcloc = srcloc
+        self._srcloc_all = srcloc_all
         if verbose:
             sys.stderr.write('Done\n')
             sys.stderr.write(f'{LOG}:Initialize h22base...\n')
@@ -180,11 +213,17 @@ class SXSh22(SXSparameters, h22base):
             sys.stderr.write(f'{LOG}:Initialize h22base...Done\n')
         self._verbose = verbose
         
-    def construct_generator(self, approx, executable):
-        return SXSCompGenerator(approx, executable, self, verbose = self._verbose)
+    def construct_generator(self, approx, executable, psd = None):
+        return SXSCompGenerator(approx, executable, self, psd = psd,
+                                modeL = self._modeL, modeM = self._modeM, 
+                                verbose = self._verbose)
     
     def copy(self):
-        return SXSh22(self._SXSnum, self._srcloc, self._table, self._f_ini, self._srate, self._Mtotal, self._D)
+        return SXSh22(self._SXSnum, modeL = self._modeL, modeM = self._modeM,
+                      srcloc = self._srcloc, srcloc_all = self._srcloc_all,
+                      table = self._table, f_ini = self._f_ini, 
+                      srate = self._srate, Mtotal = self._Mtotal, D = self._D,
+                      verbose = self._verbose)
     
     @property
     def dim_t(self):
@@ -200,7 +239,7 @@ class SXSh22(SXSparameters, h22base):
         
         
 class SXSCompGenerator(Generator):
-    def __init__(self, approx, executable, sxsh22, verbose = False):
+    def __init__(self, approx, executable, sxsh22, psd = None, modeL = None, modeM = None,verbose = False):
         #print(isinstance(sxsh22, SXSh22))
         if not isinstance(sxsh22, SXSh22):
             raise TypeError('Incorrect input type: {}'.format(type(sxsh22)))
@@ -211,14 +250,34 @@ class SXSCompGenerator(Generator):
             sys.stderr.write(f'{LOG}:Initialize Generator...Done\n')
         self._core = sxsh22
         self._verbose = verbose
-        self._fecc = lambda ecc : self._CMD(m1 = self._core.m1,
-                                            m2 = self._core.m2,
-                                            s1z = self._core.s1z,
-                                            s2z = self._core.s2z,
-                                            D = self._core.D,
-                                            ecc = ecc,
-                                            srate = self._core.srate,
-                                            f_ini = self._core.f_ini)
+        self._modeL = modeL
+        self._modeM = modeM
+        self._psd = psd
+        if self.HM:
+            if self._modeL is None:
+                self._modeL = 2
+            if self._modeM is None:
+                self._modeM = 2
+            self._fecc = lambda ecc : self._CMD(m1 = self._core.m1,
+                                        m2 = self._core.m2,
+                                        s1z = self._core.s1z,
+                                        s2z = self._core.s2z,
+                                        D = self._core.D,
+                                        ecc = ecc,
+                                        srate = self._core.srate,
+                                        f_ini = self._core.f_ini,
+                                        L = self._modeL,
+                                        M = self._modeM)
+
+        else:
+            self._fecc = lambda ecc : self._CMD(m1 = self._core.m1,
+                                                m2 = self._core.m2,
+                                                s1z = self._core.s1z,
+                                                s2z = self._core.s2z,
+                                                D = self._core.D,
+                                                ecc = ecc,
+                                                srate = self._core.srate,
+                                                f_ini = self._core.f_ini)
         
     @property
     def SXS(self):
@@ -252,8 +311,11 @@ class SXSCompGenerator(Generator):
                             ecc = ecc,
                             srate = self._core.srate,
                             f_ini = self._core.f_ini,
+                            L = self._modeL,
+                            M = self._modeM,
                             jobtag = jobtag,
                             timeout = timeout)
+
         if verbose:
             sys.stderr.write(f'{LOG}:Generator runs out, check the results...\n')
         if isinstance(ret, CEV):
@@ -261,7 +323,7 @@ class SXSCompGenerator(Generator):
                 sys.stderr.write(f'{WARNING}:Fail to generate waveform...terminate\n')
             return ret
         if verbose:
-            sys.stderr.write(f'{LOG}:Generation succeed, construct h22 data.\n')
+            sys.stderr.write(f'{LOG}:Generation succeed, construct mode data.\n')
         t, hr, hi = ret[:,0], ret[:,1], ret[:,2]
         if verbose:
             sys.stderr.write(f'{LOG}:Pretreatment.\n')
@@ -290,15 +352,15 @@ class SXSCompGenerator(Generator):
         if verbose is None:
             verbose = self._verbose
         if verbose:
-            sys.stderr.write(f'{LOG}:Checking input h22 status...\n')
+            sys.stderr.write(f'{LOG}:Checking input mode status...\n')
         if isinstance(h22_wf, CEV):
             if verbose:
-                sys.stderr.write(f'{WARNING}:Abnormal h22...\n')
+                sys.stderr.write(f'{WARNING}:Abnormal mode...\n')
             return 0,0,-1,0,h22_wf.value
         SXS = self._core.copy()
         # Check sample rate
         if verbose:
-            sys.stderr.write(f'{LOG}:Align data for comparison...')
+            sys.stderr.write(f'{LOG}:Align data for comparison...\n')
         SXS, h22_wf, tmove = h22_alignment(SXS, h22_wf)
         if verbose:
             sys.stderr.write('Done\n')
@@ -306,11 +368,13 @@ class SXSCompGenerator(Generator):
         fs = SXS.srate
         NFFT = len(SXS)
         df = fs/NFFT
+        freqs = np.abs(np.fft.fftfreq(NFFT, 1./fs))
+        power_vec = self._psd(freqs)
         Stilde = SXS.h22f
         htilde = h22_wf.h22f
-        O11 = np.sum(Stilde * Stilde.conjugate()).real * df
-        O22 = np.sum(htilde * htilde.conjugate()).real * df
-        Ox = Stilde * htilde.conjugate()
+        O11 = np.sum(Stilde * Stilde.conjugate() / power_vec).real * df
+        O22 = np.sum(htilde * htilde.conjugate() / power_vec).real * df
+        Ox = Stilde * htilde.conjugate() / power_vec
         Oxt = np.fft.ifft(Ox) * fs
         Oxt_abs = np.abs(Oxt) / np.sqrt(O11 * O22)
         idx = np.where(Oxt_abs == max(Oxt_abs))[0][0]
@@ -342,7 +406,7 @@ class SXSCompGenerator(Generator):
             sys.stderr.write('Done\n')
             sys.stderr.write(f'{LOG}:Run self-adaptivor...\n')
         return SA.run(maxitr = maxitr, 
-                      verbose = self._verbose, 
+                      verbose = self._verbose,
                       prec_x = prec_x, 
                       prec_y = prec_y)
 
@@ -464,6 +528,7 @@ class CompResults(object):
             sys.stderr.write(f'{LOG}:Saving sa results to {filename}\n')
         data = np.stack([self.tc_out.astype(np.str), 
                          self.phic_out.astype(np.str),
+                         self.ecc_out.astype(np.str),
                          self.FF_out.astype(np.str),
                          self.CEV_STATE_out.name], axis = 1)
         np.savetxt(filename, data, fmt = '%s', **kwargs)
@@ -521,7 +586,7 @@ class CompResults(object):
             fit = self.generator.get_waveform(ecc = self.ecc_fit,
                                               jobtag = self._jobtag,
                                               verbose = False)
-            fit.apply(-self.tc_fit + self.tmove_fit, -self.phic_fit)
+            fit.apply(-self.tc_fit + self.tmove_fit, self.phic_fit)
             self._h22_fit = fit
     @property
     def h22_fit(self):

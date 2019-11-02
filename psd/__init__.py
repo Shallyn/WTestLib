@@ -46,6 +46,9 @@ class DetectorPSD(object):
             if case('advLIGO_fit'):
                 self._psd = PSD_advLIGO_fit
                 break
+            if case('advLIGO_zerodethp'):
+                self._psd = loadPSD_from_file(LOC /"ZERO_DET_high_P.txt", flow)
+                break
             if case('L1'):
                 self._psd = loadPSD_from_file(LOC / 'LIGOLivingston_O3PSD-1241571618-21600.txt', flow, exp = False)
                 break
@@ -70,6 +73,8 @@ def loadPSD_from_file(file, flow = 0, exp = True):
     else:
         valpsd[idxsift] = h[idxsift]
     func = InterpolatedUnivariateSpline(freq, valpsd)
+    if flow < freq[0]:
+        flow = freq[0]
     def funcPSD(freq):
         ret = func(freq)
         if hasattr(freq, '__len__'):

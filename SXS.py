@@ -13,6 +13,7 @@ from .h22datatype import dim_h, dim_t, h22base, h22_alignment
 from pathlib import Path
 from .generator import Generator, self_adaptivor
 import csv,codecs,h5py
+from .psd import DetectorPSD
 
 DEFAULT_SRCLOC = Path('/Users/drizl/Documents/2018/SEOBNRE/Program_Test/SXS_Data_txt')
 DEFAULT_SRCLOC_ALL = Path('/Users/drizl/Documents/2018/SEOBNRE/Program_Test/SXS_Data')
@@ -283,7 +284,27 @@ class SXSCompGenerator(Generator):
     def SXS(self):
         return self._core
         
-        
+    def get_CMD(self, ecc = None):
+        if self._core.CEV_STATE != CEV.NORMAL:
+            sys.stderr.write(f'{WARNING}:Abnormal SXSh22...\n')
+            return self._core.CEV_STATE
+        if ecc is None:
+            ecc = 0
+        if ecc is not None and not self.allow_ecc:
+            sys.stderr.write(f'{WARNING}: parameter ecc is unused.\n')
+        ret = self.call(m1 = self._core.m1,
+                            m2 = self._core.m2,
+                            s1z = self._core.s1z,
+                            s2z = self._core.s2z,
+                            D = self._core.D,
+                            ecc = ecc,
+                            srate = self._core.srate,
+                            f_ini = self._core.f_ini,
+                            L = self._modeL,
+                            M = self._modeM)
+        return ret
+
+    
     def get_waveform(self, ecc = None, 
                      jobtag = 'test',
                      timeout = 60,
@@ -648,6 +669,103 @@ class CompResults(object):
     
     
 #--------Utils-------#
+def get_wf_caller(approx, executable, SXSnum, verbose = False, **kwargs):
+    core = SXSh22(SXSnum, **kwargs)
+    ge = core.construct_generator(approx, executable)
+    return ge
+
+def calculate_overlap(wf_1, wf_2, psd = None, flow = 0, verbose = False):
+    if verbose:
+        sys.stderr.write(f'{LOG}:Checking input mode status...\n')
+    if isinstance(wf_1, CEV) or isinstance(wf_2, CEV):
+        if verbose:
+            sys.stderr.write(f'{WARNING}:Abnormal mode...\n')
+        return -1,0,0,wf_1.value, wf_2.value
+    psdfunc = DetectorPSD(psd, flow)
+    # Check sample rate
+    if verbose:
+        sys.stderr.write(f'{LOG}:Align data for comparison...\n')
+    wf_1, wf_2, tmove = h22_alignment(wf_1, wf_2)
+    if verbose:
+        sys.stderr.write('Done\n')
+        sys.stderr.write(f'{LOG}:Calculating overlap...')
+    fs = wf_1.srate
+    NFFT = len(wf_1)
+    df = fs/NFFT
+    freqs = np.abs(np.fft.fftfreq(NFFT, 1./fs))
+    power_vec = psdfunc(freqs)
+    htilde_1 = wf_1.h22f
+    htilde_2 = wf_2.h22f
+    O11 = np.sum(htilde_1 * htilde_1.conjugate() / power_vec).real * df
+    O22 = np.sum(htilde_2 * htilde_2.conjugate() / power_vec).real * df
+    Ox = htilde_1 * htilde_2.conjugate() / power_vec
+    Oxt = np.fft.ifft(Ox) * fs / np.sqrt(O11 * O22)
+    if verbose:
+        sys.stderr.write('Done\n')
+    return Oxt, tmove, fs, CEV.SUCCESS.value, CEV.SUCCESS.value
+
+def plot_fit(wf_1, wf_2, fname, name1 = 'name1', name2 = 'name2',
+             FIT_linestyle = None, FIT_color = None, 
+             FIT_alpha = None, FIT_linewidth = None,
+             SXS_linestyle = None, SXS_color = None, 
+             SXS_alpha = None, SXS_linewidth = None,
+             **kwargs):
+    
+    Oxt, tmove, fs, _1, _2 = calculate_overlap(wf_1, wf_2)
+    Oxt_abs = np.abs(Oxt)
+    idx = np.where(Oxt_abs == max(Oxt_abs))[0][0]
+    lth = len(Oxt_abs)
+    if idx > lth / 2:
+        tc = (idx - lth) / fs
+    else:
+        tc = idx / fs
+    phic = np.angle(Oxt[idx])
+    wf_2.apply(-tc + tmove, phic)
+    if _1 != CEV.SUCCESS.value or _2 != CEV.SUCCESS.value:
+        sys.stderr.write(f'{WARNING}:State is not success, skip waveform plotting.\n')
+    else:
+        filename = fname
+
+        if FIT_linestyle is None:
+            FIT_linestyle = DEFAULT_FIT_PLOT_LINESTYLE
+        if FIT_color is None:
+            FIT_color = DEFAULT_FIT_PLOT_COLOR
+        if FIT_alpha is None:
+            FIT_alpha = DEFAULT_FIT_ALPHA
+        if FIT_linewidth is None:
+            FIT_linewidth = DEFAULT_FIT_LINEWIDTH
+
+        if SXS_linestyle is None:
+            SXS_linestyle = DEFAULT_SXS_PLOT_LINESTYLE
+        if SXS_color is None:
+            SXS_color = DEFAULT_SXS_PLOT_COLOR
+        if SXS_alpha is None:
+            SXS_alpha = DEFAULT_SXS_ALPHA
+        if SXS_linewidth is None:
+            SXS_linewidth = DEFAULT_SXS_LINEWIDTH
+
+
+        SXSplot = dict()
+        FITplot = dict()
+        SXSplot['x'] = wf_1.time
+        SXSplot['y'] = wf_1.real
+        SXSplot['name'] = name1
+        SXSplot['linestyle'] = SXS_linestyle
+        SXSplot['color'] = SXS_color
+        SXSplot['alpha'] = SXS_alpha
+        SXSplot['linewidth'] = SXS_linewidth
+        
+        FITplot['x'] = wf_2.time
+        FITplot['y'] = wf_2.real
+        FITplot['name'] = name2
+        FITplot['linestyle'] = FIT_linestyle
+        FITplot['color'] = FIT_color
+        FITplot['alpha'] = FIT_alpha
+        FITplot['linewidth'] = FIT_linewidth
+
+        
+        plot_compare_attach_any([SXSplot, FITplot], savefig = filename, tstart=0, **kwargs)
+        return -tc + tmove, phic
 
 def parse_ecc(ecc, maxecc):
     if type(ecc) is str:

@@ -234,6 +234,30 @@ class Generator(object):
     def approx(self):
         return self._approx
     
+    
+    def call(self, 
+                 m1, 
+                 m2,
+                 s1z, 
+                 s2z,
+                 D,
+                 ecc,
+                 srate,
+                 f_ini,
+                 L,
+                 M):
+        EXE = self._CMD(m1 = m1,
+                        m2 = m2,
+                        s1z = s1z,
+                        s2z = s2z,
+                        D = D,
+                        ecc = ecc,
+                        srate = srate,
+                        f_ini = f_ini,
+                        L = L,
+                        M = M)
+        return EXE
+    
     @property
     def HM(self):
         return self._HM

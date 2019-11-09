@@ -30,6 +30,9 @@ h_0_SI = 0.678 # Hubble Constant
 def dim_t(M):
     return c_SI**3 / ( M * M_Sun_SI * G_SI)
 
+def get_Mtotal(fdimless, fmin):
+    return fdimless * pow(c_SI, 3) / (G_SI * M_Sun_SI * fmin)
+
 def dim_h(r, M):
     return r * pc_SI * 1e6 * c_SI**2 / ( M * M_Sun_SI * G_SI )
 

@@ -10,6 +10,7 @@ from . import Utils
 from . import SXS
 from . import generator
 from . import h22datatype
+from . import psd
 
-__all__ = ['Utils', 'SXS', 'generator', 'h22datatype']
+__all__ = ['Utils', 'SXS', 'generator', 'h22datatype', 'psd']
 

@@ -22,6 +22,7 @@ def parseargs(argv):
     
     parser = OptionParser(description='Waveform Comparation With SXS')
     parser.add_option('--exe', type = 'str', default = DEFAULT_SEOBNREv1.name, help = 'Exe command')
+    parser.add_option('--approx', type = 'str', default = 'SEOBNREv1', help = 'approx')
     parser.add_option('--jobtag', type = 'str', help = 'Jobtag for the code run')
     parser.add_option('--prefix', type = 'str', default = '.', help = 'dir for results saving.')
     parser.add_option('--verbose', action = 'store_true', help = 'If added, will print verbose message.')

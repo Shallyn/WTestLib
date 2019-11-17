@@ -117,9 +117,10 @@ def main(argv = None):
     
     jobtag = args.jobtag
     if jobtag is None:
-        ttag = int(pytime.time() % 10000)
-        rdtag =int(np.random.uniform(0,1)*pytime.time())
-        jobtag = f'_job_{ttag}_{rdtag}.job'
+        jobtag = '_job'
+    ttag = int(pytime.time() % 10000)
+    rdtag =int(np.random.uniform(0,1)*pytime.time())
+    jobtag = f'_job_{ttag}_{rdtag}.job'
     prefix = Path(args.prefix)
     if not prefix.exists():
         prefix.mkdir(parents=True)

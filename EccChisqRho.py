@@ -34,8 +34,8 @@ def parseargs(argv):
     parser.add_option('--mratio', type = 'float', action = 'append', default = [], help = 'Mass ratio')
     parser.add_option('--spin1z', type = 'float', action = 'append', default = [], help = 'Spin1z')
     parser.add_option('--spin2z', type = 'float', action = 'append', default = [], help = 'Spin2z')
-    parser.add_option('--fini', type = 'float', default = 0.002, help = 'Initial orbital frequency[M]')
-    parser.add_option('--fmin', type = 'float', default = 10, help = 'Initial orbital frequency[Hz]')
+    parser.add_option('--f-ini', type = 'float', default = 0.002, help = 'Initial orbital frequency[M]')
+    parser.add_option('--f-min', type = 'float', default = 10, help = 'Initial orbital frequency[Hz]')
 
     args, _ = parser.parse_args(argv)
     return args

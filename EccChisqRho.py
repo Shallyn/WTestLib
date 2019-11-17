@@ -149,7 +149,7 @@ def main(argv = None):
             else:
                 Eps = 1 - np.abs(FF).max()
             add_csv(fout, data = [[q, s1z, s2z, ecc, Eps]])
-            sys.stderr.write('Error: m1, m2, s1z, s2z, ecc, eps = %.3f, %.3f, %.3f, %.3f, %.3f, %.3e\n'%(m1, m2, s1z, s2z, ecc, Eps))
+            sys.stderr.write('Results: m1, m2, s1z, s2z, ecc, eps = %.3f, %.3f, %.3f, %.3f, %.3f, %.3e\n'%(m1, m2, s1z, s2z, ecc, Eps))
 
 
 

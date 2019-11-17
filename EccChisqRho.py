@@ -78,7 +78,6 @@ class WfGenerator(Generator):
         else:
             return cev
 
-class Template()
 
 #----------------------------------#
 #               Main               #

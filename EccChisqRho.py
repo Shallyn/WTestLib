@@ -88,6 +88,7 @@ class WfGenerator(Generator):
 from itertools import product
 from .SXS import save_namecol, add_csv, calculate_overlap
 import time as pytime
+from pathlib import Path
 def main(argv = None):
     args = parseargs(argv)
     srate = args.srate
@@ -121,7 +122,7 @@ def main(argv = None):
         ttag = int(pytime.time() % 10000)
         rdtag =int(np.random.uniform(0,1)*pytime.time())
         jobtag = f'_job_{ttag}_{rdtag}.job'
-    prefix = args.prefix
+    prefix = Path(args.prefix)
     if not prefix.exists():
         prefix.mkdir(parents=True)
         

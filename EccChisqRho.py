@@ -23,7 +23,7 @@ def parseargs(argv):
     parser = OptionParser(description='Waveform Comparation With SXS')
     parser.add_option('--exe', type = 'str', default = DEFAULT_SEOBNREv1.name, help = 'Exe command')
     parser.add_option('--approx', type = 'str', default = 'SEOBNREv1', help = 'approx')
-    parser.add_option('--jobtag', type = 'str', help = 'Jobtag for the code run')
+    parser.add_option('--jobtag', type = 'str', default = 'job', help = 'Jobtag for the code run')
     parser.add_option('--prefix', type = 'str', default = '.', help = 'dir for results saving.')
     parser.add_option('--verbose', action = 'store_true', help = 'If added, will print verbose message.')
     parser.add_option('--psd', type = 'str', help = 'Detector psd.')
@@ -116,11 +116,9 @@ def main(argv = None):
     psd = args.psd
     
     jobtag = args.jobtag
-    if jobtag is None:
-        jobtag = 'job'
     ttag = int(pytime.time() % 10000)
     rdtag =int(np.random.uniform(0,1)*pytime.time())
-    jobtag = f'_{job}_{ttag}_{rdtag}.job'
+    jobtag = f'_{jobtag}_{ttag}_{rdtag}.job'
     prefix = Path(args.prefix)
     if not prefix.exists():
         prefix.mkdir(parents=True)

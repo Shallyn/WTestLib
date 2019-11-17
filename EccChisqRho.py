@@ -132,15 +132,15 @@ def main(argv = None):
     for q, s1z, s2z in product(q_ls, s1z_ls, s2z_ls):
         m2 = Mtotal / (q+1)
         m1 = Mtotal - m2
-        wfC = Gfunc(m1, m2, s1z, s2z, D, 0, srate, fmin, 2, 2, jobtag = jobtag)
+        wfC = Gfunc(m1, m2, s1z, s2z, D, 0, srate, flcut, 2, 2, jobtag = jobtag)
         if isinstance(wfC, CEV):
-            sys.stderr.write(f'Error: m1, m2, s1z, s2z = {m1}, {m2}, {s1z}, {s2z}\n')
+            sys.stderr.write('Error: m1, m2, s1z, s2z = %.3f, %.3f, %.3f, %.3f\n'%(m1, m2, s1z, s2z))
             continue
         wfC = h22base(wfC[0], wfC[1], wfC[2], srate)
         for ecc in ecc_ls:
-            wfE = Gfunc(m1, m2, s1z, s2z, D, ecc, srate, fmin, 2, 2, jobtag = jobtag)
+            wfE = Gfunc(m1, m2, s1z, s2z, D, ecc, srate, flcut, 2, 2, jobtag = jobtag)
             if isinstance(wfE, CEV):
-                sys.stderr.write(f'Error: m1, m2, s1z, s2z, ecc = {m1}, {m2}, {s1z}, {s2z}, {ecc}\n')
+                sys.stderr.write('Error: m1, m2, s1z, s2z, ecc = %.3f, %.3f, %.3f, %.3f, %.3f\n'%(m1, m2, s1z, s2z, ecc))
                 continue
             wfE = h22base(wfE[0], wfE[1], wfE[2], srate)
             FF, tmove, fs,  _1, _2 = calculate_overlap(wfC, wfE, psd = psd)
@@ -149,7 +149,7 @@ def main(argv = None):
             else:
                 Eps = 1 - np.abs(FF).max()
             add_csv(fout, data = [[q, s1z, s2z, ecc, Eps]])
-            sys.stderr.write(f'Results: m1, m2, s1z, s2z, ecc, eps = {m1}, {m2}, {s1z}, {s2z}, {ecc}, {Eps}\n')
+            sys.stderr.write('Error: m1, m2, s1z, s2z, ecc, eps = %.3f, %.3f, %.3f, %.3f, %.3f, %.3e\n'%(m1, m2, s1z, s2z, ecc, Eps))
 
 
 

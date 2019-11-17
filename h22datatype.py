@@ -202,12 +202,13 @@ class h22base(ModeBase):
 def h22_alignment(wfA, wfB):
     fs_A = wfA.srate
     fs_B = wfB.srate
-    if fs_A > fs_B:
-        wfA.resample(fs_B)
-        fs = fs_B
-    else:
-        wfB.resample(fs_A)
-        fs = fs_A
+    if fs_A != fs_B
+        if fs_A > fs_B:
+            wfA.resample(fs_B)
+            fs = fs_B
+        else:
+            wfB.resample(fs_A)
+            fs = fs_A
     peak_A = wfA.argpeak
     peak_B = wfB.argpeak           
 

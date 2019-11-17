@@ -233,7 +233,10 @@ class Generator(object):
     @property
     def approx(self):
         return self._approx
-    
+
+    @property
+    def pretreat(self):
+        return self._pretreat
     
     def call(self, 
                  m1, 

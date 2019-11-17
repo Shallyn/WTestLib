@@ -96,7 +96,7 @@ def main(argv = None):
     Gfunc = WfGenerator(approx, exe)
     
     flcut = args.f_min
-    fini = args._ini
+    fini = args.f_ini
     D = 100
     Mtotal = get_Mtotal(fini, flcut)
     

@@ -147,7 +147,7 @@ def main(argv = None):
             else:
                 Eps = 1 - np.abs(FF).max()
             add_csv(fout, data = [[q, s1z, s2z, ecc, Eps]])
-
+            sys.stderr.write(f'Results: m1, m2, s1z, s2z, ecc, eps = {m1}, {m2}, {s1z}, {s2z}, {ecc}, {Eps}\n')
 
 
 

@@ -26,8 +26,6 @@ def parseargs(argv):
     parser.add_option('--jobtag', type = 'str', help = 'Jobtag for the code run')
     parser.add_option('--prefix', type = 'str', default = '.', help = 'dir for results saving.')
     parser.add_option('--verbose', action = 'store_true', help = 'If added, will print verbose message.')
-    parser.add_option('--table', type = 'str', default = str(DEFAULT_TABLE), help = 'Path of SXS table.')
-    parser.add_option('--srcloc', type = 'str', default = str(DEFAULT_SRCLOC), help = 'Path of SXS waveform data.')
     parser.add_option('--psd', type = 'str', help = 'Detector psd.')
     parser.add_option('--srate', type = 'float', default = 16384, help = 'Sample rate')
 
@@ -80,6 +78,7 @@ class WfGenerator(Generator):
         else:
             return cev
 
+class Template()
 
 #----------------------------------#
 #               Main               #
@@ -127,7 +126,8 @@ def main(argv = None):
         prefix.mkdir(parents=True)
         
     fout = prefix / f'results_{psd}.csv'
-    save_namecol(fout, data = [['#q', '#s1z','#s2z','#ecc', '#1-FF']])
+    if not fout.exists():
+        save_namecol(fout, data = [['#q', '#s1z','#s2z','#ecc', '#1-FF']])
     
     for q, s1z, s2z in product(q_ls, s1z_ls, s2z_ls):
         m2 = Mtotal / (q+1)

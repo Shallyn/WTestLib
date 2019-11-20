@@ -35,6 +35,7 @@ def parseargs(argv):
     parser.add_option('--f-ini', type = 'float', default = 0.002, help = 'Initial orbital frequency[M]')
     parser.add_option('--f-min', type = 'float', default = 10, help = 'Initial orbital frequency[Hz]')
     parser.add_option('--nsample', type = 'int', default = 10000, help = 'Number for sample')
+    parser.add_option('--seed', type = 'int', help = 'Seed for random generator')
 
     args, _ = parser.parse_args(argv)
     return args
@@ -111,10 +112,12 @@ def main(argv = None):
             [(0.05 * i + 0.36) for i in range(4)]
     
     psd = args.psd
-    
+    seed = args.seed
     jobtag = args.jobtag
     ttag = int(pytime.time() % 10000)
     rdtag =int(np.random.uniform(0,1)*pytime.time())
+    if seed:
+        np.random.seed(seed + rdtag)
     jobtag = f'_{jobtag}_{ttag}_{rdtag}.job'
     prefix = Path(args.prefix)
     if not prefix.exists():

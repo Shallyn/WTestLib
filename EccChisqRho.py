@@ -29,11 +29,12 @@ def parseargs(argv):
     parser.add_option('--psd', type = 'str', help = 'Detector psd.')
     parser.add_option('--srate', type = 'float', default = 16384, help = 'Sample rate')
 
-    parser.add_option('--mratio', type = 'float', action = 'append', default = [], help = 'Mass ratio')
-    parser.add_option('--spin1z', type = 'float', action = 'append', default = [], help = 'Spin1z')
-    parser.add_option('--spin2z', type = 'float', action = 'append', default = [], help = 'Spin2z')
+    parser.add_option('--max-q', type = 'float', action = 'append', default = 5, help = 'Mass ratio')
+    parser.add_option('--max-s1z', type = 'float', action = 'append', default = 0.5, help = 'Spin1z')
+    parser.add_option('--max-s2z', type = 'float', action = 'append', default = 0.5, help = 'Spin2z')
     parser.add_option('--f-ini', type = 'float', default = 0.002, help = 'Initial orbital frequency[M]')
     parser.add_option('--f-min', type = 'float', default = 10, help = 'Initial orbital frequency[Hz]')
+    parser.add_option('--nsample', type = 'int', default = 10000, help = 'Number for sample')
 
     args, _ = parser.parse_args(argv)
     return args
@@ -99,15 +100,11 @@ def main(argv = None):
     D = 100
     Mtotal = get_Mtotal(fini, flcut)
     
-    q_ls = args.mratio
-    if len(q_ls) == 0:
-        q_ls = [1.]
-    s1z_ls = args.spin1z
-    if len(s1z_ls) == 0:
-        s1z_ls = [0.]
-    s2z_ls = args.spin2z
-    if len(s2z_ls) == 0:
-        s2z_ls = [0.]
+    N = args.nsample
+
+    q_max = args.max_q
+    s1z_max = args.max_s1z
+    s2z_max = args.max_s2z
     ecc_ls = [0.01*i for i in range(10)] + \
             [(0.02 * i + 0.1) for i in range(5)] + \
             [(0.04 * i + 0.2) for i in range(5)] + \
@@ -127,7 +124,10 @@ def main(argv = None):
     if not fout.exists():
         save_namecol(fout, data = [['#q', '#s1z','#s2z','#ecc', '#1-FF']])
     
-    for q, s1z, s2z in product(q_ls, s1z_ls, s2z_ls):
+    for i in range(N):
+        q = np.random.uniform(1, q_max)
+        s1z = np.random.uniform(-s1z_max, s1z_max)
+        s2z = np.random.uniform(-s2z_max, s2z_max)
         m2 = Mtotal / (q+1)
         m1 = Mtotal - m2
         wfC = Gfunc(m1, m2, s1z, s2z, D, 0, srate, flcut, 2, 2, jobtag = jobtag)

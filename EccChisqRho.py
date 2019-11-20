@@ -29,9 +29,9 @@ def parseargs(argv):
     parser.add_option('--psd', type = 'str', help = 'Detector psd.')
     parser.add_option('--srate', type = 'float', default = 16384, help = 'Sample rate')
 
-    parser.add_option('--max-q', type = 'float', action = 'append', default = 5, help = 'Mass ratio')
-    parser.add_option('--max-s1z', type = 'float', action = 'append', default = 0.5, help = 'Spin1z')
-    parser.add_option('--max-s2z', type = 'float', action = 'append', default = 0.5, help = 'Spin2z')
+    parser.add_option('--max-q', type = 'float', default = 5, help = 'Mass ratio')
+    parser.add_option('--max-s1z', type = 'float', default = 0.5, help = 'Spin1z')
+    parser.add_option('--max-s2z', type = 'float', default = 0.5, help = 'Spin2z')
     parser.add_option('--f-ini', type = 'float', default = 0.002, help = 'Initial orbital frequency[M]')
     parser.add_option('--f-min', type = 'float', default = 10, help = 'Initial orbital frequency[Hz]')
     parser.add_option('--nsample', type = 'int', default = 10000, help = 'Number for sample')

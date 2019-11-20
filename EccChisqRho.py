@@ -120,7 +120,7 @@ def main(argv = None):
     if not prefix.exists():
         prefix.mkdir(parents=True)
         
-    fout = prefix / f'results_{psd}_{jobtag}.csv'
+    fout = prefix / f'results_{psd}.csv'
     if not fout.exists():
         save_namecol(fout, data = [['#q', '#s1z','#s2z','#ecc', '#1-FF']])
     

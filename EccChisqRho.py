@@ -117,7 +117,8 @@ def main(argv = None):
     ttag = int(pytime.time() % 10000)
     rdtag =int(np.random.uniform(0,1)*pytime.time())
     if seed:
-        np.random.seed(seed + rdtag)
+        seedrd = pytime.time() % 100
+        np.random.seed(seed + seedrd)
     jobtag = f'_{jobtag}_{ttag}_{rdtag}.job'
     prefix = Path(args.prefix)
     if not prefix.exists():

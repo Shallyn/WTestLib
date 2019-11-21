@@ -32,6 +32,7 @@ def parseargs(argv):
     parser.add_option('--max-q', type = 'float', default = 5, help = 'Mass ratio')
     parser.add_option('--max-s1z', type = 'float', default = 0.5, help = 'Spin1z')
     parser.add_option('--max-s2z', type = 'float', default = 0.5, help = 'Spin2z')
+    parser.add_option('--randomecc', action = 'store_true')
     parser.add_option('--f-ini', type = 'float', default = 0.002, help = 'Initial orbital frequency[M]')
     parser.add_option('--f-min', type = 'float', default = 10, help = 'Initial orbital frequency[Hz]')
     parser.add_option('--nsample', type = 'int', default = 10000, help = 'Number for sample')
@@ -106,11 +107,9 @@ def main(argv = None):
     q_max = args.max_q
     s1z_max = args.max_s1z
     s2z_max = args.max_s2z
-    ecc_ls = [0.01*i for i in range(10)] + \
-            [(0.02 * i + 0.1) for i in range(5)] + \
-            [(0.04 * i + 0.2) for i in range(5)] + \
-            [(0.05 * i + 0.36) for i in range(4)]
-    
+
+    randomecc = args.randomecc
+
     psd = args.psd
     seed = args.seed
     jobtag = args.jobtag
@@ -139,6 +138,15 @@ def main(argv = None):
             sys.stderr.write('Error: m1, m2, s1z, s2z = %.3f, %.3f, %.3f, %.3f\n'%(m1, m2, s1z, s2z))
             continue
         wfC = h22base(wfC[0], wfC[1], wfC[2], srate)
+        if randomecc:
+            ecc_ls = [0.01*i for i in range(10)] + \
+                    [(0.02 * i + 0.1) for i in range(5)] + \
+                    [(0.04 * i + 0.2) for i in range(5)] + \
+                    [(0.05 * i + 0.36) for i in range(4)]
+        else:
+            ecc_ls = np.abs(0.2*np.random.randn(25))
+            ecc_ls = ecc_ls[ecc_ls<0.5]
+
         for ecc in ecc_ls:
             wfE = Gfunc(m1, m2, s1z, s2z, D, ecc, srate, flcut, 2, 2, jobtag = jobtag)
             if isinstance(wfE, CEV):

@@ -9,6 +9,7 @@ Created on Fri Jun 21 10:46:47 2019
 import numpy as np
 from scipy.interpolate import interp1d
 from .Utils import interp1d_complex, LOG, WARNING
+import matplotlib.pyplot as plt
 import sys
 
 #-----Constants-----#
@@ -197,7 +198,12 @@ class h22base(ModeBase):
         data = np.stack([self.time, self.real, self.imag], axis = 1)
         np.savetxt(fname, data, **kwargs)
 
-
+    def plot(self, fname = 'save.png'):
+        plt.figure(figsize = (14,5))
+        plt.title('waveform')
+        plt.plot(self.time, self.real)
+        plt.savefig(fname, dpi = 200)
+        plt.close()
 
 def h22_alignment(wfA, wfB):
     fs_A = wfA.srate

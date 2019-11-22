@@ -410,7 +410,7 @@ class SXSCompGenerator(Generator):
         return tc, phic, Oxt_abs[idx], tmove, CEV.SUCCESS.value
     
     def __core_scan_ecc_overlap(self, estep = 0.02, maxitr = None, verbose = False,
-                                prec_x = 1e-6, prec_y = 1e-6, jobtag = 'test', maxecc = 0):
+                                prec_x = 1e-6, prec_y = 1e-6, jobtag = 'test', maxecc = 0, timeout = 60):
         # Parse ecc
         if self._verbose:
             sys.stderr.write(f'{LOG}:Parsing ecc...')
@@ -421,7 +421,7 @@ class SXSCompGenerator(Generator):
         if ecc_range[1] - ecc_range[0] < estep * 5:
             estep = (ecc_range[1] - ecc_range[0]) / 5
         def ecc_wf(ecc):
-            h22_wf = self.get_waveform(ecc = ecc, verbose = False, jobtag = jobtag)
+            h22_wf = self.get_waveform(ecc = ecc, verbose = False, jobtag = jobtag, timeout = timeout)
             ret = self.__core_calculate_overlap(h22_wf, verbose = False)
             return ret
         SA = self_adaptivor(ecc_wf, ecc_range, estep, outindex = 2)

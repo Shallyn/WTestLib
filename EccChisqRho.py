@@ -138,7 +138,7 @@ def main(argv = None):
             sys.stderr.write('Error: m1, m2, s1z, s2z = %.3f, %.3f, %.3f, %.3f\n'%(m1, m2, s1z, s2z))
             continue
         wfC = h22base(wfC[0], wfC[1], wfC[2], srate)
-        if randomecc:
+        if not randomecc:
             ecc_ls = [0.01*i for i in range(10)] + \
                     [(0.02 * i + 0.1) for i in range(5)] + \
                     [(0.04 * i + 0.2) for i in range(5)] + \

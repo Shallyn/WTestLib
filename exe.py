@@ -45,6 +45,7 @@ def parseargs(argv):
     parser.add_option('--modeM', type = 'int', help = 'mode M for HM')
     parser.add_option('--psd', type = 'str', help = 'Detector psd.')
     parser.add_option('--flow', type = 'float', default = 0, help = 'Lower frequency cut off for psd.')
+    parser.add_option('--timeout', type = 'int', default = 60, help = 'Time limit for waveform generation')
     args = parser.parse_args(argv)
     return args
 
@@ -66,6 +67,7 @@ def main(argv = None):
     srcloc = args.srcloc
     srcloc_all = args.srcloc_all
     psd = DetectorPSD(args.psd, flow = args.flow)
+    timeout = args.timeout
     
     modeL = args.modeL
     modeM = args.modeM
@@ -102,7 +104,7 @@ def main(argv = None):
                    verbose = verbose, 
                    ishertz = ishertz)
         ge = s.construct_generator(approx, exe, psd = psd)
-        ret = ge.get_overlap(jobtag = jobtag, maxecc = maxecc)
+        ret = ge.get_overlap(jobtag = jobtag, maxecc = maxecc, timeout = timeout)
         
 
         if isplot:

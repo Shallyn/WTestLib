@@ -608,7 +608,8 @@ class CompResults(object):
             self._errmsg = f'{self.generator.SXS.SXSnum}:{self.generator.approx}:Success'
             fit = self.generator.get_waveform(ecc = self.ecc_fit,
                                               jobtag = self._jobtag,
-                                              verbose = False)
+                                              verbose = False,
+                                              timeout = 86400)
             fit.apply(-self.tc_fit + self.tmove_fit, self.phic_fit)
             self._h22_fit = fit
     @property

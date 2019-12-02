@@ -187,7 +187,8 @@ def plot_compare_attach_any(LIST,
                             figsize=(18, 6),
                             savefig = 'savefig.jpg',
                             Nlth_end = 8,
-                            savedpi = 200):
+                            savedpi = 200,
+                            transparent = False):
     # LIST [wfdict_1, wfdict_2, ...]
     # wfdict: 'name'
     #         'x'
@@ -278,7 +279,7 @@ def plot_compare_attach_any(LIST,
     ax2.set_ylim(rg_h)
     ax2.set_yticks([])
     if savefig != False:
-        plt.savefig(savefig, dpi = savedpi)
+        plt.savefig(savefig, transparent = transparent, dpi = savedpi)
 
 def plot_marker(x, y, 
                 figsize = None,

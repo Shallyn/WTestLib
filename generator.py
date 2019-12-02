@@ -484,8 +484,8 @@ class self_adaptivor(object):
                 new_diff = diff_l
             else:
                 new_diff = (diff_l + diff_r) / 2
-        xmin = xlist[max(0,idx_ymax - 2)]
-        xmax = xlist[min(lmax,idx_ymax + 2)]
+        xmin = xlist[max(0,idx_ymax - 3)]
+        xmax = xlist[min(lmax,idx_ymax + 3)]
         dx = dx / 5
         return xmin, xmax, dx, new_diff
 

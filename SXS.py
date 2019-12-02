@@ -150,6 +150,15 @@ class SXSparameters(SXSObject):
         self._ishertz = ishertz
     
     @property
+    def ecc_float(self):
+        try:
+            ecc = float(self.ecc)
+        except:
+            ecc = 0
+        return ecc
+
+
+    @property
     def D(self):
         return self._D
     
@@ -225,6 +234,9 @@ class SXSh22(SXSparameters, h22base):
                       table = self._table, f_ini = self._f_ini, 
                       srate = self._srate, Mtotal = self._Mtotal, D = self._D,
                       verbose = False)
+        
+    def get_h22(self):
+        return h22base(self.time, self.real, self.imag, self.srate)
     
     @property
     def dim_t(self):

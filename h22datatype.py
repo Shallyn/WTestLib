@@ -34,6 +34,9 @@ def dim_t(M):
 def get_Mtotal(fdimless, fmin):
     return fdimless * pow(c_SI, 3) / (G_SI * M_Sun_SI * fmin)
 
+def get_fmin(fdimless, Mtotal):
+    return fdimless * pow(c_SI, 3) / (G_SI * M_Sun_SI * Mtotal)
+
 def dim_h(r, M):
     return r * pc_SI * 1e6 * c_SI**2 / ( M * M_Sun_SI * G_SI )
 

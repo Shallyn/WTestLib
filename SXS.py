@@ -176,7 +176,7 @@ class SXSparameters(SXSObject):
     
     @property
     def f_ini(self):
-        if self._f_ini == 0:
+        if self._f_ini <= 0:
             return self.Sf_ini * dim_t(self._Mtotal)
         else:
             if self._ishertz:

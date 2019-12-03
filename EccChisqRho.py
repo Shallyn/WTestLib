@@ -35,6 +35,7 @@ def parseargs(argv):
     parser.add_option('--randomecc', action = 'store_true')
     parser.add_option('--f-ini', type = 'float', default = 0.002, help = 'Initial orbital frequency[M]')
     parser.add_option('--f-min', type = 'float', default = 10, help = 'Initial orbital frequency[Hz]')
+    parser.add_option('--Mtotal', type = 'float', default = 20, help = 'Total system mass[M_Sun]')
     parser.add_option('--nsample', type = 'int', default = 10000, help = 'Number for sample')
     parser.add_option('--seed', type = 'int', help = 'Seed for random generator')
 
@@ -99,8 +100,12 @@ def main(argv = None):
     
     flcut = args.f_min
     fini = args.f_ini
+    Mtotal = args.Mtotal
     D = 100
-    Mtotal = get_Mtotal(fini, flcut)
+    if Mtotal < 0
+        Mtotal = get_Mtotal(fini, flcut)
+    else:
+        fini = get_fini_dimless(flcut, Mtotal)
     
     N = args.nsample
 

@@ -102,7 +102,7 @@ def main(argv = None):
     fini = args.f_ini
     Mtotal = args.Mtotal
     D = 100
-    if Mtotal < 0
+    if Mtotal < 0:
         Mtotal = get_Mtotal(fini, flcut)
     else:
         fini = get_fini_dimless(flcut, Mtotal)

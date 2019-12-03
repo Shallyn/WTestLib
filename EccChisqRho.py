@@ -9,7 +9,7 @@ Created on Sun Nov 17 10:52:52 2019
 
 import numpy as np
 from optparse import OptionParser
-from .h22datatype import h22base, get_Mtotal, h22_alignment
+from .h22datatype import h22base, get_Mtotal, h22_alignment, get_fini_dimless
 from .generator import Generator
 from .Utils import CEV, cmd_stdout_cev
 import sys

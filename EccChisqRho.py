@@ -39,6 +39,7 @@ def parseargs(argv):
     parser.add_option('--nsample', type = 'int', default = 10000, help = 'Number for sample')
     parser.add_option('--seed', type = 'int', help = 'Seed for random generator')
 
+    parser.add_option('--timeout', type = 'int', default = 60, help = 'Used for waveform generation')
     args, _ = parser.parse_args(argv)
     return args
 
@@ -101,6 +102,7 @@ def main(argv = None):
     flcut = args.f_min
     fini = args.f_ini
     Mtotal = args.Mtotal
+    timeout = args.timeout
     D = 100
     if Mtotal < 0:
         Mtotal = get_Mtotal(fini, flcut)
@@ -138,7 +140,7 @@ def main(argv = None):
         s2z = np.random.uniform(-s2z_max, s2z_max)
         m2 = Mtotal / (q+1)
         m1 = Mtotal - m2
-        wfC = Gfunc(m1, m2, s1z, s2z, D, 0, srate, flcut, 2, 2, jobtag = jobtag)
+        wfC = Gfunc(m1, m2, s1z, s2z, D, 0, srate, flcut, 2, 2, jobtag = jobtag, timeout = timeout)
         if isinstance(wfC, CEV):
             sys.stderr.write('Error: m1, m2, s1z, s2z = %.3f, %.3f, %.3f, %.3f\n'%(m1, m2, s1z, s2z))
             continue
@@ -153,7 +155,7 @@ def main(argv = None):
             ecc_ls = ecc_ls[ecc_ls<0.5]
 
         for ecc in ecc_ls:
-            wfE = Gfunc(m1, m2, s1z, s2z, D, ecc, srate, flcut, 2, 2, jobtag = jobtag)
+            wfE = Gfunc(m1, m2, s1z, s2z, D, ecc, srate, flcut, 2, 2, jobtag = jobtag, timeout = timeout)
             if isinstance(wfE, CEV):
                 sys.stderr.write('Error: m1, m2, s1z, s2z, ecc = %.3f, %.3f, %.3f, %.3f, %.3f\n'%(m1, m2, s1z, s2z, ecc))
                 continue

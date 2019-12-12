@@ -32,8 +32,8 @@ DEFAULT_FIT_LINEWIDTH = 1.0
 def loadSXStxtdata(SXSnum, srcloc):
     srcpath = Path(srcloc)
     filename = srcpath / f'BBH_{SXSnum}.txt'
-    t, hr, hi = np.loadtxt(filename)
-    return t, hr, hi
+    data = np.loadtxt(filename)
+    return data[:,0], data[:,1], data[:,2]
 
 def loadSXSdataLM(SXSnum, srcloc, modeL, modeM):
     srcloc = Path(srcloc)

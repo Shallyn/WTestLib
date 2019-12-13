@@ -266,31 +266,21 @@ class SXSCompGenerator(Generator):
         self._modeL = modeL
         self._modeM = modeM
         self._psd = psd
-        if self.HM:
-            if self._modeL is None:
-                self._modeL = 2
-            if self._modeM is None:
-                self._modeM = 2
-            self._fecc = lambda ecc : self._CMD(m1 = self._core.m1,
-                                        m2 = self._core.m2,
-                                        s1z = self._core.s1z,
-                                        s2z = self._core.s2z,
-                                        D = self._core.D,
-                                        ecc = ecc,
-                                        srate = self._core.srate,
-                                        f_ini = self._core.f_ini,
-                                        L = self._modeL,
-                                        M = self._modeM)
+        if self._modeL is None:
+            self._modeL = 2
+        if self._modeM is None:
+            self._modeM = 2
+        self._fecc = lambda ecc : self._CMD(m1 = self._core.m1,
+                                    m2 = self._core.m2,
+                                    s1z = self._core.s1z,
+                                    s2z = self._core.s2z,
+                                    D = self._core.D,
+                                    ecc = ecc,
+                                    srate = self._core.srate,
+                                    f_ini = self._core.f_ini,
+                                    L = self._modeL,
+                                    M = self._modeM)
 
-        else:
-            self._fecc = lambda ecc : self._CMD(m1 = self._core.m1,
-                                                m2 = self._core.m2,
-                                                s1z = self._core.s1z,
-                                                s2z = self._core.s2z,
-                                                D = self._core.D,
-                                                ecc = ecc,
-                                                srate = self._core.srate,
-                                                f_ini = self._core.f_ini)
         
     @property
     def SXS(self):

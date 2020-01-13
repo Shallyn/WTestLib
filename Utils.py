@@ -318,6 +318,17 @@ class interp1d_complex(object):
     def __call__(self, x):
         return self._func_real(x) + 1.j*self._func_imag(x)
         
+def polyfit(x, y, order):
+    if len(x) != len(y) or order >= len(x):
+        return None
+    n = len(x)
+    m = int(order)+1
+    X = np.zeros([n, m])
+    Y = y.copy()
+    for i in range(m):
+        X[:,i] = np.power(x, i)
+    return np.dot(np.dot(np.linalg.inv(np.dot(X.T, X)), X.T), Y)
+
 
     
 #-----switch method-----#

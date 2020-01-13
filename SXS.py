@@ -138,7 +138,7 @@ class SXSObject(object):
         return self._SXSnum
 
 class SXSparameters(SXSObject):
-    def __init__(self, SXSnum, table, f_ini = 0, Mtotal = 40, D = 100, verbose = False, ishertz = False):
+    def __init__(self, SXSnum, table = DEFAULT_TABLE, f_ini = 0, Mtotal = 40, D = 100, verbose = False, ishertz = False):
         if verbose:
             sys.stderr.write(f'{LOG}:Initialize SXSObject...\n')
         super(SXSparameters, self).__init__(SXSnum, table, verbose = verbose)

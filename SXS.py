@@ -8,8 +8,8 @@ Created on Fri Jun 21 10:41:46 2019
 
 import numpy as np
 import sys, os, json
-from .Utils import switch, CEV, LOG, WARNING, CEV_parse_value, MESSAGE, plot_compare_attach_any, plot_marker
-from .h22datatype import dim_h, dim_t, h22base, h22_alignment
+from .Utils import switch, CEV, LOG, WARNING, CEV_parse_value, MESSAGE, plot_compare_attach_any, plot_marker, interp1d_complex
+from .h22datatype import dim_h, dim_t, h22base, h22_alignment, ModeBase
 from pathlib import Path
 from .generator import Generator, self_adaptivor
 import csv,codecs,h5py
@@ -136,6 +136,180 @@ class SXSObject(object):
     @property
     def SXSnum(self):
         return self._SXSnum
+    
+    def save_info(self, fname):
+        with open(fname,'w') as f:
+            f.write(f'#q {self.q}\n')
+            f.write(f'#spin1x {self.s1x}\n')
+            f.write(f'#spin1y {self.s1y}\n')
+            f.write(f'#spin1z {self.s1z}\n')
+            f.write(f'#spin2x {self.s2x}\n')
+            f.write(f'#spin2y {self.s2y}\n')
+            f.write(f'#spin2z {self.s2z}\n')
+            f.write(f'#e0 {self.ecc}\n')
+            f.write(f'#f_ini {self.Sf_ini}\n')
+            f.write(f'#final mass {self.final_mass}\n')
+            f.write(f'#final spinx {self.final_spinx}\n')
+            f.write(f'#final spiny {self.final_spiny}\n')
+            f.write(f'#final spinz {self.final_spinz}\n')
+            f.write(f'#initial ADM energy {self.initial_ADM_energy}\n')
+            f.write(f'final kick vx {self.final_kick_vx}\n')
+            f.write(f'final kick vy {self.final_kick_vy}\n')
+            f.write(f'final kick vz {self.final_kick_vz}\n')
+        return
+
+
+class SXSAllMode(SXSObject):
+    def __init__(self, SXSnum, table = DEFAULT_TABLE, srcloc = DEFAULT_SRCLOC_ALL):
+        super(SXSAllMode, self).__init__(SXSnum, table, verbose = False)
+        self._file = srcloc / f'BBH_{SXSnum}.h5'
+        self._core = waveform_mode_collector(0)
+        f = h5py.File(self._file,'r')
+        for key in f.keys():
+            if (key != 'OutermostExtraction.dir'):
+                dir_key = key
+                break
+        for modekey in f[dir_key]:
+            if modekey.split('.')[-1] != 'dat':
+                continue
+            Data = f[dir_key][modekey][:,:]
+            l,m = self._parse_mode(modekey)
+            time = Data[:,0]
+            time -= time[0]
+            hreal = Data[:,1]
+            himag = Data[:,2]
+            self._core.append_mode(time, hreal, himag, l, m)
+        f.close()
+
+    def get_timeSI(self, Mtotal):
+        return self._core.get_timeSI(Mtotal)
+
+    def _parse_mode(self, key):
+        l = 0
+        m = 0
+        try:
+            spt = key.split('.')[0].split('_')
+            l = int(spt[1].split('l')[1])
+            m = int(spt[2].split('m')[1])
+        except:
+            sys.stderr.write(f'{WARNING}:Failed to parse modekey:{key}, unrecgnized format.\n')
+        return l,m
+
+    def get_mode(self, l, m):
+        return self._core.get_mode(l,m)
+
+    def calculate_EnergyFlux(self):
+        ret = np.zeros(len(self.time))
+        for (l,m), mode in self._core:
+            modeabs = np.abs(mode.dot)
+            ret += np.power(modeabs,2)
+        return ret / 16 / np.pi
+
+    def calculate_AngularMomentumFlux(self):
+        ret = np.zeros(len(self.time)) + 1.j*np.zeros(len(self.time))
+        for (l,m), mode in self._core:
+            modedot = mode.dot
+            ret += 1.j * m * modedot * np.conjugate(mode)
+        return np.real(ret) / 16 / np.pi
+
+
+    @property
+    def file(self):
+        return self._file
+    
+    def __iter__(self):
+        for ele in self._core:
+            yield ele
+
+    @property
+    def time(self):
+        return self._core.time
+
+    def get_time_peak(self, l, m, Mtotal = None):
+        return self._core.get_time_peak(l, m, Mtotal)
+
+    def iter_modeL(self):
+        for l in self._core.iter_modeL():
+            yield l
+
+class waveform_mode_collector(object):
+    def __init__(self, cutpct = 20):
+        self._modes = {}
+        self._time = None
+        self._icut = cutpct
+    
+    def __len__(self):
+        return len(self._modes)
+    
+    def __iter__(self):
+        for key in self._modes:
+            yield self._get_mode_lm(key), self._modes[key]
+            
+    def iter_modeL(self):
+        modeLs = [self._get_mode_lm(x)[0] for x in self._modes]
+        minL = min(modeLs)
+        maxL = max(modeLs)
+        for l in range(minL, maxL + 1):
+            yield l
+    
+    @property
+    def time(self):
+        return self._time
+    
+    def get_timeSI(self, Mtotal = 40):
+        if self._time is not None:
+            return self._time / dim_t(Mtotal)
+        else:
+            return self.time
+    
+    def append_mode(self, time, real, imag, l, m):
+        if self._time is None:
+            self._time = np.asarray(time.copy())
+        mode = np.asarray(real) + 1.j*np.asarray(imag)
+        if not np.allclose(self._time, time):
+            sys.stderr.write(f'{WARNING}:Length of time is not compatible.')
+            func = interp1d_complex(time, mode)
+            if (time[-1] - time[0]) > (self._time[-1] - self._time[0]):
+                mode = func(self._time)
+            else:
+                idx_cut = np.where(np.abs(self._time - time[-1]) == np.min(np.abs(self._time - time[-1])))[0][0]
+                mode = np.zeros(self._time.size, dtype = np.complex)
+                mode[:idx_cut] = func(self._time[:idx_cut])
+        # NOTICE
+        # mode /= 2
+        key = self._get_key(l, m)
+        self._modes[key] = ModeBase(self._time, mode.real, mode.imag)
+    
+    def _get_key(self, l, m):
+        return f'Y_{l}_{m}'
+    
+    def _get_mode_lm(self, key):
+        if key not in self._modes:
+            raise TypeError(f'Invalid key:{key}')
+        splt = key.split('_')
+        l = int(splt[1])
+        m = int(splt[2])
+        return (l,m)
+        
+    
+    def get_mode(self, l, m):
+        key = self._get_key(l,m)
+        if key not in self._modes:
+            sys.stderr.write(f'{WARNING}:You have not appended such mode ({l},{m})\n')
+            return None
+        return self._modes[key]
+    
+    def __del__(self):
+        del self._modes
+        del self._time
+
+    def get_time_peak(self, l, m, Mtotal = None):
+        mode = self.get_mode(l,m)
+        if Mtotal is not None:
+            return self.get_timeSI(Mtotal)[np.argmax(np.abs(mode))]
+        else:
+            return self.time[np.argmax(np.abs(mode))]
+
 
 class SXSparameters(SXSObject):
     def __init__(self, SXSnum, table = DEFAULT_TABLE, f_ini = 0, Mtotal = 40, D = 100, verbose = False, ishertz = False):
@@ -677,7 +851,7 @@ def get_wf_caller(approx, executable, SXSnum, verbose = False, **kwargs):
     ge = core.construct_generator(approx, executable)
     return ge
 
-def calculate_overlap(wf_1, wf_2, psd = None, flow = 0, verbose = False):
+def calculate_overlap(wf_1, wf_2, psd = None, flow = 0, verbose = False, fullreturn = True):
     if verbose:
         sys.stderr.write(f'{LOG}:Checking input mode status...\n')
     if isinstance(wf_1, CEV) or isinstance(wf_2, CEV):
@@ -705,7 +879,18 @@ def calculate_overlap(wf_1, wf_2, psd = None, flow = 0, verbose = False):
     Oxt = np.fft.ifft(Ox) * fs / np.sqrt(O11 * O22)
     if verbose:
         sys.stderr.write('Done\n')
-    return Oxt, tmove, fs, CEV.SUCCESS.value, CEV.SUCCESS.value
+    if fullreturn:
+        return Oxt, tmove, fs, CEV.SUCCESS.value, CEV.SUCCESS.value
+    else:
+        Oxt_abs = np.abs(Oxt)
+        idx = np.where(Oxt_abs == max(Oxt_abs))[0][0]
+        lth = len(Oxt_abs)
+        if idx > lth / 2:
+            tc = (idx - lth) / fs
+        else:
+            tc = idx / fs
+        phic = np.angle(Oxt[idx])
+        return max(Oxt_abs), tc, phic, tmove
 
 def plot_fit(wf_1, wf_2, fname, name1 = 'name1', name2 = 'name2',
              FIT_linestyle = None, FIT_color = None, 
@@ -716,6 +901,7 @@ def plot_fit(wf_1, wf_2, fname, name1 = 'name1', name2 = 'name2',
     
     Oxt, tmove, fs, _1, _2 = calculate_overlap(wf_1, wf_2)
     Oxt_abs = np.abs(Oxt)
+    print(max(Oxt_abs))
     idx = np.where(Oxt_abs == max(Oxt_abs))[0][0]
     lth = len(Oxt_abs)
     if idx > lth / 2:

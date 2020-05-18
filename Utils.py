@@ -280,6 +280,9 @@ def plot_compare_attach_any(LIST,
     ax2.set_yticks([])
     if savefig != False:
         plt.savefig(savefig, transparent = transparent, dpi = savedpi)
+        plt.close()
+    else:
+        plt.show()
 
 def plot_marker(x, y, 
                 figsize = None,

@@ -364,6 +364,56 @@ class CompGenerator(object):
                         sys.stderr.write(f'PMS: m1 = {m1}, m2 = {m2}, s1z = {s1zj}, s2z = {s2zk} ecc = {eccl}\n\t FF = {ans}\n\n')
         
         return ret
+
+    def compare_random(self,
+                       min_q, 
+                       max_q, 
+                       min_s1z, 
+                       max_s1z, 
+                       min_s2z, 
+                       max_s2z, 
+                       min_ecc,
+                       max_ecc, 
+                       Num = 10,
+                       Mtotal = 16,
+                       D = 100,
+                       f_ini = 40,
+                       srate = 16384,
+                       timeout = 60,
+                       jobtag = '_CompareRandom'):
+        if self._verbose:
+            sys.stderr.write(f'{LOG}:Initialize parameter...\n')
+        Num = int(Num)
+
+        q = np.random.uniform(min_q, max_q, Num)
+        if min_s1z is None or max_s1z is None:
+            s1z = np.zeros(Num)
+        else:
+            s1z = np.random.uniform(min_s1z, max_s1z, Num)
+
+        if min_s2z is None or max_s2z is None:
+            s2z = np.zeros(Num)
+        else:
+            s2z = np.random.uniform(min_s2z, max_s2z, Num)
+
+        if min_ecc is None or max_ecc is None:
+            ecc = np.zeros(Num)
+        else:
+            ecc = np.random.uniform(min_ecc, max_ecc, Num)
+        
+        data = []
+        for i in range(Num):
+            m1 = Mtotal * q[i] / (1 + q[i])
+            m2 = Mtotal / (1 + q[i])
+            ans = self._core_calcFF(m1, m2, 
+                                    s1z[i], s2z[i], ecc[i],
+                                    D, f_ini, 
+                                    srate, timeout, jobtag)
+            data.append([m1, m2, s1z[i], s2z[i], ans])
+            sys.stderr.write(f'PMS: m1 = {m1}, m2 = {m2}, s1z = {s1z[i]}, s2z = {s2z[i]} ecc = {ecc[i]}\n\t FF = {ans}\n\n')
+
+        return data
+        
     
     def _core_calcFF(self, m1, m2, s1z, s2z, ecc,
                      D, f_ini, srate, timeout, jobtag):

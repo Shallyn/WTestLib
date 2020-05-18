@@ -163,6 +163,18 @@ def modcomp(argv = None):
     parser.add_option('--srate', type = 'float', default = 16384, help = 'Sample rate')
     parser.add_option('--jobtag', type = 'str', default = '_test', help = 'Tag for this run')
     parser.add_option('--timeout', type = 'int', default = 60, help = 'Time limit for waveform generation')
+    # Random mode
+    parser.add_option('--random', action = 'store_true', help = 'If added, will use random parameters.')
+    parser.add_option('--min-mratio', type = 'float', default = 1, help = 'Used in random mode [1]')
+    parser.add_option('--max-mratio', type = 'float', default = 9, help = 'Used in random mode [9]')
+    parser.add_option('--min-spin1z', type = 'float',  help = 'Used in random mode')
+    parser.add_option('--max-spin1z', type = 'float',  help = 'Used in random mode')
+    parser.add_option('--min-spin2z', type = 'float',  help = 'Used in random mode')
+    parser.add_option('--max-spin2z', type = 'float',  help = 'Used in random mode')
+    parser.add_option('--min-ecc', type = 'float',  help = 'Used in random mode')
+    parser.add_option('--max-ecc', type = 'float',  help = 'Used in random mode')
+    parser.add_option('--ncompare', type = 'int', default = 10, help = 'Used in random mode [10]')
+
     args, empty = parser.parse_args(argv)
     approx1 = args.approx1
     approx2 = args.approx2
@@ -194,11 +206,7 @@ def modcomp(argv = None):
     if not savedir.exists():
         savedir.mkdir(parents = True)
     
-    Comp = CompGenerator(approx1, exe1, approx2, exe2, verbose = verbose)
-    # shape of ret:[nq, ns1z, ns2z, necc]
-    ret = Comp.compare(q, s1z, s2z, ecc, Mtotal, D, f_ini, srate, timeout, jobtag)
     # 1. save all
-    nq, ns1z, ns2z, necc = ret.shape
     namecol = [['#mass ratio',
                '#spin1z',
                '#spin2z',
@@ -206,72 +214,89 @@ def modcomp(argv = None):
                '#FF']]
     fsave = savedir / 'all.csv'
     save_namecol(fsave, data = namecol)
-    data = []
-    for i in range(nq):
-        for j in range(ns1z):
-            for k in range(ns2z):
-                for l in range(necc):
-                    data.append([q[i], s1z[j], s2z[k], ecc[l], ret[i,j,k,l]])
+    Comp = CompGenerator(approx1, exe1, approx2, exe2, verbose = verbose)
+
+    if args.random:
+        ret = Comp.compare_random(args.min_mratio, args.max_mratio, 
+                                  args.min_spin1z, args.max_spin1z, 
+                                  args.min_spin2z, args.max_spin2z, 
+                                  args.min_ecc, args.max_ecc, 
+                                  Num = args.ncompare, 
+                                  Mtotal = 16, 
+                                  D = 100, f_ini = 40, 
+                                  srate = 16384, jobtag = jobtag)
+        data = ret
+    else:
+        ret = Comp.compare(q, s1z, s2z, ecc, Mtotal, D, f_ini, srate, timeout, jobtag)
+        # shape of ret:[nq, ns1z, ns2z, necc]
+        nq, ns1z, ns2z, necc = ret.shape
+        data = []
+        for i in range(nq):
+            for j in range(ns1z):
+                for k in range(ns2z):
+                    for l in range(necc):
+                        data.append([q[i], s1z[j], s2z[k], ecc[l], ret[i,j,k,l]])
     add_csv(fsave, data)
     
-    # np.savetxt(savedir / 'all.txt', ret)
-    from .Utils import plot_marker
-    # 2. plot
-    if len(q) > 0:
-        x = q
-        y = 1 - ret[:,0,0,0]
-        if min(y) <= 1e-8:
-            LOGY = False
-        else:
-            LOGY = True
-        plot_marker(x, y, fname = savedir / 'CompMratio.png', 
-                    title = 'q vs 1 - FF', 
-                    xlabel = 'q', 
-                    ylabel = 'log 1 - FF', 
-                    ylim = [0, 1],
-                    ylog = LOGY)
-    
-    if len(s1z) > 0:
-        x = s1z
-        y = 1 - ret[0,:,0,0]
-        if min(y) <= 1e-8:
-            LOGY = False
-        else:
-            LOGY = True
-        plot_marker(x, y, fname = savedir / 'CompSpin1z.png', 
-                    title = 's1z vs 1 - FF', 
-                    xlabel = 's1z', 
-                    ylabel = 'log 1 - FF', 
-                    ylim = [0, 1],
-                    ylog = LOGY)
+    if not args.random:
+        # np.savetxt(savedir / 'all.txt', ret)
+        from .Utils import plot_marker
+        # 2. plot
+        if len(q) > 0:
+            x = q
+            y = 1 - ret[:,0,0,0]
+            if min(y) <= 1e-8:
+                LOGY = False
+            else:
+                LOGY = True
+            plot_marker(x, y, fname = savedir / 'CompMratio.png', 
+                        title = 'q vs 1 - FF', 
+                        xlabel = 'q', 
+                        ylabel = 'log 1 - FF', 
+                        ylim = [0, 1],
+                        ylog = LOGY)
         
-    if len(s2z) > 0:
-        x = s2z
-        y = 1 - ret[0,0,:,0]
-        if min(y) <= 1e-8:
-            LOGY = False
-        else:
-            LOGY = True
-        plot_marker(x, y, fname = savedir / 'CompSpin2z.png', 
-                    title = 's2z vs 1 - FF', 
-                    xlabel = 's2z', 
-                    ylabel = 'log 1 - FF', 
-                    ylim = [0, 1],
-                    ylog = LOGY)
-        
-    if len(ecc) > 0:
-        x = ecc
-        y = 1 - ret[0,0,0,:]
-        if min(y) <= 1e-8:
-            LOGY = False
-        else:
-            LOGY = True
-        plot_marker(x, y, fname = savedir / 'CompEcc.png', 
-                    title = 'ecc vs 1 - FF', 
-                    xlabel = 'ecc', 
-                    ylabel = 'log 1 - FF', 
-                    ylim = [0, 1],
-                    ylog = LOGY)
+        if len(s1z) > 0:
+            x = s1z
+            y = 1 - ret[0,:,0,0]
+            if min(y) <= 1e-8:
+                LOGY = False
+            else:
+                LOGY = True
+            plot_marker(x, y, fname = savedir / 'CompSpin1z.png', 
+                        title = 's1z vs 1 - FF', 
+                        xlabel = 's1z', 
+                        ylabel = 'log 1 - FF', 
+                        ylim = [0, 1],
+                        ylog = LOGY)
+            
+        if len(s2z) > 0:
+            x = s2z
+            y = 1 - ret[0,0,:,0]
+            if min(y) <= 1e-8:
+                LOGY = False
+            else:
+                LOGY = True
+            plot_marker(x, y, fname = savedir / 'CompSpin2z.png', 
+                        title = 's2z vs 1 - FF', 
+                        xlabel = 's2z', 
+                        ylabel = 'log 1 - FF', 
+                        ylim = [0, 1],
+                        ylog = LOGY)
+            
+        if len(ecc) > 0:
+            x = ecc
+            y = 1 - ret[0,0,0,:]
+            if min(y) <= 1e-8:
+                LOGY = False
+            else:
+                LOGY = True
+            plot_marker(x, y, fname = savedir / 'CompEcc.png', 
+                        title = 'ecc vs 1 - FF', 
+                        xlabel = 'ecc', 
+                        ylabel = 'log 1 - FF', 
+                        ylim = [0, 1],
+                        ylog = LOGY)
         
     return 0
 

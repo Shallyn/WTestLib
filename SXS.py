@@ -524,7 +524,7 @@ class SXSCompGenerator(Generator):
         t, hr, hi = ret[:,0], ret[:,1], ret[:,2]
         if verbose:
             sys.stderr.write(f'{LOG}:Pretreatment.\n')
-        hr, hi = self._pretreat(hr, hi, self._core._D, self._core._Mtotal)
+        t, hr, hi = self._pretreat(t, hr, hi, self._core._D, self._core._Mtotal)
         h22_wf = h22base(t, hr, hi, self._core._srate)
         return h22_wf
     

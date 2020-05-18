@@ -104,6 +104,19 @@ def CMD_new_SEOBNREv4HM(exe,
             --modem={modeM} --inclination=0'
     return CMD
 
+def CMD_pyEOBCal(exe,
+                 m1,
+                 m2,
+                 s1z,
+                 s2z,
+                 ecc,
+                 srate,
+                 f_ini):
+    CMD = f'{exe} --m1={m1} --m2={m2} \
+                --spin1z={s1z} --spin2z={s2z} \
+                --sample-rate={srate} --f-min={f_ini} --eccentricity={ecc}'
+    return CMD
+
 
 # Classifier
 class Generator(object):
@@ -136,10 +149,10 @@ class Generator(object):
                                         srate = srate,
                                         f_ini = f_ini,
                                         approx = self._approx)
-                def _pretreat(hr, hi, r, M):
+                def _pretreat(t, hr, hi, r, M, **kwargs):
                     hr *= np.sqrt(4 * np.pi / 5) * dim_h(r, M)
                     hi *= -np.sqrt(4 * np.pi / 5) * dim_h(r, M)
-                    return hr, hi
+                    return t, hr, hi
                 self._pretreat = _pretreat
                 self._allow_ecc = False
                 break
@@ -154,10 +167,10 @@ class Generator(object):
                                   ecc = ecc,
                                   srate = srate,
                                   f_ini = f_ini)
-                def _pretreat(hr, hi, r, M):
+                def _pretreat(t, hr, hi, r, M, **kwargs):
                     hr *= dim_h(r, M)
                     hi *= dim_h(r, M)
-                    return hr, hi
+                    return t, hr, hi
                 self._pretreat = _pretreat
                 self._allow_ecc = True
                 break
@@ -172,10 +185,10 @@ class Generator(object):
                                   ecc = ecc,
                                   srate = srate,
                                   f_ini = f_ini)
-                def _pretreat(hr, hi, r, M):
+                def _pretreat(t, hr, hi, r, M, **kwargs):
                     hr *= dim_h(r, M)
                     hi *= dim_h(r, M)
-                    return hr, hi
+                    return t, hr, hi
                 self._pretreat = _pretreat
                 self._allow_ecc = True
                 break
@@ -194,10 +207,10 @@ class Generator(object):
                                     srate = srate,
                                     f_ini = f_ini,
                                     approx = self._approx)
-                def _pretreat(hr, hi, r, M):
+                def _pretreat(t, hr, hi, r, M, **kwargs):
                     hr *= np.sqrt(4 * np.pi / 5) * dim_h(r, M)
                     hi *= -np.sqrt(4 * np.pi / 5) * dim_h(r, M)
-                    return hr, hi
+                    return t, hr, hi
                 self._pretreat = _pretreat
                 self._allow_ecc = True
                 break
@@ -215,13 +228,30 @@ class Generator(object):
                                         approx = self._approx,
                                         modeL = L,
                                         modeM = M)
-                def _pretreat(hr, hi, r, M):
+                def _pretreat(t, hr, hi, r, M, **kwargs):
                     hr *= dim_h(r, M)
                     hi *= dim_h(r, M)
-                    return hr, hi
+                    return t, hr, hi
                 self._pretreat = _pretreat
                 self._allow_ecc = False
                 self._HM = True
+                break
+
+            if case('pyEOBCal'):
+                self._CMD = lambda m1, m2, s1z, s2z, D, ecc, srate, f_ini, L, M :\
+                    CMD_pyEOBCal(exe = self._exe,
+                                 m1 = m1,
+                                 m2 = m2,
+                                 s1z = s1z,
+                                 s2z = s2z,
+                                 ecc = ecc,
+                                 srate = srate,
+                                 f_ini = f_ini)
+                def _pretreat(t, hr, hi, r, M, **kwargs):
+                    #t = t / dim_t(M)
+                    return t, hr, hi
+                self._pretreat = _pretreat
+                self._allow_ecc = True
                 break
 
             raise ValueError('Unsupported approx: {}'.format(self._approx))
@@ -288,6 +318,8 @@ class Generator(object):
                         f_ini = f_ini,
                         L = L,
                         M = M)
+        if self._verbose:
+            sys.stderr.write(f'{LOG}:\n{EXE}\n')
         cev, ret =  cmd_stdout_cev(EXE, 
                             timeout = timeout,
                             name_out = jobtag)
@@ -423,7 +455,7 @@ class CompGenerator(object):
         if isinstance(data, CEV):
             return 0
         t, hr, hi = data[:,0], data[:,1], data[:,2]
-        hr, hi = self._pretreat1(hr, hi, D, Mtotal)
+        t, hr, hi = self._pretreat1(t, hr, hi, D, Mtotal)
 
         wf1 = h22base(t, hr, hi, srate)
 
@@ -432,7 +464,7 @@ class CompGenerator(object):
         if isinstance(data, CEV):
             return 0
         t, hr, hi = data[:,0], data[:,1], data[:,2]
-        hr, hi = self._pretreat2(hr, hi, D, Mtotal)
+        t, hr, hi = self._pretreat2(t, hr, hi, D, Mtotal)
         wf2 = h22base(t, hr, hi, srate)
 
         wf1, wf2, tmove = h22_alignment(wf1, wf2)

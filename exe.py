@@ -215,7 +215,14 @@ def modcomp(argv = None):
     timeout = args.timeout
     jobtag = args.jobtag
     psd = DetectorPSD(args.psd, flow = args.flow)
-    savedir = Path(args.prefix)
+    prefix = Path(args.prefix)
+    if len(prefix.parts) <= 1:
+        fname = 'all.csv'
+        savedir = prefix
+    else:
+        savedir = prefix.parent
+        fname = f'{prefix.parts[-1]}.csv'
+
     if not savedir.exists():
         savedir.mkdir(parents = True)
     
@@ -225,7 +232,7 @@ def modcomp(argv = None):
                '#spin2z',
                '#ecc',
                '#FF']]
-    fsave = savedir / 'all.csv'
+    fsave = savedir / fname
     save_namecol(fsave, data = namecol)
     Comp = CompGenerator(approx1, exe1, approx2, exe2, psd = psd, verbose = verbose)
 

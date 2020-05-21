@@ -17,6 +17,8 @@ LOC = Path(__file__).parent
 
 class DetectorPSD(object):
     def __init__(self, name = None, flow = 0):
+        if isinstance(name, DetectorPSD):
+            name = name.name
         self._name = name
         self._choose_psd(flow)
                 
@@ -73,6 +75,10 @@ class DetectorPSD(object):
             self._psd = lambda x : 1
         self._file = file
             
+    @property
+    def name(self):
+        return self._name
+        
     def get_psd_data(self, exp = True):
         if self._file is None:
             return None

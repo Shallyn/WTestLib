@@ -13,6 +13,7 @@ from .SXS import SXSh22, save_namecol
 from pathlib import Path
 from optparse import OptionParser
 from .psd import DetectorPSD
+from .h22datatype import get_fmin
 
 
 #-----Parse args-----#
@@ -164,10 +165,14 @@ def modcomp(argv = None):
     parser.add_option('--mtotal', type = 'float', default = 16, help = 'Total mass of the binary system')
     parser.add_option('--ecc', type = 'float', action = 'append', default = [], help = 'eccentricity')
     parser.add_option('--fini', type = 'float', default = 40, help = 'Initial orbit frequency')
+    parser.add_option('--natural', action = 'store_true', help = 'If added, will use natural dimension for fini.')
     parser.add_option('--distance', type = 'float', default = 100, help = 'BBH distance in Mpc')
     parser.add_option('--srate', type = 'float', default = 16384, help = 'Sample rate')
     parser.add_option('--jobtag', type = 'str', default = '_test', help = 'Tag for this run')
     parser.add_option('--timeout', type = 'int', default = 60, help = 'Time limit for waveform generation')
+    parser.add_option('--psd', type = 'str', help = 'Detector psd.')
+    parser.add_option('--flow', type = 'float', default = 0, help = 'Lower frequency cut off for psd.')
+
     # Random mode
     parser.add_option('--random', action = 'store_true', help = 'If added, will use random parameters.')
     parser.add_option('--min-mratio', type = 'float', default = 1, help = 'Used in random mode [1]')
@@ -179,6 +184,7 @@ def modcomp(argv = None):
     parser.add_option('--min-ecc', type = 'float',  help = 'Used in random mode')
     parser.add_option('--max-ecc', type = 'float',  help = 'Used in random mode')
     parser.add_option('--ncompare', type = 'int', default = 10, help = 'Used in random mode [10]')
+
 
     args, empty = parser.parse_args(argv)
     approx1 = args.approx1
@@ -203,10 +209,12 @@ def modcomp(argv = None):
     Mtotal = args.mtotal
     D = args.distance
     f_ini = args.fini
+    if args.natural:
+        f_ini = get_fmin(f_ini, Mtotal)
     srate = args.srate
     timeout = args.timeout
     jobtag = args.jobtag
-    
+    psd = DetectorPSD(args.psd, flow = args.flow)
     savedir = Path(args.prefix)
     if not savedir.exists():
         savedir.mkdir(parents = True)
@@ -219,7 +227,7 @@ def modcomp(argv = None):
                '#FF']]
     fsave = savedir / 'all.csv'
     save_namecol(fsave, data = namecol)
-    Comp = CompGenerator(approx1, exe1, approx2, exe2, verbose = verbose)
+    Comp = CompGenerator(approx1, exe1, approx2, exe2, psd = psd, verbose = verbose)
 
     if args.random:
         ret = Comp.compare_random(args.min_mratio, args.max_mratio, 
@@ -227,9 +235,9 @@ def modcomp(argv = None):
                                   args.min_spin2z, args.max_spin2z, 
                                   args.min_ecc, args.max_ecc, 
                                   Num = args.ncompare, 
-                                  Mtotal = 16, 
-                                  D = 100, f_ini = 40, 
-                                  srate = 16384, jobtag = jobtag)
+                                  Mtotal = Mtotal, 
+                                  D = D, f_ini = f_ini, 
+                                  srate = srate, jobtag = jobtag)
         data = ret
     else:
         ret = Comp.compare(q, s1z, s2z, ecc, Mtotal, D, f_ini, srate, timeout, jobtag)

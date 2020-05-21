@@ -332,12 +332,13 @@ class Generator(object):
 
 
 class CompGenerator(object):
-    def __init__(self, approx1, exe1, approx2, exe2, verbose = False):
+    def __init__(self, approx1, exe1, approx2, exe2, psd = None, verbose = False):
         self._verbose = verbose
         if verbose:
             sys.stderr.write(f'{LOG}:Construct CompGenerator...\n')
         gen1 = Generator(approx1, exe1, verbose)
         gen2 = Generator(approx2, exe2, verbose)
+        self._psd = psd
         self._get_wf1 = gen1.__call__
         self._pretreat1 = gen1._pretreat
         self._get_wf2 = gen2.__call__
@@ -441,7 +442,7 @@ class CompGenerator(object):
                                     s1z[i], s2z[i], ecc[i],
                                     D, f_ini, 
                                     srate, timeout, jobtag)
-            data.append([m1, m2, s1z[i], s2z[i], ans])
+            data.append([q[i], s1z[i], s2z[i], ecc[i], ans])
             sys.stderr.write(f'PMS: m1 = {m1}, m2 = {m2}, s1z = {s1z[i]}, s2z = {s2z[i]} ecc = {ecc[i]}\n\t FF = {ans}\n\n')
 
         return data
@@ -470,11 +471,13 @@ class CompGenerator(object):
         wf1, wf2, tmove = h22_alignment(wf1, wf2)
         fs = wf1.srate
         NFFT = len(wf1)
+        freqs = np.abs(np.fft.fftfreq(NFFT, 1./fs))
+        power_vec = self._psd(freqs)
         df = fs/NFFT
         Stilde = wf1.h22f
         htilde = wf2.h22f
-        O11 = np.sum(Stilde * Stilde.conjugate()).real * df
-        O22 = np.sum(htilde * htilde.conjugate()).real * df
+        O11 = np.sum(Stilde * Stilde.conjugate() / power_vec).real * df
+        O22 = np.sum(htilde * htilde.conjugate() / power_vec).real * df
         Ox = Stilde * htilde.conjugate()
         Oxt = np.fft.ifft(Ox) * fs
         Oxt_abs = np.abs(Oxt) / np.sqrt(O11 * O22)

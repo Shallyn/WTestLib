@@ -319,7 +319,7 @@ class Generator(object):
                         L = L,
                         M = M)
         if self._verbose:
-            sys.stderr.write(f'{LOG}:\n{EXE}\n')
+            sys.stderr.write(f'{LOG}:{jobtag}-> \n{EXE}\n')
         cev, ret =  cmd_stdout_cev(EXE, 
                             timeout = timeout,
                             name_out = jobtag)
@@ -451,8 +451,10 @@ class CompGenerator(object):
     def _core_calcFF(self, m1, m2, s1z, s2z, ecc,
                      D, f_ini, srate, timeout, jobtag):
         Mtotal = m1 + m2
-        data = self._get_wf1(m1, m2, s1z, s2z, D, ecc,
-                            srate, f_ini, timeout, jobtag)
+        data = self._get_wf1(m1 = m1, m2 = m2, s1z = s1z, s2z = s2z, 
+                             D = D, ecc = ecc, srate = srate, f_ini = f_ini, 
+                             L = 2, M = 2,
+                             timeout = timeout, jobtag = jobtag)
         if isinstance(data, CEV):
             return 0
         t, hr, hi = data[:,0], data[:,1], data[:,2]
@@ -460,8 +462,10 @@ class CompGenerator(object):
 
         wf1 = h22base(t, hr, hi, srate)
 
-        data = self._get_wf2(m1, m2, s1z, s2z, D, ecc,
-                            srate, f_ini, timeout, jobtag)
+        data = self._get_wf2(m1 = m1, m2 = m2, s1z = s1z, s2z = s2z, 
+                             D = D, ecc = ecc, srate = srate, f_ini = f_ini, 
+                             L = 2, M = 2,
+                             timeout = timeout, jobtag = jobtag)
         if isinstance(data, CEV):
             return 0
         t, hr, hi = data[:,0], data[:,1], data[:,2]

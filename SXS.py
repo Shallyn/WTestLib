@@ -528,7 +528,7 @@ class SXSCompGenerator(Generator):
         h22_wf = h22base(t, hr, hi, self._core._srate)
         return h22_wf
     
-    def get_overlap(self, jobtag = 'test', maxecc = 0, **kwargs):
+    def get_overlap(self, jobtag = 'test', minecc = 0, maxecc = 0, **kwargs):
         if self._verbose:
             sys.stderr.write(f'{LOG}:Checking ecc is allowed or not.\n')
         if not self.allow_ecc:
@@ -540,7 +540,7 @@ class SXSCompGenerator(Generator):
         else:
             if self._verbose:
                 sys.stderr.write(f'{LOG}:ecc is allowed in approx: {self._approx}, now run self-adaptivor.\n')
-            wraper = self.__core_scan_ecc_overlap(jobtag = jobtag, maxecc = maxecc, **kwargs)
+            wraper = self.__core_scan_ecc_overlap(jobtag = jobtag, minecc = minecc, maxecc = maxecc, **kwargs)
         if self._verbose:
             sys.stderr.write(f'{LOG}:Calculation complete, construct result processor.\n')
         return CompResults(self, wraper, self._verbose, jobtag = jobtag)
@@ -586,21 +586,26 @@ class SXSCompGenerator(Generator):
         return tc, phic, Oxt_abs[idx], tmove, CEV.SUCCESS.value
     
     def __core_scan_ecc_overlap(self, estep = 0.02, maxitr = None, verbose = False,
-                                prec_x = 1e-6, prec_y = 1e-6, jobtag = 'test', maxecc = 0, timeout = 60):
+                                prec_x = 1e-6, prec_y = 1e-6, jobtag = 'test',
+                                minecc = 0, maxecc = 0, timeout = 60, Preset = False):
         # Parse ecc
         if self._verbose:
             sys.stderr.write(f'{LOG}:Parsing ecc...')
-        ecc_range = parse_ecc(self._core.ecc, maxecc = maxecc)
+        if Preset:
+            Preset = self.SXS._SXSnum
+        else:
+            Preset = None
+        ecc_range = parse_ecc(self._core.ecc, minecc = minecc, maxecc = maxecc, Preset = Preset)
         if self._verbose:
             sys.stderr.write('Done: Ecc Range: {}\n'.format(ecc_range))
             sys.stderr.write(f'{LOG}:Construct self-adaptivor...')
-        if ecc_range[1] - ecc_range[0] < estep * 5:
-            estep = (ecc_range[1] - ecc_range[0]) / 5
+        if ecc_range[1] - ecc_range[0] < estep * 10:
+            estep = (ecc_range[1] - ecc_range[0]) / 10
         def ecc_wf(ecc):
             h22_wf = self.get_waveform(ecc = ecc, verbose = False, jobtag = jobtag, timeout = timeout)
             ret = self.__core_calculate_overlap(h22_wf, verbose = False)
             return ret
-        SA = self_adaptivor(ecc_wf, ecc_range, estep, outindex = 2)
+        SA = self_adaptivor(ecc_wf, ecc_range, estep, outindex = 2, verbose = verbose)
         if self._verbose:
             sys.stderr.write('Done\n')
             sys.stderr.write(f'{LOG}:Run self-adaptivor...\n')
@@ -956,7 +961,81 @@ def plot_fit(wf_1, wf_2, fname, name1 = 'name1', name2 = 'name2',
         plot_compare_attach_any([SXSplot, FITplot], savefig = filename, tstart=0, **kwargs)
         return -tc + tmove, phic
 
-def parse_ecc(ecc, maxecc):
+def preset_ecc(SXSnum):
+    for case in switch(SXSnum):
+        if case('1355'):
+            mid = 0.279776
+            break
+        if case('1356'):
+            mid = 0.3420896
+            break
+        if case('1357'):
+            mid = 0.4339328
+            break
+        if case('1358'):
+            mid = 0.4600928
+            break
+        if case('1359'):
+            mid = 0.43984
+            break
+        if case('1360'):
+            mid = 0.526576
+            break
+        if case('1361'):
+            mid = 0.5274464
+            break
+        if case('1362'):
+            mid = 0.59
+            break
+        if case('1363'):
+            mid = 0.581776
+            break
+        if case('1364'):
+            mid = 0.2803712
+            break
+        if case('1365'):
+            mid = 0.3123872
+            break
+        if case('1366'):
+            mid = 0.44
+            break
+        if case('1367'):
+            mid = 0.394416
+            break
+        if case('1368'):
+            mid = 0.45016576
+            break
+        if case('1369'):
+            mid = 0.5876
+            break
+        if case('1370'):
+            mid = 0.583648
+            break
+        if case('1371'):
+            mid = 0.2576224
+            break
+        if case('1372'):
+            mid = 0.4562912
+            break
+        if case('1373'):
+            mid = 0.4802464
+            break
+        if case('1374'):
+            mid = 0.5848128
+            break
+        mid = None
+    if mid is not None:
+        ret = [max(0, mid - 0.05), min(1, mid + 0.05)]
+    else:
+        ret = None
+    return ret
+        
+
+def parse_ecc(ecc, minecc, maxecc, Preset = None):
+    if Preset is not None:
+        ecc_range = preset_ecc(Preset)
+        if ecc_range is not None:
+            return ecc_range
     if type(ecc) is str:
         try:
             xecc = float(ecc[1:])
@@ -978,6 +1057,8 @@ def parse_ecc(ecc, maxecc):
         ecc_range[1] = min(elip_max * 2, maxecc)
     elif maxecc > 0:
         ecc_range[1] = maxecc
+        if minecc > 0 and minecc < maxecc:
+            ecc_range[0] = minecc
 
     return ecc_range
     

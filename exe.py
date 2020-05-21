@@ -37,7 +37,9 @@ def parseargs(argv):
     parser.add_option('--plot', action = 'store_true', help = 'If added, will plot sa results and waveform.')
     parser.add_option('--verbose', action = 'store_true', help = 'If added, will print verbose message.')
     parser.add_option('--hertz', action = 'store_true', help = 'If added, will use dimension Hz for fini.')
+    parser.add_option('--preset-ecc', action = 'store_true', help = 'If added, will use preset Hz eccentricities.')
     parser.add_option('--maxecc', type = 'float', default = 0, help = 'If zero, will automatically set ecc search range.')
+    parser.add_option('--minecc', type = 'float', default = 0, help = 'If zero, will automatically set ecc search range.')
     parser.add_option('--table', type = 'str', default = str(DEFAULT_TABLE), help = 'Path of SXS table.')
     parser.add_option('--srcloc', type = 'str', default = str(DEFAULT_SRCLOC), help = 'Path of SXS waveform data.')
     parser.add_option('--srcloc-all', type = 'str', default = str(DEFAULT_SRCLOC_ALL), help = 'Path of SXS waveform data all modes')
@@ -63,11 +65,13 @@ def main(argv = None):
     fini = args.fini
     ishertz = args.hertz
     maxecc = args.maxecc
+    minecc = args.minecc
     table = args.table
     srcloc = args.srcloc
     srcloc_all = args.srcloc_all
     psd = DetectorPSD(args.psd, flow = args.flow)
     timeout = args.timeout
+    Preset = args.preset_ecc
     
     modeL = args.modeL
     modeM = args.modeM
@@ -104,7 +108,8 @@ def main(argv = None):
                    verbose = verbose, 
                    ishertz = ishertz)
         ge = s.construct_generator(approx, exe, psd = psd)
-        ret = ge.get_overlap(jobtag = jobtag, maxecc = maxecc, timeout = timeout)
+        ret = ge.get_overlap(jobtag = jobtag, minecc = minecc, maxecc = maxecc, 
+                             timeout = timeout, verbose = verbose, Preset = Preset)
         
 
         if isplot:

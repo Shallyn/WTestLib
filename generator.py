@@ -566,8 +566,8 @@ class self_adaptivor(object):
                 new_diff = diff_l
             else:
                 new_diff = (diff_l + diff_r) / 2
-        xmin = xlist[max(0,idx_ymax - 3)]
-        xmax = xlist[min(lmax,idx_ymax + 3)]
+        xmin = max(0, xlist[max(0,idx_ymax - 3)] - dx / 6)
+        xmax = min(1.0, xlist[min(lmax,idx_ymax + 3)] + dx/6)
         dx = dx / 5
         return xmin, xmax, dx, new_diff
 
@@ -575,7 +575,10 @@ class self_adaptivor(object):
         ylist = []
         #Ntot = len(xlist)
         for (i,x) in enumerate(xlist):
-            ylist.append(self.fun(x))
+            fret = self.fun(x)
+            if self._verbose:
+                sys.stderr.write(f'{LOG}: {fret}\n')
+            ylist.append(fret)
             #Process_v2(i+1, Ntot)
         return np.asarray(ylist)
 

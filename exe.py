@@ -168,7 +168,7 @@ def modcomp(argv = None):
     parser.add_option('--natural', action = 'store_true', help = 'If added, will use natural dimension for fini.')
     parser.add_option('--distance', type = 'float', default = 100, help = 'BBH distance in Mpc')
     parser.add_option('--srate', type = 'float', default = 16384, help = 'Sample rate')
-    parser.add_option('--jobtag', type = 'str', default = '_test', help = 'Tag for this run')
+    parser.add_option('--jobtag', type = 'str', default = '_wfcomp', help = 'Tag for this run')
     parser.add_option('--timeout', type = 'int', default = 60, help = 'Time limit for waveform generation')
     parser.add_option('--psd', type = 'str', help = 'Detector psd.')
     parser.add_option('--flow', type = 'float', default = 0, help = 'Lower frequency cut off for psd.')

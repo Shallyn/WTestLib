@@ -1023,6 +1023,21 @@ def preset_ecc(SXSnum):
         if case('1374'):
             mid = 0.5848128
             break
+        if case('0320'):
+            mid = 0.103616
+            break
+        if case('0321'):
+            mid = 0.2601568
+            break
+        if case('0322'):
+            mid = 0.30392
+            break
+        if case('0323'):
+            mid = 0.4219776
+            break
+        if case('0324'):
+            mid = 0.5685408
+            break
         mid = None
     if mid is not None:
         ret = [max(0, mid - 0.05), min(1, mid + 0.05)]

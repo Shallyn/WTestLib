@@ -133,6 +133,106 @@ def main(argv = None):
     
     return 0
 
+
+def parseargs_compWithFreqCut(argv):
+    # Input Parameters:
+    # --executable: exe file path
+    # --jobtag: job tag
+    # --fini: Initial orbital frequency
+    # --approx: Code version
+    # --SXS: Template for comparision
+    # --prefix: dir for saving
+    from .SXS import DEFAULT_TABLE
+    from .SXS import DEFAULT_SRCLOC
+    from .SXS import DEFAULT_SRCLOC_ALL
+    parser = OptionParser(description='Waveform Comparation With SXS')
+    parser.add_option('--executable', type = 'str', default = 'lalsim-inspiral', help = 'Exe command')
+    parser.add_option('--jobtag', type = 'str', default = '_test', help = 'Jobtag for the code run')
+    parser.add_option('--approx', type = 'str', default = 'SEOBNRv1', help = 'Version of the code')
+    parser.add_option('--fini', type = 'float', default = 0, help = 'Initial orbital frequency')
+    parser.add_option('--SXS', type = 'str', action = 'append', default = [], help = 'SXS template for comparision')
+    parser.add_option('--min-mtotal', type = 'float', default = 10, help = 'Min Total mass')
+    parser.add_option('--max-mtotal', type = 'float', default = 200, help = 'Max Total mass')
+    parser.add_option('--num-mtotal', type = 'int', default = 100, help = 'Number of cases')
+    parser.add_option('--prefix', type = 'str', default = '.', help = 'dir for results saving.')
+    parser.add_option('--verbose', action = 'store_true', help = 'If added, will print verbose message.')
+    parser.add_option('--table', type = 'str', default = str(DEFAULT_TABLE), help = 'Path of SXS table.')
+    parser.add_option('--srcloc', type = 'str', default = str(DEFAULT_SRCLOC), help = 'Path of SXS waveform data.')
+    parser.add_option('--srcloc-all', type = 'str', default = str(DEFAULT_SRCLOC_ALL), help = 'Path of SXS waveform data all modes')
+    parser.add_option('--psd', type = 'str', help = 'Detector psd.')
+    parser.add_option('--flow', type = 'float', default = 0, help = 'Lower frequency cut off for psd.')
+    parser.add_option('--fhigh', type = 'float', help = 'Higher frequency cut off for psd.')
+    parser.add_option('--timeout', type = 'int', default = 60, help = 'Time limit for waveform generation')
+    args = parser.parse_args(argv)
+    return args
+
+def compWithFreqCut(argv = None):
+    args, _ = parseargs_compWithFreqCut(argv)
+
+    approx = args.approx
+    exe = args.executable
+    prefix = Path(args.prefix)
+    fini = args.fini
+    SXSnum_list = args.SXS
+
+    Mtotal_min = args.min_mtotal
+    Mtotal_max = args.max_mtotal
+    Mtotal_num = args.num_mtotal
+    Mtotal_list = np.linspace(Mtotal_min, Mtotal_max, Mtotal_num)
+    if len(SXSnum_list) == 0:
+        SXSnum_list.append('0001')
+
+    psd = DetectorPSD(args.psd, flow = args.flow, fhigh = args.fhigh)
+
+    timeout = args.timeout
+    jobtag = args.jobtag
+    
+    table = args.table
+    srcloc = args.srcloc
+    srcloc_all = args.srcloc_all
+    verbose = args.verbose
+
+    savedir = prefix / approx
+    verbose = args.verbose
+        
+    # Mkdir for data saving
+    if not savedir.exists():
+        savedir.mkdir(parents=True)
+    # Setting ErrorMsg filename.
+    ferrmsg = savedir / f'errMessageLog_{jobtag}.txt'
+    errmsg = []
+
+    fresults = savedir / f'results_{jobtag}.csv'
+    # Setting Results savimg filename.
+    save_namecol(fresults, data = [['#q', '#chi1', '#chi2', '#Mtotal', '#FF']])
+    
+    for SXSnum in SXSnum_list:
+        # Setting saveing prefix
+        Sprefix = savedir / SXSnum
+        if not Sprefix.exists():
+            Sprefix.mkdir()
+        
+        s = SXSh22(SXSnum, f_ini = fini, 
+                   modeL = 2,
+                   modeM = 2, 
+                   table = table,
+                   srcloc = srcloc,
+                   srcloc_all = srcloc_all,
+                   verbose = verbose, 
+                   ishertz = False)
+        ge = s.construct_generator(approx, exe, psd = psd)
+        for Mtotal in Mtotal_list:
+            ret = ge.get_overlap(jobtag = jobtag, minecc = 0, maxecc = 0, 
+                                timeout = timeout, verbose = verbose, Mtotal = Mtotal)
+            data = [[s.q, s.s1z, s.s2z, Mtotal, ret.max_FF]]
+            add_csv(fresults, data)
+            errmsg.append(ret.ErrorMsg)
+    
+    np.savetxt(ferrmsg, np.array([errmsg]), fmt = '%s', delimiter = '\n')
+    
+    return 0
+        
+
 #-------------Resave------------#
 from .SXS import resave_results, add_csv, save_namecol
 def resave_main(argv=None):

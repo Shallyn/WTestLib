@@ -16,21 +16,21 @@ __all__ = ['DetectorPSD']
 LOC = Path(__file__).parent
 
 class DetectorPSD(object):
-    def __init__(self, name = None, flow = 0):
+    def __init__(self, name = None, flow = 0, fhigh = None):
         if isinstance(name, DetectorPSD):
             name = name.name
         self._name = name
-        self._choose_psd(flow)
+        self._choose_psd(flow, fhigh)
                 
     def __call__(self, *args, **kwargs):
         return self._psd(*args, **kwargs)
     
-    def _choose_psd(self, flow = 0):
+    def _choose_psd(self, flow = 0, fhigh = None):
         file = None
         for case in switch(self._name):
             if case('ET'):
                 file = LOC / 'LIGO-P1600143-v18-ET_D.txt'
-                self._psd = loadPSD_from_file(file, flow)
+                self._psd = loadPSD_from_file(file, flow, fhigh = fhigh)
                 break
             if case('ET_fit'):
                 file = None
@@ -38,19 +38,19 @@ class DetectorPSD(object):
                 break
             if case('CE_Pes'):
                 file = LOC / 'LIGO-P1600143-v18-CE_Pessimistic.txt'
-                self._psd = loadPSD_from_file(file, flow)
+                self._psd = loadPSD_from_file(file, flow, fhigh = fhigh)
                 break
             if case('CE_Wide'):
                 file = LOC / 'LIGO-P1600143-v18-CE_Wideband.txt'
-                self._psd = loadPSD_from_file(file, flow)
+                self._psd = loadPSD_from_file(file, flow, fhigh = fhigh)
                 break
             if case('CE'):
                 file = LOC / 'LIGO-P1600143-v18-CE.txt'
-                self._psd = loadPSD_from_file(file, flow)
+                self._psd = loadPSD_from_file(file, flow, fhigh = fhigh)
                 break
             if case('advLIGO'):
                 file = LOC / 'LIGO-P1200087-v18-aLIGO_DESIGN.txt'
-                self._psd = loadPSD_from_file(file, flow)
+                self._psd = loadPSD_from_file(file, flow, fhigh = fhigh)
                 break
             if case('advLIGO_fit'):
                 file = None
@@ -58,19 +58,22 @@ class DetectorPSD(object):
                 break
             if case('advLIGO_zerodethp'):
                 file = LOC /"ZERO_DET_high_P.txt"
-                self._psd = loadPSD_from_file(file, flow)
+                self._psd = loadPSD_from_file(file, flow, fhigh = fhigh)
                 break
             if case('L1'):
                 file = LOC / 'LIGOLivingston_O3PSD-1241571618-21600.txt'
-                self._psd = loadPSD_from_file(file, flow, exp = False)
+                self._psd = loadPSD_from_file(file, flow, fhigh = fhigh, exp = False)
                 break
             if case('H1'):
                 file = LOC / 'LIGOHanford_O3PSD-1241571618-21600.txt'
-                self._psd = loadPSD_from_file(file, flow, exp = False)
+                self._psd = loadPSD_from_file(file, flow, fhigh = fhigh, exp = False)
                 break
             if case('V1'):
                 file = LOC / 'Virgo_O3PSD-1241571618-21600.txt'
-                self._psd = loadPSD_from_file(file, flow, exp = False)
+                self._psd = loadPSD_from_file(file, flow, fhigh = fhigh, exp = False)
+                break
+            if case('cut'):
+                self._psd = get_lowCutPSD(flow = flow, fhigh = fhigh)
                 break
             self._psd = lambda x : 1
         self._file = file
@@ -95,7 +98,9 @@ class DetectorPSD(object):
 
     
 
-def loadPSD_from_file(file, flow = 0, exp = True):
+def loadPSD_from_file(file, flow = 0, fhigh = None, exp = True):
+    if fhigh is None:
+        fhigh = np.inf
     data = np.loadtxt(file)
     freq = data[:,0]
     h = data[:,1]
@@ -108,16 +113,34 @@ def loadPSD_from_file(file, flow = 0, exp = True):
     func = InterpolatedUnivariateSpline(freq, valpsd)
     if flow < freq[0]:
         flow = freq[0]
+    if fhigh > freq[-1]:
+        fhigh = freq[-1]
     def funcPSD(freq):
         ret = func(freq)
         if hasattr(freq, '__len__'):
             ret[np.where(freq < flow)] = np.inf
+            ret[np.where(freq > fhigh)] = np.inf
         elif freq < flow:
+            ret = np.inf
+        elif freq > fhigh:
             ret = np.inf
         return ret
     return funcPSD
         
-        
+def get_lowCutPSD(flow = 0, fhigh = None):
+    if fhigh is None:
+        fhigh = np.inf
+    def funcPSD(freq):
+        if hasattr(freq, '__len__'):
+            ret = np.ones(len(freq))
+            ret[np.where(freq < flow)] = np.inf
+            ret[np.where(freq > fhigh)] = np.inf
+        elif freq < flow:
+            ret = np.inf
+        elif freq > fhigh:
+            ret = np.inf
+        return ret
+    return funcPSD
     
 
 """

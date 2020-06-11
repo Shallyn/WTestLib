@@ -484,6 +484,7 @@ class SXSCompGenerator(Generator):
     def get_waveform(self, ecc = None, 
                      jobtag = 'test',
                      timeout = 60,
+                     Mtotal = None,
                      verbose = None):
         if verbose is None:
             verbose = self._verbose
@@ -500,8 +501,15 @@ class SXSCompGenerator(Generator):
             sys.stderr.write(f'{WARNING}: parameter ecc is unused.\n')
         if verbose:
             sys.stderr.write(f'{LOG}:Calling Generator to generate waveform...\n')
-        ret = self.__call__(m1 = self._core.m1,
-                            m2 = self._core.m2,
+        if Mtotal is None:
+            m1 = self._core.m1
+            m2 = self._core.m2
+        else:
+            m1 = Mtotal * self._core.q / (1 + self._core.q)
+            m2 = Mtotal / (1 + self._core.q)
+
+        ret = self.__call__(m1 = m1,
+                            m2 = m2,
                             s1z = self._core.s1z,
                             s2z = self._core.s2z,
                             D = self._core.D,
@@ -531,11 +539,12 @@ class SXSCompGenerator(Generator):
     def get_overlap(self, jobtag = 'test', minecc = 0, maxecc = 0, **kwargs):
         if self._verbose:
             sys.stderr.write(f'{LOG}:Checking ecc is allowed or not.\n')
-        if not self.allow_ecc:
+        if not self.allow_ecc or (minecc == 0 and maxecc == 0):
             if self._verbose:
                 sys.stderr.write(f'{LOG}:ecc is unused in approx: {self._approx}, now calculate overlap.\n')
             h22_wf = self.get_waveform(jobtag = jobtag)
-            ret = self.__core_calculate_overlap(h22_wf)
+            Mtotal = kwargs.get('Mtotal')
+            ret = self.__core_calculate_overlap(h22_wf, Mtotal = Mtotal)
             wraper = [np.array([0]),np.asarray([ret])]
         else:
             if self._verbose:
@@ -545,7 +554,7 @@ class SXSCompGenerator(Generator):
             sys.stderr.write(f'{LOG}:Calculation complete, construct result processor.\n')
         return CompResults(self, wraper, self._verbose, jobtag = jobtag)
         
-    def __core_calculate_overlap(self, h22_wf, verbose = None):
+    def __core_calculate_overlap(self, h22_wf, verbose = None, Mtotal = None):
         if verbose is None:
             verbose = self._verbose
         if verbose:
@@ -565,6 +574,9 @@ class SXSCompGenerator(Generator):
         fs = SXS.srate
         NFFT = len(SXS)
         df = fs/NFFT
+        if Mtotal is not None:
+            df = df * Mtotal / self._core.Mtotal
+            fs = df * NFFT
         freqs = np.abs(np.fft.fftfreq(NFFT, 1./fs))
         power_vec = self._psd(freqs)
         Stilde = SXS.h22f

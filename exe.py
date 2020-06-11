@@ -210,8 +210,8 @@ def compWithFreqCut(argv = None):
         save_namecol(fresults, data = [['#q', '#chi1', '#chi2', '#Mtotal', '#FF']])
         
         s = SXSh22(SXSnum, f_ini = fini, 
-                   modeL = 2,
-                   modeM = 2, 
+                   modeL = None,
+                   modeM = None, 
                    table = table,
                    srcloc = srcloc,
                    srcloc_all = srcloc_all,

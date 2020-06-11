@@ -202,15 +202,12 @@ def compWithFreqCut(argv = None):
     ferrmsg = savedir / f'errMessageLog_{jobtag}.txt'
     errmsg = []
 
-    fresults = savedir / f'results_{jobtag}.csv'
-    # Setting Results savimg filename.
-    save_namecol(fresults, data = [['#q', '#chi1', '#chi2', '#Mtotal', '#FF']])
     
     for SXSnum in SXSnum_list:
         # Setting saveing prefix
-        Sprefix = savedir / SXSnum
-        if not Sprefix.exists():
-            Sprefix.mkdir()
+        fresults = savedir / f'results_{SXSnum}_{jobtag}.csv'
+        # Setting Results savimg filename.
+        save_namecol(fresults, data = [['#q', '#chi1', '#chi2', '#Mtotal', '#FF']])
         
         s = SXSh22(SXSnum, f_ini = fini, 
                    modeL = 2,

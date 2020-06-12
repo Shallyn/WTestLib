@@ -347,6 +347,10 @@ class SXSparameters(SXSObject):
     @property
     def m2(self):
         return self._Mtotal / (1 + self.q)
+
+    @property
+    def eta(self):
+        return self.q / (1+self.q) / (1+self.q)
     
     @property
     def f_ini(self):
@@ -1145,3 +1149,70 @@ def resave_results(prefix, target):
             sys.stderr.write(f'{LOG}:Saving {file.name} to {target}...\n')
             data = load_csv(file)
             add_csv(target, data)
+
+def parse_SXSeccV1(SXSnum):
+    for case in switch(SXSnum):
+        if case('1355'):
+            e0 = 0.280016
+            break
+        if case('1356'):
+            e0 = 0.350032
+            break
+        if case('1357'):
+            e0 = 0.4338912
+            break
+        if case('1358'):
+            e0 = 0.4601088
+            break
+        if case('1359'):
+            e0 = 0.4397376
+            break
+        if case('1360'):
+            e0 = 0.5266624
+            break
+        if case('1361'):
+            e0 = 0.53544
+            break
+        if case('1362'):
+            e0 = 0.59
+            break
+        if case('1363'):
+            e0 = 0.59
+            break
+        if case('1364'):
+            e0 = 0.2642848
+            break
+        if case('1365'):
+            e0 = 0.320086211
+            break
+        if case('1366'):
+            e0 = 0.4401536
+            break
+        if case('1367'):
+            e0 = 0.394346368
+            break
+        if case('1368'):
+            e0 = 0.450117606
+            break
+        if case('1369'):
+            e0 = 0.5876
+            break
+        if case('1370'):
+            e0 = 0.5837184
+            break
+        if case('1371'):
+            e0 = 0.280352
+            break
+        if case('1372'):
+            e0 = 0.4563264
+            break
+        if case('1373'):
+            e0 = 0.4802336
+            break
+        if case('1374'):
+            e0 = 0.5848224
+            break
+        else:
+            e0 = 0
+            break
+    return e0

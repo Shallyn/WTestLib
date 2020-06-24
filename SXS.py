@@ -659,7 +659,10 @@ class SXSCompGenerator(Generator):
         for i, Mtotal in enumerate(MtotalList):
             df = df_old *  self._core.Mtotal / Mtotal
             fs = df * NFFT
-            freqs = np.abs(np.fft.fftfreq(NFFT, 1./fs))
+            try:
+                freqs = np.abs(np.fft.fftfreq(NFFT, 1./fs))
+            except:
+                raise Exception(f'{NFFT}, {fs}')
             power_vec = self._psd(freqs)
             if np.isinf(np.min(power_vec)):
                 ret_tc[i] = 0

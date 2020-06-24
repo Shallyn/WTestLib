@@ -662,6 +662,7 @@ class SXSCompGenerator(Generator):
             try:
                 freqs = np.abs(np.fft.fftfreq(NFFT, 1./fs))
             except:
+                print(MtotalList.shape)
                 raise Exception(f'{NFFT}, {fs}')
             power_vec = self._psd(freqs)
             if np.isinf(np.min(power_vec)):

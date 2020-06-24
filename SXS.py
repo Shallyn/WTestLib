@@ -637,10 +637,15 @@ class SXSCompGenerator(Generator):
             verbose = self._verbose
         if verbose:
             sys.stderr.write(f'{LOG}:Checking input mode status...\n')
+        ret_tc = np.zeros(len(MtotalList))
+        ret_phic = np.zeros(len(MtotalList))
+        ret_FF = np.zeros(len(MtotalList)) - 1
+        ret_tmove = np.zeros(len(MtotalList))
+
         if isinstance(h22_wf, CEV):
             if verbose:
                 sys.stderr.write(f'{WARNING}:Abnormal mode...\n')
-            return 0,0,-1,0,h22_wf.value
+            return ret_tc, ret_phic, ret_FF, ret_tmove
         SXS = self._core.copy()
         # Check sample rate
         if verbose:
@@ -652,10 +657,6 @@ class SXSCompGenerator(Generator):
         fs = SXS.srate
         NFFT = len(SXS)
         df_old = fs/NFFT
-        ret_tc = np.zeros(len(MtotalList))
-        ret_phic = np.zeros(len(MtotalList))
-        ret_FF = np.zeros(len(MtotalList))
-        ret_tmove = np.zeros(len(MtotalList))
         for i, Mtotal in enumerate(MtotalList):
             df = df_old *  self._core.Mtotal / Mtotal
             fs = df * NFFT

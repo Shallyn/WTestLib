@@ -230,8 +230,8 @@ def compWithFreqCut(argv = None):
         s1z_list = s.s1z*np.ones(len(Mtotal_list)).reshape(1,length)
         s2z_list = s.s2z*np.ones(len(Mtotal_list)).reshape(1,length)
         FF_list = ret[2].reshape(1,length)
-        Mtotal_list = Mtotal_list.reshape(1, length)
-        data = np.concatenate((q_list, s1z_list, s2z_list, Mtotal_list, FF_list), axis = 0)
+        Mtotal_list_out = Mtotal_list.reshape(1, length)
+        data = np.concatenate((q_list, s1z_list, s2z_list, Mtotal_list_out, FF_list), axis = 0)
         add_csv(fresults, data.T.tolist())
         
     return 0

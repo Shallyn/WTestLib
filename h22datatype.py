@@ -102,6 +102,11 @@ class ModeBase(object):
         return np.abs(np.unwrap(np.angle(self._mode)))
     
     @property
+    def phaseFrom0(self):
+        phase = self.phase
+        return phase - phase[0]
+
+    @property
     def frequency(self):
         return np.gradient(self.phase) / np.gradient(self._time)
     
@@ -139,10 +144,7 @@ class ModeBase(object):
     
     def __repr__(self):
         return self.__str__()
-    
-    def __format__(self):
-        return self.__str__()
-        
+            
     def __iter__(self):
         for x in self._mode:
             yield x

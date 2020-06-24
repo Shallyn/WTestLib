@@ -29,6 +29,27 @@ DEFAULT_FIT_ALPHA = 1.0
 DEFAULT_FIT_LINEWIDTH = 1.0
 
 #-------------Load File--------------#
+def loadSXSh5data(fname, modeL, modeM):
+    f = h5py.File(fname, 'r')
+    for key in f.keys():
+        if (key != 'OutermostExtraction.dir'):
+            dir_key = key
+            break
+    time = None
+    hreal = None
+    himag = None
+    modeL = int(modeL)
+    modeM = int(modeM)
+    modekey = f'Y_l{modeL}_m{modeM}.dat'
+    if modekey in f[dir_key]:
+        Data = f[dir_key][modekey][:,:]
+        time = Data[:,0]
+        time -= time[0]
+        hreal = Data[:,1]
+        himag = Data[:,2]
+    f.close()
+    return time, hreal, himag
+
 def loadSXStxtdata(SXSnum, srcloc):
     srcpath = Path(srcloc)
     filename = srcpath / f'BBH_{SXSnum}.txt'
@@ -390,6 +411,7 @@ class SXSh22(SXSparameters, h22base):
                 raise ValueError(f'Mode {modeL} {modeM} is not available.')
         else:
             t, hr, hi = loadSXStxtdata(SXSnum, srcloc)
+        self._rawData = ModeBase(t.copy(), hr, hi)
         t /= dim_t(Mtotal)
         self._srcloc = srcloc
         self._srcloc_all = srcloc_all
@@ -400,6 +422,10 @@ class SXSh22(SXSparameters, h22base):
         if verbose:
             sys.stderr.write(f'{LOG}:Initialize h22base...Done\n')
         self._verbose = verbose
+    
+    @property
+    def rawData(self):
+        return self._rawData
         
     def construct_generator(self, approx, executable, psd = None):
         return SXSCompGenerator(approx, executable, self, psd = psd,
@@ -543,13 +569,18 @@ class SXSCompGenerator(Generator):
     def get_overlap(self, jobtag = 'test', minecc = 0, maxecc = 0, **kwargs):
         if self._verbose:
             sys.stderr.write(f'{LOG}:Checking ecc is allowed or not.\n')
+        eccentricity = kwargs.get('eccentricity')
         if not self.allow_ecc or (minecc == 0 and maxecc == 0):
             if self._verbose:
                 sys.stderr.write(f'{LOG}:ecc is unused in approx: {self._approx}, now calculate overlap.\n')
-            h22_wf = self.get_waveform(jobtag = jobtag)
+            h22_wf = self.get_waveform(jobtag = jobtag, ecc = eccentricity)
             Mtotal = kwargs.get('Mtotal')
-            ret = self.__core_calculate_overlap(h22_wf, Mtotal = Mtotal)
-            wraper = [np.array([0]),np.asarray([ret])]
+            if hasattr(Mtotal, '__len__'):
+                ret = self.__core_calculate_overlap_MtotalList(h22_wf, MtotalList = Mtotal, verbose = self._verbose)
+                return ret
+            else:
+                ret = self.__core_calculate_overlap(h22_wf, Mtotal = Mtotal)
+                wraper = [np.array([0]),np.asarray([ret])]
         else:
             if self._verbose:
                 sys.stderr.write(f'{LOG}:ecc is allowed in approx: {self._approx}, now run self-adaptivor.\n')
@@ -601,6 +632,64 @@ class SXSCompGenerator(Generator):
             sys.stderr.write('Done\n')
         return tc, phic, Oxt_abs[idx], tmove, CEV.SUCCESS.value
     
+    def __core_calculate_overlap_MtotalList(self, h22_wf, MtotalList, verbose = None):
+        if verbose is None:
+            verbose = self._verbose
+        if verbose:
+            sys.stderr.write(f'{LOG}:Checking input mode status...\n')
+        if isinstance(h22_wf, CEV):
+            if verbose:
+                sys.stderr.write(f'{WARNING}:Abnormal mode...\n')
+            return 0,0,-1,0,h22_wf.value
+        SXS = self._core.copy()
+        # Check sample rate
+        if verbose:
+            sys.stderr.write(f'{LOG}:Align data for comparison...\n')
+        SXS, h22_wf, tmove = h22_alignment(SXS, h22_wf)
+        if verbose:
+            sys.stderr.write('Done\n')
+            sys.stderr.write(f'{LOG}:Calculating overlap...')
+        fs = SXS.srate
+        NFFT = len(SXS)
+        df_old = fs/NFFT
+        ret_tc = np.zeros(len(MtotalList))
+        ret_phic = np.zeros(len(MtotalList))
+        ret_FF = np.zeros(len(MtotalList))
+        ret_tmove = np.zeros(len(MtotalList))
+        for i, Mtotal in enumerate(MtotalList):
+            df = df_old *  self._core.Mtotal / Mtotal
+            fs = df * NFFT
+            freqs = np.abs(np.fft.fftfreq(NFFT, 1./fs))
+            power_vec = self._psd(freqs)
+            if np.isinf(np.min(power_vec)):
+                ret_tc[i] = 0
+                ret_phic[i] = 0
+                ret_FF[i] = 2
+                ret_tmove[i] = tmove
+                continue
+            Stilde = SXS.h22f
+            htilde = h22_wf.h22f
+            O11 = np.sum(Stilde * Stilde.conjugate() / power_vec).real * df
+            O22 = np.sum(htilde * htilde.conjugate() / power_vec).real * df
+            Ox = Stilde * htilde.conjugate() / power_vec
+            Oxt = np.fft.ifft(Ox) * fs
+            Oxt_abs = np.abs(Oxt) / np.sqrt(O11 * O22)
+            idx = np.where(Oxt_abs == max(Oxt_abs))[0][0]
+            lth = len(Oxt_abs)
+            if idx > lth / 2:
+                tc = (idx - lth) / fs
+            else:
+                tc = idx / fs
+            phic = np.angle(Oxt[idx])
+            if verbose:
+                sys.stderr.write('Done\n')
+            ret_tc[i] = tc
+            ret_phic[i] = phic
+            ret_FF[i] = Oxt_abs[idx]
+            ret_tmove[i] = tmove
+        return ret_tc, ret_phic, ret_FF, ret_tmove
+
+
     def __core_scan_ecc_overlap(self, estep = 0.02, maxitr = None, verbose = False,
                                 prec_x = 1e-6, prec_y = 1e-6, jobtag = 'test',
                                 minecc = 0, maxecc = 0, timeout = 60, Preset = False):

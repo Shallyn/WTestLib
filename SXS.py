@@ -1067,7 +1067,7 @@ def plot_fit(wf_1, wf_2, fname, name1 = 'name1', name2 = 'name2',
         plot_compare_attach_any([SXSplot, FITplot], savefig = filename, tstart=0, **kwargs)
         return -tc + tmove, phic
 
-def preset_ecc(SXSnum):
+def preset_ecc(SXSnum, retMid = False):
     for case in switch(SXSnum):
         if case('1355'):
             mid = 0.279776
@@ -1145,6 +1145,8 @@ def preset_ecc(SXSnum):
             mid = 0.5685408
             break
         mid = None
+    if retMid:
+        return mid
     if mid is not None:
         ret = [max(0, mid - 0.05), min(1, mid + 0.05)]
     else:

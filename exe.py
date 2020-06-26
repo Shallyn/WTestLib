@@ -153,7 +153,7 @@ def parseargs_compWithFreqCut(argv):
     parser.add_option('--SXS', type = 'str', action = 'append', default = [], help = 'SXS template for comparision')
     parser.add_option('--allow-ecc', action = 'store_true', help = 'Would use default NR ecc, if nan, will use 0.')
     parser.add_option('--allow-ecc-pass0', action = 'store_true', help = 'Would use default NR ecc, if nan, will skip')
-    parser.add_option('--allow-ecc-fit', action = 'store_truc', help = 'Would find best fit ecc.')
+    parser.add_option('--allow-ecc-fit', action = 'store_true', help = 'Would find best fit ecc.')
     parser.add_option('--min-mtotal', type = 'float', default = 10, help = 'Min Total mass')
     parser.add_option('--max-mtotal', type = 'float', default = 200, help = 'Max Total mass')
     parser.add_option('--num-mtotal', type = 'int', default = 100, help = 'Number of cases')

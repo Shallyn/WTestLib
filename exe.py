@@ -153,6 +153,7 @@ def parseargs_compWithFreqCut(argv):
     parser.add_option('--SXS', type = 'str', action = 'append', default = [], help = 'SXS template for comparision')
     parser.add_option('--allow-ecc', action = 'store_true', help = 'Would use default NR ecc, if nan, will use 0.')
     parser.add_option('--allow-ecc-pass0', action = 'store_true', help = 'Would use default NR ecc, if nan, will skip')
+    parser.add_option('--allow-ecc-fit', action = 'store_truc', help = 'Would find best fit ecc.')
     parser.add_option('--min-mtotal', type = 'float', default = 10, help = 'Min Total mass')
     parser.add_option('--max-mtotal', type = 'float', default = 200, help = 'Max Total mass')
     parser.add_option('--num-mtotal', type = 'int', default = 100, help = 'Number of cases')
@@ -188,10 +189,12 @@ def compWithFreqCut(argv = None):
     psd = DetectorPSD(args.psd, flow = args.flow, fhigh = args.fhigh)
     allow_ecc = args.allow_ecc
     ecc_skipNAN = False
+    allow_ecc_fit = False
     allow_ecc_pass0 = args.allow_ecc_pass0
     if allow_ecc_pass0:
         allow_ecc = True
         ecc_skipNAN = True
+    allow_ecc_fit = args.allow_ecc_fit
     timeout = args.timeout
     jobtag = args.jobtag
     
@@ -217,38 +220,44 @@ def compWithFreqCut(argv = None):
                    srcloc_all = srcloc_all,
                    verbose = verbose, 
                    ishertz = False)
-        if fini == 0:
-            ecc = s.ecc
-            if allow_ecc:
-                if type(ecc) is str and ecc_skipNAN:
-                    continue
+        ge = s.construct_generator(approx, exe, psd = psd)
+
+        if allow_ecc_fit and fini == 0.002:
+            ret = ge.get_overlap(jobtag = jobtag, minecc = 0, maxecc = 0, 
+                                timeout = timeout, verbose = verbose, Preset = True)
+            e0 = ret.ecc_fit
+        else:
+            if fini == 0:
+                ecc = s.ecc
+                if allow_ecc:
+                    if type(ecc) is str and ecc_skipNAN:
+                        continue
+                    else:
+                        ecc = 0
+                    e0 = ecc
+                else:
+                    e0 = 0
+            elif fini == 0.002:
+                if allow_ecc:
+                    ecc = preset_ecc(fini, retMid = True)
+                    if ecc is None and ecc_skipNAN:
+                        continue
+                    else:
+                        ecc = 0
                 else:
                     ecc = 0
                 e0 = ecc
             else:
-                e0 = 0
-        elif fini == 0.002:
-            if allow_ecc:
-                ecc = preset_ecc(fini, retMid = True)
-                if ecc is None and ecc_skipNAN:
+                if allow_ecc:
                     continue
                 else:
-                    ecc = 0
-            else:
-                ecc = 0
-            e0 = ecc
-        else:
-            if allow_ecc:
-                continue
-            else:
-                e0 = 0
+                    e0 = 0
             
         # Setting saveing prefix
         fresults = savedir / f'results_{SXSnum}_{jobtag}.csv'
         # Setting Results savimg filename.
         save_namecol(fresults, data = [['#q', '#chi1', '#chi2', '#Mtotal', '#FF', f'#ecc={ecc}']])
 
-        ge = s.construct_generator(approx, exe, psd = psd)
         ret = ge.get_overlap(jobtag = jobtag, minecc = 0, maxecc = 0, eccentricity = e0,
                             timeout = timeout, verbose = verbose, Mtotal = Mtotal_list)
         length = len(Mtotal_list)

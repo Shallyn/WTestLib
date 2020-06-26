@@ -570,7 +570,8 @@ class SXSCompGenerator(Generator):
         if self._verbose:
             sys.stderr.write(f'{LOG}:Checking ecc is allowed or not.\n')
         eccentricity = kwargs.get('eccentricity')
-        if not self.allow_ecc or (minecc == 0 and maxecc == 0):
+        Preset_ecc = kwargs.get('Preset')
+        if not self.allow_ecc or (minecc == 0 and maxecc == 0 and Preset_ecc is True):
             if self._verbose:
                 sys.stderr.write(f'{LOG}:ecc is unused in approx: {self._approx}, now calculate overlap.\n')
             h22_wf = self.get_waveform(jobtag = jobtag, ecc = eccentricity)

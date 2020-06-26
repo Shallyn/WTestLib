@@ -694,7 +694,7 @@ class SXSCompGenerator(Generator):
 
     def __core_scan_ecc_overlap(self, estep = 0.02, maxitr = None, verbose = False,
                                 prec_x = 1e-6, prec_y = 1e-6, jobtag = 'test',
-                                minecc = 0, maxecc = 0, timeout = 60, Preset = False):
+                                minecc = 0, maxecc = 0, timeout = 60, Preset = False, **kwargs):
         # Parse ecc
         if self._verbose:
             sys.stderr.write(f'{LOG}:Parsing ecc...')

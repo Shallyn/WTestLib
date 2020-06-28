@@ -14,7 +14,7 @@ from pathlib import Path
 from optparse import OptionParser
 from .psd import DetectorPSD
 from .h22datatype import get_fmin, get_fini_dimless
-
+import sys
 
 #-----Parse args-----#
 def parseargs(argv):

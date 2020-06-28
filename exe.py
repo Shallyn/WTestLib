@@ -291,10 +291,11 @@ def compWithFreqCut(argv = None):
                 if fini == 0:
                     ecc = s.ecc
                     if allow_ecc:
-                        if type(ecc) is str and ecc_skipNAN:
-                            continue
-                        else:
-                            ecc = 0
+                        if type(ecc) is str:
+                            if ecc_skipNAN:
+                                continue
+                            else:
+                                ecc = 0
                         e0 = ecc
                     else:
                         e0 = 0

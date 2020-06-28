@@ -247,17 +247,19 @@ def compWithFreqCut(argv = None):
             # Setting saveing prefix
             fresults = savedir / f'results_{SXSnum}_{jobtag}.csv'
             # Setting Results savimg filename.
-            save_namecol(fresults, data = [['#q', '#chi1', '#chi2', '#Mtotal', '#FF', f'#ecc={ecc}']])
+            save_namecol(fresults, data = [['#q', '#chi1', '#chi2', '#Mtotal', '#FF', f'#ecc={ecc}', f'#fini(f0 = {fini_si}Hz)']])
 
             ecc_list = []
             FF_list = []
+            fini_list = []
             for Mtotal in Mtotal_list:
                 fini_need = get_fini_dimless(fini_si, Mtotal)
-                e0 = solveEcc(ecc, s.f_ini, fini_need)
+                e0 = solveEcc(ecc, s.f_ini_dimless, fini_need)
                 ret = ge.get_overlap(jobtag = jobtag, minecc = 0, maxecc = 0, eccentricity = e0,
                                     timeout = timeout, verbose = verbose, Mtotal = Mtotal)
                 ecc_list.append(e0)
                 FF_list.append(ret.max_FF)
+                fini_list.append(fini_need)
             length = len(Mtotal_list)
             q_list = s.q*np.ones(len(Mtotal_list)).reshape(1,length)
             s1z_list = s.s1z*np.ones(len(Mtotal_list)).reshape(1,length)
@@ -265,7 +267,8 @@ def compWithFreqCut(argv = None):
             FF_list = np.array(FF_list).reshape(1,length)
             ecc_list = np.array(ecc_list).reshape(1,length)
             Mtotal_list_out = Mtotal_list.reshape(1, length)
-            data = np.concatenate((q_list, s1z_list, s2z_list, Mtotal_list_out, FF_list, ecc_list), axis = 0)
+            fini_list = np.array(fini_list).reshape(1, length)
+            data = np.concatenate((q_list, s1z_list, s2z_list, Mtotal_list_out, FF_list, ecc_list, fini_list), axis = 0)
             add_csv(fresults, data.T.tolist())
     else:
 

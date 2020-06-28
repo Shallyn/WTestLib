@@ -318,7 +318,7 @@ def compWithFreqCut(argv = None):
             fresults = savedir / f'results_{SXSnum}_{jobtag}.csv'
             # Setting Results savimg filename.
             save_namecol(fresults, data = [['#q', '#chi1', '#chi2', '#Mtotal', '#FF', f'#ecc={e0}']])
-            sys.stderr.write(f'Ecc = {e0}\n')
+            sys.stderr.write(f'Ecc = {ecc}\n')
             ret = ge.get_overlap(jobtag = jobtag, minecc = 0, maxecc = 0, eccentricity = e0,
                                 timeout = timeout, verbose = verbose, Mtotal = Mtotal_list)
             length = len(Mtotal_list)

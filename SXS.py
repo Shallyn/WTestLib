@@ -515,7 +515,8 @@ class SXSCompGenerator(Generator):
                      jobtag = 'test',
                      timeout = 60,
                      Mtotal = None,
-                     verbose = None):
+                     verbose = None,
+                     fini = None):
         if verbose is None:
             verbose = self._verbose
         if verbose:
@@ -537,7 +538,8 @@ class SXSCompGenerator(Generator):
         else:
             m1 = Mtotal * self._core.q / (1 + self._core.q)
             m2 = Mtotal / (1 + self._core.q)
-
+        if fini is None:
+            fini = self._core.f_ini
         ret = self.__call__(m1 = m1,
                             m2 = m2,
                             s1z = self._core.s1z,
@@ -545,7 +547,7 @@ class SXSCompGenerator(Generator):
                             D = self._core.D,
                             ecc = ecc,
                             srate = self._core.srate,
-                            f_ini = self._core.f_ini,
+                            f_ini = fini,
                             L = self._modeL,
                             M = self._modeM,
                             jobtag = jobtag,
@@ -574,7 +576,8 @@ class SXSCompGenerator(Generator):
         if not self.allow_ecc or (minecc == 0 and maxecc == 0 and Preset_ecc is True):
             if self._verbose:
                 sys.stderr.write(f'{LOG}:ecc is unused in approx: {self._approx}, now calculate overlap.\n')
-            h22_wf = self.get_waveform(jobtag = jobtag, ecc = eccentricity)
+            fini = kwargs.get('fini')
+            h22_wf = self.get_waveform(jobtag = jobtag, ecc = eccentricity, fini = fini)
             Mtotal = kwargs.get('Mtotal')
             if hasattr(Mtotal, '__len__'):
                 ret = self.__core_calculate_overlap_MtotalList(h22_wf, MtotalList = Mtotal, verbose = self._verbose)

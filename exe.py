@@ -13,7 +13,7 @@ from .SXS import SXSh22, save_namecol
 from pathlib import Path
 from optparse import OptionParser
 from .psd import DetectorPSD
-from .h22datatype import get_fmin
+from .h22datatype import get_fmin, get_fini_dimless
 
 
 #-----Parse args-----#
@@ -150,10 +150,12 @@ def parseargs_compWithFreqCut(argv):
     parser.add_option('--jobtag', type = 'str', default = '_test', help = 'Jobtag for the code run')
     parser.add_option('--approx', type = 'str', default = 'SEOBNRv1', help = 'Version of the code')
     parser.add_option('--fini', type = 'float', default = 0, help = 'Initial orbital frequency')
+    parser.add_option('--fini-si', type = 'float', help = 'SI initial orbital frequency')
     parser.add_option('--SXS', type = 'str', action = 'append', default = [], help = 'SXS template for comparision')
     parser.add_option('--allow-ecc', action = 'store_true', help = 'Would use default NR ecc, if nan, will use 0.')
     parser.add_option('--allow-ecc-pass0', action = 'store_true', help = 'Would use default NR ecc, if nan, will skip')
     parser.add_option('--allow-ecc-fit', action = 'store_true', help = 'Would find best fit ecc.')
+    parser.add_option('--allow-ecc-pn', action = 'store_true', help = 'Would solve correspond ecc by PN')
     parser.add_option('--min-mtotal', type = 'float', default = 10, help = 'Min Total mass')
     parser.add_option('--max-mtotal', type = 'float', default = 200, help = 'Max Total mass')
     parser.add_option('--num-mtotal', type = 'int', default = 100, help = 'Number of cases')
@@ -169,6 +171,21 @@ def parseargs_compWithFreqCut(argv):
     args = parser.parse_args(argv)
     return args
 
+from scipy.optimize import root
+def aPN(e):
+    return np.power(e, 12/19) * np.power(1 + 121 * e * e / 304, 870/2299) / (1-e*e)
+
+def ProduceEccSolver(f, eNR, fNR):
+    def solver(e):
+        return aPN(e) - aPN(eNR) * np.power(fNR/f, 3/2)
+    return solver
+
+def solveEcc(eNR, fNR, f):
+    fsr = ProduceEccSolver(f, eNR, fNR)
+
+    ans = root(fsr, eNR).x
+    return ans[0]
+
 from WTestLib.SXS import preset_ecc
 def compWithFreqCut(argv = None):
     args, _ = parseargs_compWithFreqCut(argv)
@@ -177,6 +194,7 @@ def compWithFreqCut(argv = None):
     exe = args.executable
     prefix = Path(args.prefix)
     fini = args.fini
+    fini_si = args.fini_si
     SXSnum_list = args.SXS
 
     Mtotal_min = args.min_mtotal
@@ -195,6 +213,7 @@ def compWithFreqCut(argv = None):
         allow_ecc = True
         ecc_skipNAN = True
     allow_ecc_fit = args.allow_ecc_fit
+    allow_ecc_pn = args.allow_ecc_pn
     timeout = args.timeout
     jobtag = args.jobtag
     
@@ -210,65 +229,104 @@ def compWithFreqCut(argv = None):
     if not savedir.exists():
         savedir.mkdir(parents=True)
     # Setting ErrorMsg filename.
-    
-    for SXSnum in SXSnum_list:        
-        s = SXSh22(SXSnum, f_ini = fini, 
-                   modeL = None,
-                   modeM = None, 
-                   table = table,
-                   srcloc = srcloc,
-                   srcloc_all = srcloc_all,
-                   verbose = verbose, 
-                   ishertz = False)
-        ge = s.construct_generator(approx, exe, psd = psd)
+    if allow_ecc_pn:
+        for SXSnum in SXSnum_list:        
+            s = SXSh22(SXSnum, f_ini = fini, 
+                    modeL = None,
+                    modeM = None, 
+                    table = table,
+                    srcloc = srcloc,
+                    srcloc_all = srcloc_all,
+                    verbose = verbose, 
+                    ishertz = False)
+            ge = s.construct_generator(approx, exe, psd = psd)
+            ecc = s.ecc
+            if type(ecc) is str:
+                continue
 
-        if allow_ecc_fit and fini == 0.002:
-            ge_fit = s.construct_generator(approx, exe, psd = None)
-            ret = ge_fit.get_overlap(jobtag = jobtag, minecc = 0, maxecc = 0, 
-                                timeout = timeout, verbose = verbose, Preset = True)
-            e0 = ret.ecc_fit
-        else:
-            if fini == 0:
-                ecc = s.ecc
-                if allow_ecc:
-                    if type(ecc) is str and ecc_skipNAN:
-                        continue
+            # Setting saveing prefix
+            fresults = savedir / f'results_{SXSnum}_{jobtag}.csv'
+            # Setting Results savimg filename.
+            save_namecol(fresults, data = [['#q', '#chi1', '#chi2', '#Mtotal', '#FF', f'#ecc={ecc}']])
+
+            ecc_list = []
+            FF_list = []
+            for Mtotal in Mtotal_list:
+                fini_need = get_fini_dimless(fini_si, Mtotal)
+                e0 = solveEcc(ecc, s.f_ini, fini_need)
+                ret = ge.get_overlap(jobtag = jobtag, minecc = 0, maxecc = 0, eccentricity = e0,
+                                    timeout = timeout, verbose = verbose, Mtotal = Mtotal)
+                ecc_list.append(e0)
+                FF_list.append(ret.max_FF)
+            length = len(Mtotal_list)
+            q_list = s.q*np.ones(len(Mtotal_list)).reshape(1,length)
+            s1z_list = s.s1z*np.ones(len(Mtotal_list)).reshape(1,length)
+            s2z_list = s.s2z*np.ones(len(Mtotal_list)).reshape(1,length)
+            FF_list = np.array(FF_list).reshape(1,length)
+            ecc_list = np.array(ecc_list).reshape(1,length)
+            Mtotal_list_out = Mtotal_list.reshape(1, length)
+            data = np.concatenate((q_list, s1z_list, s2z_list, Mtotal_list_out, FF_list, ecc_list), axis = 0)
+            add_csv(fresults, data.T.tolist())
+    else:
+
+        for SXSnum in SXSnum_list:        
+            s = SXSh22(SXSnum, f_ini = fini, 
+                    modeL = None,
+                    modeM = None, 
+                    table = table,
+                    srcloc = srcloc,
+                    srcloc_all = srcloc_all,
+                    verbose = verbose, 
+                    ishertz = False)
+            ge = s.construct_generator(approx, exe, psd = psd)
+
+            if allow_ecc_fit and fini == 0.002:
+                ge_fit = s.construct_generator(approx, exe, psd = None)
+                ret = ge_fit.get_overlap(jobtag = jobtag, minecc = 0, maxecc = 0, 
+                                    timeout = timeout, verbose = verbose, Preset = True)
+                e0 = ret.ecc_fit
+            else:
+                if fini == 0:
+                    ecc = s.ecc
+                    if allow_ecc:
+                        if type(ecc) is str and ecc_skipNAN:
+                            continue
+                        else:
+                            ecc = 0
+                        e0 = ecc
+                    else:
+                        e0 = 0
+                elif fini == 0.002:
+                    if allow_ecc:
+                        ecc = preset_ecc(fini, retMid = True)
+                        if ecc is None and ecc_skipNAN:
+                            continue
+                        else:
+                            ecc = 0
                     else:
                         ecc = 0
                     e0 = ecc
                 else:
-                    e0 = 0
-            elif fini == 0.002:
-                if allow_ecc:
-                    ecc = preset_ecc(fini, retMid = True)
-                    if ecc is None and ecc_skipNAN:
+                    if allow_ecc:
                         continue
                     else:
-                        ecc = 0
-                else:
-                    ecc = 0
-                e0 = ecc
-            else:
-                if allow_ecc:
-                    continue
-                else:
-                    e0 = 0
-            
-        # Setting saveing prefix
-        fresults = savedir / f'results_{SXSnum}_{jobtag}.csv'
-        # Setting Results savimg filename.
-        save_namecol(fresults, data = [['#q', '#chi1', '#chi2', '#Mtotal', '#FF', f'#ecc={e0}']])
+                        e0 = 0
+                
+            # Setting saveing prefix
+            fresults = savedir / f'results_{SXSnum}_{jobtag}.csv'
+            # Setting Results savimg filename.
+            save_namecol(fresults, data = [['#q', '#chi1', '#chi2', '#Mtotal', '#FF', f'#ecc={e0}']])
 
-        ret = ge.get_overlap(jobtag = jobtag, minecc = 0, maxecc = 0, eccentricity = e0,
-                            timeout = timeout, verbose = verbose, Mtotal = Mtotal_list)
-        length = len(Mtotal_list)
-        q_list = s.q*np.ones(len(Mtotal_list)).reshape(1,length)
-        s1z_list = s.s1z*np.ones(len(Mtotal_list)).reshape(1,length)
-        s2z_list = s.s2z*np.ones(len(Mtotal_list)).reshape(1,length)
-        FF_list = ret[2].reshape(1,length)
-        Mtotal_list_out = Mtotal_list.reshape(1, length)
-        data = np.concatenate((q_list, s1z_list, s2z_list, Mtotal_list_out, FF_list), axis = 0)
-        add_csv(fresults, data.T.tolist())
+            ret = ge.get_overlap(jobtag = jobtag, minecc = 0, maxecc = 0, eccentricity = e0,
+                                timeout = timeout, verbose = verbose, Mtotal = Mtotal_list)
+            length = len(Mtotal_list)
+            q_list = s.q*np.ones(len(Mtotal_list)).reshape(1,length)
+            s1z_list = s.s1z*np.ones(len(Mtotal_list)).reshape(1,length)
+            s2z_list = s.s2z*np.ones(len(Mtotal_list)).reshape(1,length)
+            FF_list = ret[2].reshape(1,length)
+            Mtotal_list_out = Mtotal_list.reshape(1, length)
+            data = np.concatenate((q_list, s1z_list, s2z_list, Mtotal_list_out, FF_list), axis = 0)
+            add_csv(fresults, data.T.tolist())
         
     return 0
         

@@ -207,13 +207,12 @@ def compWithFreqCut(argv = None):
     psd = DetectorPSD(args.psd, flow = args.flow, fhigh = args.fhigh)
     allow_ecc = args.allow_ecc
     ecc_skipNAN = False
-    allow_ecc_fit = False
+    allow_ecc_fit = args.allow_ecc_fit
+    allow_ecc_pn = args.allow_ecc_pn
     allow_ecc_pass0 = args.allow_ecc_pass0
     if allow_ecc_pass0:
         allow_ecc = True
         ecc_skipNAN = True
-    allow_ecc_fit = args.allow_ecc_fit
-    allow_ecc_pn = args.allow_ecc_pn
     timeout = args.timeout
     jobtag = args.jobtag
     
@@ -319,7 +318,7 @@ def compWithFreqCut(argv = None):
             fresults = savedir / f'results_{SXSnum}_{jobtag}.csv'
             # Setting Results savimg filename.
             save_namecol(fresults, data = [['#q', '#chi1', '#chi2', '#Mtotal', '#FF', f'#ecc={e0}']])
-
+            sys.stderr.write(f'Ecc = {e0}\n')
             ret = ge.get_overlap(jobtag = jobtag, minecc = 0, maxecc = 0, eccentricity = e0,
                                 timeout = timeout, verbose = verbose, Mtotal = Mtotal_list)
             length = len(Mtotal_list)

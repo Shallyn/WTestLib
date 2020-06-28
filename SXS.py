@@ -685,12 +685,12 @@ class SXSCompGenerator(Generator):
             else:
                 tc = idx / fs
             phic = np.angle(Oxt[idx])
-            if verbose:
-                sys.stderr.write('Done\n')
             ret_tc[i] = tc
             ret_phic[i] = phic
             ret_FF[i] = Oxt_abs[idx]
             ret_tmove[i] = tmove
+        if verbose:
+            sys.stderr.write('Done\n')
         return ret_tc, ret_phic, ret_FF, ret_tmove
 
 

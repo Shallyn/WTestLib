@@ -290,6 +290,7 @@ def compWithFreqCut(argv = None):
             else:
                 if fini == 0:
                     ecc = s.ecc
+                    print(f'ecc = {ecc}')
                     if allow_ecc:
                         if type(ecc) is str and ecc_skipNAN:
                             continue
@@ -318,7 +319,6 @@ def compWithFreqCut(argv = None):
             fresults = savedir / f'results_{SXSnum}_{jobtag}.csv'
             # Setting Results savimg filename.
             save_namecol(fresults, data = [['#q', '#chi1', '#chi2', '#Mtotal', '#FF', f'#ecc={e0}']])
-            sys.stderr.write(f'Ecc = {ecc}\n')
             ret = ge.get_overlap(jobtag = jobtag, minecc = 0, maxecc = 0, eccentricity = e0,
                                 timeout = timeout, verbose = verbose, Mtotal = Mtotal_list)
             length = len(Mtotal_list)

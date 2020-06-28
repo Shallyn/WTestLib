@@ -247,7 +247,7 @@ def compWithFreqCut(argv = None):
             # Setting saveing prefix
             fresults = savedir / f'results_{SXSnum}_{jobtag}.csv'
             # Setting Results savimg filename.
-            save_namecol(fresults, data = [['#q', '#chi1', '#chi2', '#Mtotal', '#FF', f'#ecc={ecc}', f'#fini(f0 = {fini_si}Hz)']])
+            save_namecol(fresults, data = [['#q', '#chi1', '#chi2', '#Mtotal', '#FF', f'#ecc={ecc}', f'#fini = {s.f_ini_dimless}(f0 = {fini_si}Hz)']])
 
             ecc_list = []
             FF_list = []

@@ -572,7 +572,8 @@ class SXSCompGenerator(Generator):
         if self._verbose:
             sys.stderr.write(f'{LOG}:Checking ecc is allowed or not.\n')
         eccentricity = kwargs.get('eccentricity')
-        if not self.allow_ecc or (minecc == 0 and maxecc == 0):
+        preset = kwargs.get('Preset')
+        if not self.allow_ecc or (minecc == 0 and maxecc == 0 and preset is not True):
             if self._verbose:
                 sys.stderr.write(f'{LOG}:ecc is unused in approx: {self._approx}, now calculate overlap.\n')
             fini = kwargs.get('fini')

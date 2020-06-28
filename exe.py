@@ -290,7 +290,6 @@ def compWithFreqCut(argv = None):
             else:
                 if fini == 0:
                     ecc = s.ecc
-                    print(f'ecc = {ecc}')
                     if allow_ecc:
                         if type(ecc) is str and ecc_skipNAN:
                             continue
@@ -299,6 +298,7 @@ def compWithFreqCut(argv = None):
                         e0 = ecc
                     else:
                         e0 = 0
+                    print(f'ecc = {e0}')
                 elif fini == 0.002:
                     if allow_ecc:
                         ecc = preset_ecc(fini, retMid = True)

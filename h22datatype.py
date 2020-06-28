@@ -38,7 +38,7 @@ def get_fmin(fdimless, Mtotal):
     return fdimless * pow(c_SI, 3) / (G_SI * M_Sun_SI * Mtotal)
 
 def get_fini_dimless(fmin, Mtotal):
-    return fmin * G_SI * Mtotal / pow(c_SI, 3)
+    return fmin * G_SI * Mtotal * M_Sun_SI / pow(c_SI, 3)
 
 def dim_h(r, M):
     return r * pc_SI * 1e6 * c_SI**2 / ( M * M_Sun_SI * G_SI )

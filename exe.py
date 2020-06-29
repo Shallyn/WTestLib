@@ -255,7 +255,7 @@ def compWithFreqCut(argv = None):
                 fini_need = get_fini_dimless(fini_si, Mtotal)
                 e0 = solveEcc(ecc, s.f_ini_dimless, fini_need)
                 ret = ge.get_overlap(jobtag = jobtag, minecc = 0, maxecc = 0, eccentricity = e0,
-                                    timeout = timeout, verbose = verbose, Mtotal = Mtotal)
+                                    timeout = timeout, verbose = verbose, Mtotal = Mtotal, fini = fini_si)
                 ecc_list.append(e0)
                 FF_list.append(ret.max_FF)
                 fini_list.append(fini_need)

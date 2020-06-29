@@ -183,7 +183,7 @@ def ProduceEccSolver(f, eNR, fNR):
 def solveEcc(eNR, fNR, f):
     fsr = ProduceEccSolver(f, eNR, fNR)
 
-    ans = root(fsr, eNR).x
+    ans = root(fsr, 0).x
     return ans[0]
 
 from WTestLib.SXS import preset_ecc

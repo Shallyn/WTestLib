@@ -156,6 +156,7 @@ def parseargs_compWithFreqCut(argv):
     parser.add_option('--allow-ecc-pass0', action = 'store_true', help = 'Would use default NR ecc, if nan, will skip')
     parser.add_option('--allow-ecc-fit', action = 'store_true', help = 'Would find best fit ecc.')
     parser.add_option('--allow-ecc-pn', action = 'store_true', help = 'Would solve correspond ecc by PN')
+    parser.add_option('--allow-ecc-resp', action = 'store_truc', help = 'Would fit respectively.')
     parser.add_option('--min-mtotal', type = 'float', default = 10, help = 'Min Total mass')
     parser.add_option('--max-mtotal', type = 'float', default = 200, help = 'Max Total mass')
     parser.add_option('--num-mtotal', type = 'int', default = 100, help = 'Number of cases')
@@ -182,7 +183,6 @@ def ProduceEccSolver(f, eNR, fNR):
 
 def solveEcc(eNR, fNR, f):
     fsr = ProduceEccSolver(f, eNR, fNR)
-
     ans = root(fsr, 0).x
     return ans[0]
 
@@ -207,6 +207,7 @@ def compWithFreqCut(argv = None):
     psd = DetectorPSD(args.psd, flow = args.flow, fhigh = args.fhigh)
     allow_ecc = args.allow_ecc
     ecc_skipNAN = False
+    allow_ecc_resp = args.allow_ecc_resp
     allow_ecc_fit = args.allow_ecc_fit
     allow_ecc_pn = args.allow_ecc_pn
     allow_ecc_pass0 = args.allow_ecc_pass0
@@ -223,7 +224,8 @@ def compWithFreqCut(argv = None):
 
     savedir = prefix / approx
     verbose = args.verbose
-        
+    onePSD = DetectorPSD(None)
+
     # Mkdir for data saving
     if not savedir.exists():
         savedir.mkdir(parents=True)
@@ -269,8 +271,30 @@ def compWithFreqCut(argv = None):
             fini_list = np.array(fini_list).reshape(1, length)
             data = np.concatenate((q_list, s1z_list, s2z_list, Mtotal_list_out, FF_list, ecc_list, fini_list), axis = 0)
             add_csv(fresults, data.T.tolist())
-    else:
+    elif allow_ecc_resp:
+        for SXSnum in SXSnum_list:
+            s = SXSh22(SXSnum, f_ini = fini, 
+                    modeL = None,
+                    modeM = None, 
+                    table = table,
+                    srcloc = srcloc,
+                    srcloc_all = srcloc_all,
+                    verbose = verbose, 
+                    ishertz = False)
+            ge = s.construct_generator(approx, exe, psd = psd)
+            # Setting saveing prefix
+            fresults = savedir / f'results_{SXSnum}_{jobtag}.csv'
+            # Setting Results savimg filename.
+            save_namecol(fresults, data = [['#q', '#chi1', '#chi2', '#Mtotal', '#FF', f'#ecc={s.ecc}', f'#fini']])
 
+            for Mtotal in Mtotal_list:
+                ret_fit = ge.get_overlap(jobtag = jobtag, minecc = 0, maxecc = 0, Mtotal = Mtotal,
+                                    timeout = timeout, verbose = verbose, Preset = True)
+                e0 = ret_fit.ecc_fit
+                FF = ret_fit.max_FF
+                data = [[s.q, s.s1z, s.s2z, Mtotal, FF, e0, fini]]
+                add_csv(fresults, data)
+    else:
         for SXSnum in SXSnum_list:        
             s = SXSh22(SXSnum, f_ini = fini, 
                     modeL = None,
@@ -283,7 +307,6 @@ def compWithFreqCut(argv = None):
             ge = s.construct_generator(approx, exe, psd = psd)
 
             if allow_ecc_fit and fini == 0.002:
-                onePSD = DetectorPSD(None)
                 ge_fit = s.construct_generator(approx, exe, psd = onePSD)
                 ret_fit = ge_fit.get_overlap(jobtag = jobtag, minecc = 0, maxecc = 0, 
                                     timeout = timeout, verbose = verbose, Preset = True)

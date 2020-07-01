@@ -1152,7 +1152,7 @@ def preset_ecc(SXSnum, retMid = False):
     if retMid:
         return mid
     if mid is not None:
-        ret = [max(0, mid - 0.2), min(1, mid + 0.2)]
+        ret = [max(0, mid - 0.1), min(1, mid + 0.1)]
     else:
         ret = None
     return ret

@@ -34,6 +34,10 @@ def parseargs(argv):
     parser.add_option('--approx', type = 'str', default = 'SEOBNRv1', help = 'Version of the code')
     parser.add_option('--fini', type = 'float', default = 0, help = 'Initial orbital frequency')
     parser.add_option('--SXS', type = 'str', action = 'append', default = [], help = 'SXS template for comparision')
+    parser.add_option('--min-mtotal', type = 'float', default = 10, help = 'Min Total mass')
+    parser.add_option('--max-mtotal', type = 'float', default = 200, help = 'Max Total mass')
+    parser.add_option('--num-mtotal', type = 'int', default = 100, help = 'Number of cases')
+
     parser.add_option('--prefix', type = 'str', default = '.', help = 'dir for results saving.')
     parser.add_option('--plot', action = 'store_true', help = 'If added, will plot sa results and waveform.')
     parser.add_option('--verbose', action = 'store_true', help = 'If added, will print verbose message.')
@@ -58,6 +62,12 @@ def main(argv = None):
     SXSnum_list = args.SXS
     if len(SXSnum_list) == 0:
         SXSnum_list.append('0001')
+    Mtotal_min = args.min_mtotal
+    Mtotal_max = args.max_mtotal
+    Mtotal_num = args.num_mtotal
+    mtotal_list = np.linspace(Mtotal_min, Mtotal_max, Mtotal_num)
+    if len(mtotal_list) == 0:
+        mtotal_list.append(40)
     approx = args.approx
     jobtag = args.jobtag
     exe = args.executable
@@ -86,51 +96,75 @@ def main(argv = None):
         savedir.mkdir(parents=True)
     
     
-    # Setting ErrorMsg filename.
-    ferrmsg = savedir / f'errMessageLog_{jobtag}.txt'
-    errmsg = []
-    # Setting Results savimg filename.
-    fresults = savedir / f'results_{jobtag}.csv'
+    if args.psd is None:
+        # Setting ErrorMsg filename.
+        ferrmsg = savedir / f'errMessageLog_{jobtag}.txt'
+        errmsg = []
+        # Setting Results savimg filename.
+        fresults = savedir / f'results_{jobtag}.csv'
 
-    save_namecol(fresults)
-    
-    for SXSnum in SXSnum_list:
-        # Setting saveing prefix
-        Sprefix = savedir / SXSnum
-        if not Sprefix.exists():
-            Sprefix.mkdir()
+        save_namecol(fresults)
         
-        s = SXSh22(SXSnum, f_ini = fini, 
-                   modeL = modeL,
-                   modeM = modeM, 
-                   table = table,
-                   srcloc = srcloc,
-                   srcloc_all = srcloc_all,
-                   verbose = verbose, 
-                   ishertz = ishertz)
-        ge = s.construct_generator(approx, exe, psd = psd)
-        ret = ge.get_overlap(jobtag = jobtag, minecc = minecc, maxecc = maxecc, 
-                             timeout = timeout, verbose = verbose, Preset = Preset)
-        
-
-        if isplot:
-            # Setting saving file prefix
-            fig_SA_scan = Sprefix / 'fig_SA_scan.png'
-            fig_waveform = Sprefix / 'fig_waveform_fit.png'
-            ret.plot_results(fig_SA_scan)
-            ret.plot_waveform_fit(fig_waveform)
+        for SXSnum in SXSnum_list:
+            # Setting saveing prefix
+            Sprefix = savedir / SXSnum
+            if not Sprefix.exists():
+                Sprefix.mkdir()
             
-        # Setting saving files
-        file_SA_scan = Sprefix / 'SA_scan.txt'
-        file_waveform = Sprefix / 'waveform_fit.txt'
+            s = SXSh22(SXSnum, f_ini = fini, 
+                    modeL = modeL,
+                    modeM = modeM, 
+                    table = table,
+                    srcloc = srcloc,
+                    srcloc_all = srcloc_all,
+                    verbose = verbose, 
+                    ishertz = ishertz)
+            ge = s.construct_generator(approx, exe, psd = psd)
+            ret = ge.get_overlap(jobtag = jobtag, minecc = minecc, maxecc = maxecc, 
+                                timeout = timeout, verbose = verbose, Preset = Preset)
+            
+
+            if isplot:
+                # Setting saving file prefix
+                fig_SA_scan = Sprefix / 'fig_SA_scan.png'
+                fig_waveform = Sprefix / 'fig_waveform_fit.png'
+                ret.plot_results(fig_SA_scan)
+                ret.plot_waveform_fit(fig_waveform)
+                
+            # Setting saving files
+            file_SA_scan = Sprefix / 'SA_scan.txt'
+            file_waveform = Sprefix / 'waveform_fit.txt'
+            
+            ret.save_fit(fresults)
+            ret.save_results(file_SA_scan)
+            ret.save_waveform_fit(file_waveform)
+            errmsg.append(ret.ErrorMsg)
         
-        ret.save_fit(fresults)
-        ret.save_results(file_SA_scan)
-        ret.save_waveform_fit(file_waveform)
-        errmsg.append(ret.ErrorMsg)
-    
-    np.savetxt(ferrmsg, np.array([errmsg]), fmt = '%s', delimiter = '\n')
-    
+        np.savetxt(ferrmsg, np.array([errmsg]), fmt = '%s', delimiter = '\n')
+    else:
+        for SXSnum in SXSnum_list:
+            Sprefix = savedir / SXSnum
+            if not Sprefix.exists():
+                Sprefix.mkdir()
+            fresults = Sprefix / f'results_{jobtag}.csv'
+
+            s = SXSh22(SXSnum, f_ini = fini, 
+                    modeL = modeL,
+                    modeM = modeM, 
+                    table = table,
+                    srcloc = srcloc,
+                    srcloc_all = srcloc_all,
+                    verbose = verbose, 
+                    ishertz = ishertz)
+            ge = s.construct_generator(approx, exe, psd = psd)
+            dprefix = [['#q', '#chi1', '#chi2', '#Mtotal', '#FF', f'#ecc={s.ecc}']]
+            save_namecol(fresults, dprefix)
+            for mtotal in mtotal_list:
+                ret = ge.get_overlap(jobtag = jobtag, minecc = minecc, maxecc = maxecc, Mtotal = mtotal,
+                                    timeout = timeout, verbose = verbose, Preset = Preset)
+                data = [[s.q, s.s1z, s.s2z, mtotal, ret.max_FF, ret.ecc_fit]]
+                add_csv(fresults, data)
+
     return 0
 
 

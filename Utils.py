@@ -150,6 +150,13 @@ def Progress_time(dt, itr, N, remarks = None):
 
 
 #------cmd-------#
+def construct_cmd(exe, **kwargs):
+    ops = [str(exe)]
+    for kw in kwargs:
+        kwR = kw.replace('_','-')
+        ops.append(f'--{kwR}={kwargs[kw]}')
+    return ' '.join(ops)
+
 def cmd(CMD, timeout = 60):
     obj = subprocess.Popen(CMD,stdout=subprocess.PIPE,stderr=subprocess.PIPE,shell=True)
     t_bgn = time.time()
@@ -169,6 +176,8 @@ def cmd_stdout_cev(CMD, name_out, timeout = 60):
         if obj.poll() is not None:
             data = np.loadtxt(name_out)
             os.remove(name_out)
+            if len(data) == 0:
+                return CEV.FAILURE, None
             return CEV.SUCCESS, data
         time_cost = time.time() - t_start
         if time_cost > timeout:

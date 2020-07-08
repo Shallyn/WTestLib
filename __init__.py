@@ -11,7 +11,6 @@ from . import SXS
 from . import generator
 from . import h22datatype
 from . import psd
-from . import exe
 
 __all__ = ['Utils', 'SXS', 'generator', 'h22datatype', 'psd']
 

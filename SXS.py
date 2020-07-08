@@ -616,7 +616,6 @@ class SXSCompGenerator(Generator):
         if Mtotal is not None:
             df = df * Mtotal / self._core.Mtotal
             fs = df * NFFT
-        print(fs)
         freqs = np.abs(np.fft.fftfreq(NFFT, 1./fs))
         power_vec = self._psd(freqs)
         Stilde = SXS.h22f

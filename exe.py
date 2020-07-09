@@ -45,6 +45,8 @@ def parseargs(argv):
     parser.add_option('--preset-ecc', action = 'store_true', help = 'If added, will use preset Hz eccentricities.')
     parser.add_option('--maxecc', type = 'float', default = 0, help = 'If zero, will automatically set ecc search range.')
     parser.add_option('--minecc', type = 'float', default = 0, help = 'If zero, will automatically set ecc search range.')
+    parser.add_option('--estep', type = 'float', default = 0.02, help = 'If zero, will automatically set ecc search range.')
+
     parser.add_option('--table', type = 'str', default = str(DEFAULT_TABLE), help = 'Path of SXS table.')
     parser.add_option('--srcloc', type = 'str', default = str(DEFAULT_SRCLOC), help = 'Path of SXS waveform data.')
     parser.add_option('--srcloc-all', type = 'str', default = str(DEFAULT_SRCLOC_ALL), help = 'Path of SXS waveform data all modes')
@@ -83,7 +85,8 @@ def main(argv = None):
     psd = DetectorPSD(args.psd, flow = args.flow)
     timeout = args.timeout
     Preset = args.preset_ecc
-    
+    estep = args.estep
+
     modeL = args.modeL
     modeM = args.modeM
         
@@ -161,7 +164,7 @@ def main(argv = None):
             save_namecol(fresults, dprefix)
             for mtotal in mtotal_list:
                 ret = ge.get_overlap(jobtag = jobtag, minecc = minecc, maxecc = maxecc, Mtotal = mtotal,
-                                    timeout = timeout, verbose = verbose, Preset = Preset)
+                                    timeout = timeout, verbose = verbose, Preset = Preset, estep = estep)
                 data = [[s.q, s.s1z, s.s2z, mtotal, ret.max_FF, ret.ecc_fit]]
                 add_csv(fresults, data)
 

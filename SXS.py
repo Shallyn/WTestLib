@@ -1007,6 +1007,19 @@ def calculate_overlap(wf_1, wf_2, psd = None, flow = 0, verbose = False, fullret
         phic = np.angle(Oxt[idx])
         return max(Oxt_abs), tc, phic, tmove
 
+def compare_with_SXS(SXSnum, hLM, **kwargs):
+    NR = SXSh22(SXSnum)
+    dtNR = np.gradient(NR.rawData.time)
+    dth = np.gradient(hLM.time)
+    min_dtNR = min(dtNR)
+    max_dtNR = max(dtNR)
+    min_dth = min(dth)
+    max_dth = max(dth)
+    fs = 1./ max(min_dtNR, max_dtNR, min_dth, max_dth)
+    NRs = h22base(NR.rawData.time, NR.rawData.real, NR.rawData.imag, fs)
+    hLMs = h22base(hLM.time, hLM.real, hLM.imag, fs)
+    return calculate_overlap(NRs, hLMs, **kwargs)
+    
 def plot_fit(wf_1, wf_2, fname, name1 = 'name1', name2 = 'name2',
              FIT_linestyle = None, FIT_color = None, 
              FIT_alpha = None, FIT_linewidth = None,

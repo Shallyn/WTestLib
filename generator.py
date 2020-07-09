@@ -562,6 +562,8 @@ class self_adaptivor(object):
             
     def __check_adaptive(self,xlist, ylist, idx_ymax):
         ymax = ylist[idx_ymax]
+        idx_ymax2 = np.argsort(ylist)[-2]
+        ymax2 = ylist[idx_ymax2]
         dx = xlist[1] - xlist[0]
         lmax = len(ylist) - 1
         diff_l = abs(ymax - ylist[max(0, idx_ymax - 1)])
@@ -573,8 +575,9 @@ class self_adaptivor(object):
                 new_diff = diff_l
             else:
                 new_diff = (diff_l + diff_r) / 2
-        xmin = max(0, xlist[max(0,idx_ymax - 3)] - dx / 6)
-        xmax = min(1.0, xlist[min(lmax,idx_ymax + 3)] + dx/6)
+        deltaIdx = max(3, abs(idx_ymax - idx_ymax2))
+        xmin = max(0, xlist[max(0,idx_ymax - deltaIdx)] - dx / 6)
+        xmax = min(1.0, xlist[min(lmax,idx_ymax + deltaIdx)] + dx/6)
         dx = dx / 5
         return xmin, xmax, dx, new_diff
 

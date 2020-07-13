@@ -28,6 +28,11 @@ DEFAULT_FIT_PLOT_COLOR = 'seagreen'
 DEFAULT_FIT_ALPHA = 1.0 
 DEFAULT_FIT_LINEWIDTH = 1.0
 
+DEFAULT_NOSPIN_SXS_LIST = ('0071', '0169', '0168', '0294', '0167', 
+                        '0295', '0296', '0166', '0297', '0298',
+                        '0299', '0300', '0301', '0302', '0303')
+
+DEFAULT_NOSPIN_ECC_SXS_LIST = [str(x) for x in range(1355, 1375)]
 #-------------Load File--------------#
 def loadSXSh5data(fname, modeL, modeM):
     f = h5py.File(fname, 'r')

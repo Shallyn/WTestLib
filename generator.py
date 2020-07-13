@@ -117,6 +117,15 @@ def CMD_pyEOBCal(exe,
                 --sample-rate={srate} --f-min={f_ini} --eccentricity={ecc}'
     return CMD
 
+def CMD_SEOBNREv5(exe,
+                  q,
+                  deltaT,
+                  ecc,
+                  f_ini):
+    CMD = f'{exe} --mass-ratio={q} --f-min={f_ini} \
+        --delta-t={deltaT} --eccentricity={ecc} \
+            --version=3 --return=0'
+    return CMD
 
 # Classifier
 class Generator(object):
@@ -249,6 +258,20 @@ class Generator(object):
                                  f_ini = f_ini)
                 def _pretreat(t, hr, hi, r, M, **kwargs):
                     #t = t / dim_t(M)
+                    return t, hr, hi
+                self._pretreat = _pretreat
+                self._allow_ecc = True
+                break
+
+            if case('SEOBNREv5'):
+                self._CMD = lambda m1, m2, s1z, s2z, D, ecc, srate, f_ini, L, M :\
+                    CMD_SEOBNREv5(exe = self._exe,
+                                  q = m1 / m2,
+                                  deltaT = dim_t(m1+m2)/srate,
+                                  ecc = ecc,
+                                  f_ini = f_ini / dim_t(m1 + m2))
+                def _pretreat(t, hr, hi, r, M, **kwargs):
+                    t = t / dim_t(M)
                     return t, hr, hi
                 self._pretreat = _pretreat
                 self._allow_ecc = True
@@ -526,6 +549,7 @@ class self_adaptivor(object):
         while(icount < maxitr):
             if abs(xmax - xmin) <= dx * 0.9:
                 break
+            sys.stderr.write('Xrange:[{xmin}, {xmax}]')
             xlist = np.arange(xmin, xmax, dx)
             ylist = self.__get_fx(xlist)
             xout += xlist.tolist()
@@ -575,7 +599,7 @@ class self_adaptivor(object):
                 new_diff = diff_l
             else:
                 new_diff = (diff_l + diff_r) / 2
-        deltaIdx = max(3, abs(idx_ymax - idx_ymax2))
+        deltaIdx = max(3, 1 + abs(idx_ymax - idx_ymax2))
         xmin = max(0, xlist[max(0,idx_ymax - deltaIdx)] - dx / 6)
         xmax = min(1.0, xlist[min(lmax,idx_ymax + deltaIdx)] + dx/6)
         dx = dx / 5

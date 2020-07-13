@@ -9,7 +9,7 @@ import matplotlib as mlb
 mlb.use('Agg')
 
 import numpy as np
-from .SXS import SXSh22, save_namecol
+from .SXS import SXSh22, save_namecol, DEFAULT_NOSPIN_SXS_LIST
 from pathlib import Path
 from optparse import OptionParser
 from .psd import DetectorPSD
@@ -34,6 +34,7 @@ def parseargs(argv):
     parser.add_option('--approx', type = 'str', default = 'SEOBNRv1', help = 'Version of the code')
     parser.add_option('--fini', type = 'float', default = 0, help = 'Initial orbital frequency')
     parser.add_option('--SXS', type = 'str', action = 'append', default = [], help = 'SXS template for comparision')
+    parser.add_option('--SXS-nospin', action = 'store_true', help = 'will use no spin SXS wfs')
     parser.add_option('--min-mtotal', type = 'float', default = 10, help = 'Min Total mass')
     parser.add_option('--max-mtotal', type = 'float', default = 200, help = 'Max Total mass')
     parser.add_option('--num-mtotal', type = 'int', default = 100, help = 'Number of cases')
@@ -60,10 +61,12 @@ def parseargs(argv):
 
 
 def main(argv = None):
-    args, empty = parseargs(argv)
+    args, _ = parseargs(argv)
     SXSnum_list = args.SXS
     if len(SXSnum_list) == 0:
         SXSnum_list.append('0001')
+    if args.SXS_nospin:
+        SXSnum_list = DEFAULT_NOSPIN_SXS_LIST
     Mtotal_min = args.min_mtotal
     Mtotal_max = args.max_mtotal
     Mtotal_num = args.num_mtotal
@@ -124,7 +127,7 @@ def main(argv = None):
                     ishertz = ishertz)
             ge = s.construct_generator(approx, exe, psd = psd)
             ret = ge.get_overlap(jobtag = jobtag, minecc = minecc, maxecc = maxecc, 
-                                timeout = timeout, verbose = verbose, Preset = Preset)
+                                timeout = timeout, verbose = verbose, Preset = Preset, estep = estep)
             
 
             if isplot:

@@ -349,7 +349,7 @@ def compWithFreqCut(argv = None):
             if allow_ecc_fit and fini == 0.002:
                 ge_fit = s.construct_generator(approx, exe, psd = onePSD)
                 ret_fit = ge_fit.get_overlap(jobtag = jobtag, minecc = 0, maxecc = 0, 
-                                    timeout = timeout, verbose = verbose, Preset = True)
+                                    timeout = timeout, verbose = verbose, Preset = True, estep = 0.001)
                 e0 = ret_fit.ecc_fit
             else:
                 if fini == 0:

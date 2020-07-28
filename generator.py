@@ -121,10 +121,24 @@ def CMD_SEOBNREv5(exe,
                   q,
                   deltaT,
                   ecc,
+                  s1z,
+                  s2z,
                   f_ini):
     CMD = f'{exe} --mass-ratio={q} --f-min={f_ini} \
         --delta-t={deltaT} --eccentricity={ecc} \
-            --version=3 --return=0'
+        --chi1={s1z} --chi2={s2z} --version=3 --return=0'
+    return CMD
+
+def CMD_SEOBNREv6(exe,
+                  q,
+                  deltaT,
+                  ecc,
+                  s1z,
+                  s2z,
+                  f_ini):
+    CMD = f'{exe} --mass-ratio={q} --f-min={f_ini} \
+        --delta-t={deltaT} --eccentricity={ecc} \
+        --chi1={s1z} --chi2={s2z} --version=4 --return=0'
     return CMD
 
 # Classifier
@@ -269,6 +283,24 @@ class Generator(object):
                                   q = m1 / m2,
                                   deltaT = dim_t(m1+m2)/srate,
                                   ecc = ecc,
+                                  s1z = s1z,
+                                  s2z = s2z,
+                                  f_ini = f_ini / dim_t(m1 + m2))
+                def _pretreat(t, hr, hi, r, M, **kwargs):
+                    t = t / dim_t(M)
+                    return t, hr, hi
+                self._pretreat = _pretreat
+                self._allow_ecc = True
+                break
+            
+            if case('SEOBNREv6'):
+                self._CMD = lambda m1, m2, s1z, s2z, D, ecc, srate, f_ini, L, M :\
+                    CMD_SEOBNREv6(exe = self._exe,
+                                  q = m1 / m2,
+                                  deltaT = dim_t(m1+m2)/srate,
+                                  ecc = ecc,
+                                  s1z = s1z,
+                                  s2z = s2z,
                                   f_ini = f_ini / dim_t(m1 + m2))
                 def _pretreat(t, hr, hi, r, M, **kwargs):
                     t = t / dim_t(M)

@@ -9,7 +9,7 @@ import matplotlib as mlb
 mlb.use('Agg')
 
 import numpy as np
-from .SXS import SXSh22, save_namecol, DEFAULT_NOSPIN_SXS_LIST
+from .SXS import SXSh22, save_namecol, DEFAULT_NOSPIN_SXS_LIST, DEFAULT_LOWSPIN_SXS_LIST, DEFAULT_HIGHSPIN_SXS_LIST
 from pathlib import Path
 from optparse import OptionParser
 from .psd import DetectorPSD
@@ -35,6 +35,8 @@ def parseargs(argv):
     parser.add_option('--fini', type = 'float', default = 0, help = 'Initial orbital frequency')
     parser.add_option('--SXS', type = 'str', action = 'append', default = [], help = 'SXS template for comparision')
     parser.add_option('--SXS-nospin', action = 'store_true', help = 'will use no spin SXS wfs')
+    parser.add_option('--SXS-lowspin', action = 'store_true', help = 'will use low spin SXS wfs')
+    parser.add_option('--SXS-highspin', action = 'store_true', help = 'will use low spin SXS wfs')
     parser.add_option('--min-mtotal', type = 'float', default = 10, help = 'Min Total mass')
     parser.add_option('--max-mtotal', type = 'float', default = 200, help = 'Max Total mass')
     parser.add_option('--num-mtotal', type = 'int', default = 100, help = 'Number of cases')
@@ -67,6 +69,10 @@ def main(argv = None):
         SXSnum_list.append('0001')
     if args.SXS_nospin:
         SXSnum_list = DEFAULT_NOSPIN_SXS_LIST
+    if args.SXS_lowspin:
+        SXSnum_list = DEFAULT_LOWSPIN_SXS_LIST
+    if args.SXS_highspin:
+        SXSnum_list = DEFAULT_HIGHSPIN_SXS_LIST
     Mtotal_min = args.min_mtotal
     Mtotal_max = args.max_mtotal
     Mtotal_num = args.num_mtotal

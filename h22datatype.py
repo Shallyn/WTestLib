@@ -166,6 +166,11 @@ class ModeBase(object):
         del self._time
         del self._mode
 
+    def dump(self, fname, **kwargs):
+        data = np.stack([self.time, self.real, self.imag], axis = 1)
+        np.savetxt(fname, data, **kwargs)
+        return
+
 class h22base(ModeBase):
     def __init__(self, time, hreal, himag, srate, verbose = False):
         super(h22base, self).__init__(time, hreal, himag)

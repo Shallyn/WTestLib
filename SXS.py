@@ -31,7 +31,11 @@ DEFAULT_FIT_LINEWIDTH = 1.0
 DEFAULT_NOSPIN_SXS_LIST = ('0071', '0169', '0168', '0294', '0167', 
                         '0295', '0296', '0166', '0297', '0298',
                         '0299', '0300', '0301', '0302', '0303')
-
+DEFAULT_LOWSPIN_SXS_LIST = ('0222', '0038', '0041', '0004', '0005', '0005', 
+                        '0014', '0148', '0170', '0171', '0203', '0205',
+                        '0240', '0241', '0242')
+DEFAULT_HIGHSPIN_SXS_LIST = ('0025', '0151', '0154', '0155', '0157', '0158',
+                        '0159', '0160', '0177', '0178', '0202', '0231', '0280')
 DEFAULT_NOSPIN_ECC_SXS_LIST = [str(x) for x in range(1355, 1375)]
 #-------------Load File--------------#
 def loadSXSh5data(fname, modeL, modeM):
@@ -83,6 +87,7 @@ def loadSXSdataLM(SXSnum, srcloc, modeL, modeM):
         himag = Data[:,2]
     f.close()
     return time, hreal, himag
+    
 
 #-----------------GET WAVEFORM PARAMETERS----------------#    
 def get_SXS_parameters(SXSnum, pmsName, 
@@ -258,6 +263,23 @@ class SXSAllMode(SXSObject):
         for l in self._core.iter_modeL():
             yield l
 
+    def dumpMode(self, l, m, fname = None):
+        if fname is None:
+            fname = f'Mode_{l}_{m}_{self._SXSnum}'
+        mode = self.get_mode(l, m)
+        mode.dump(fname)
+
+    def dumpAllModes(self, prefix = None):
+        if prefix is None:
+            prefix = Path(f'AllModes_{self._SXSnum}/Mode_')
+        if not prefix.parent.exists():
+            prefix.parent.mkdir(parents = True)
+        Prt = prefix.parent
+        fP = prefix.name
+        for (l, m), mode in self:
+            fname = Prt / f'{fP}{l}_{m}.dat'
+            mode.dump(fname)
+
 class waveform_mode_collector(object):
     def __init__(self, cutpct = 20):
         self._modes = {}
@@ -316,7 +338,6 @@ class waveform_mode_collector(object):
         l = int(splt[1])
         m = int(splt[2])
         return (l,m)
-        
     
     def get_mode(self, l, m):
         key = self._get_key(l,m)

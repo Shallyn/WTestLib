@@ -16,6 +16,76 @@ from .psd import DetectorPSD
 from .h22datatype import get_fmin, get_fini_dimless
 import sys
 
+#-----Used For MCMC Calibration----#
+def getMCFlikelihood(argv):
+    from .SXS import DEFAULT_TABLE
+    from .SXS import DEFAULT_SRCLOC
+    from .SXS import DEFAULT_SRCLOC_ALL
+
+    parser = OptionParser(description='Waveform Comparation With SXS')
+    parser.add_option('--executable', type = 'str', default = 'lalsim-inspiral', help = 'Exe command')
+    parser.add_option('--approx', type = 'str', default = 'SEOBNRv1', help = 'Version of the code')
+    parser.add_option('--fini', type = 'float', default = 0, help = 'Initial orbital frequency')
+    parser.add_option('--SXS', type = 'str', default = '0070', help = 'SXS template for comparision')
+    parser.add_option('--mtotal', type = 'float', default = 40, help = 'Total mass')
+    parser.add_option('--srate', type = 'float', default = 16384, help = 'Sample rate')
+
+    parser.add_option('--prefix', type = 'str', default = '.', help = 'dir for results saving.')
+    parser.add_option('--psd', type = 'str', help = 'Detector psd.')
+    parser.add_option('--flow', type = 'float', default = 0, help = 'Lower frequency cut off for psd.')
+    parser.add_option('--timeout', type = 'int', default = 60, help = 'Time limit for waveform generation')
+    parser.add_option('--mode', type = 'str', default = 'all', help = 'Search mode.')
+
+    parser.add_option('--table', type = 'str', default = str(DEFAULT_TABLE), help = 'Path of SXS table.')
+    parser.add_option('--srcloc', type = 'str', default = str(DEFAULT_SRCLOC), help = 'Path of SXS waveform data.')
+    parser.add_option('--srcloc-all', type = 'str', default = str(DEFAULT_SRCLOC_ALL), help = 'Path of SXS waveform data all modes')
+
+    args, _ = parser.parse_args(argv)
+
+    exe = args.executable
+    approx = args.approx
+    SXSnum = args.SXS
+    mtotal = args.mtotal
+    fini = args.fini
+    srate = args.srate
+    table = args.table
+    srcloc = args.srcloc
+    srcloc_all = args.srcloc_all
+
+    Smode = args.mode.lower()
+
+    psd = DetectorPSD(args.psd, flow = args.flow)
+    NR = SXSh22(SXSnum = SXSnum,
+                f_ini = fini,
+                Mtotal = mtotal,
+                srate = srate,
+                srcloc = srcloc,
+                table = table,
+                srcloc_all = srcloc_all)
+    ge = NR.construct_generator(approx, exe, psd = psd)
+    # K, dSO, dSS
+    def get_lnprob(pms):
+        if pms[0] < -10 or pms[0] > 10 or \
+            pms[1] < -1e4 or pms[1] > 1e4 or \
+            pms[2] < -1e3 or pms[2] > 1e3:
+            return -np.inf
+        ret = ge.get_overlap(jobtag = args.jobtag, timeout = args.timeout,
+                    KK = pms[0], dSO = pms[1], dSS = pms[2])
+        eps = 1 - ret.max_FF
+        if eps > 1:
+            return -np.inf
+        dephase = ret.dephase_fit
+        return -(pow(eps/0.01,2) + pow(dephase/5,2 ))/2
+    
+    pms0 = NR.CalculateAdjParamsV4()
+    return get_lnprob, args, pms0
+
+    
+
+
+
+
+
 #-----Parse args-----#
 def parseargs(argv):
     # Input Parameters:

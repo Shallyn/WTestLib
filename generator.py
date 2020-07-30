@@ -25,7 +25,8 @@ def CMD_lalsim_inspiral(exe,
                         D,
                         srate,
                         f_ini,
-                        approx):
+                        approx,
+                        **kwargs):
     CMD = f'{exe} --m1={m1} --m2={m2} \
             --spin1z={s1z} --spin2z={s2z} \
             --distance={D} --sample-rate={srate} \
@@ -41,7 +42,8 @@ def CMD_SEOBNREv1(exe,
                   D,
                   ecc,
                   srate,
-                  f_ini):
+                  f_ini,
+                  **kwargs):
     CMD = f'{exe} --m1 {m1} --m2 {m2} \
             --spin1z {s1z} --spin2z {s2z} \
             --distance {D} --e0 {ecc} \
@@ -58,7 +60,8 @@ def CMD_SEOBNREv4(exe,
                   D,
                   ecc,
                   srate,
-                  f_ini):
+                  f_ini,
+                  **kwargs):
     CMD = f'{exe} --m1 {m1} --m2 {m2} \
             --spin1z {s1z} --spin2z {s2z} \
             --distance {D} --e0 {ecc} \
@@ -77,7 +80,8 @@ def CMD_new_SEOBNRE(exe,
                     ecc,
                     srate,
                     f_ini,
-                    approx):
+                    approx,
+                    **kwargs):
     CMD = f'{exe} --m1={m1} --m2={m2} \
             --spin1z={s1z} --spin2z={s2z} \
             --distance={D} --sample-rate={srate} \
@@ -95,7 +99,8 @@ def CMD_new_SEOBNREv4HM(exe,
                         f_ini,
                         approx,
                         modeL,
-                        modeM):
+                        modeM,
+                        **kwargs):
     CMD = f'{exe} --m1={m1} --m2={m2} \
             --spin1z={s1z} --spin2z={s2z} \
             --distance={D} --sample-rate={srate} \
@@ -111,7 +116,8 @@ def CMD_pyEOBCal(exe,
                  s2z,
                  ecc,
                  srate,
-                 f_ini):
+                 f_ini,
+                 **kwargs):
     CMD = f'{exe} --m1={m1} --m2={m2} \
                 --spin1z={s1z} --spin2z={s2z} \
                 --sample-rate={srate} --f-min={f_ini} --eccentricity={ecc}'
@@ -123,23 +129,24 @@ def CMD_SEOBNREv5(exe,
                   ecc,
                   s1z,
                   s2z,
-                  f_ini):
+                  f_ini,
+                  version = 3,
+                  KK = None,
+                  dSO = None,
+                  dSS = None,
+                  **kwargs):
+    adjpms = ''
+    if KK is not None:
+        adjpms += f' --KK={KK}'
+    if dSO is not None:
+        adjpms += f' --dso={dSO}'
+    if dSS is not None:
+        adjpms += f' --dss={dSS}'
     CMD = f'{exe} --mass-ratio={q} --f-min={f_ini} \
         --delta-t={deltaT} --eccentricity={ecc} \
-        --chi1={s1z} --chi2={s2z} --version=3 --return=0'
+        --chi1={s1z} --chi2={s2z} --version={version} --return=0' + adjpms
     return CMD
 
-def CMD_SEOBNREv6(exe,
-                  q,
-                  deltaT,
-                  ecc,
-                  s1z,
-                  s2z,
-                  f_ini):
-    CMD = f'{exe} --mass-ratio={q} --f-min={f_ini} \
-        --delta-t={deltaT} --eccentricity={ecc} \
-        --chi1={s1z} --chi2={s2z} --version=4 --return=0'
-    return CMD
 
 # Classifier
 class Generator(object):
@@ -162,7 +169,7 @@ class Generator(object):
                 case('SEOBNRv1') or \
                 case('SEOBNRv2') or \
                 case('SEOBNRv4'):
-                self._CMD = lambda m1, m2, s1z, s2z, D, ecc, srate, f_ini, L, M : \
+                self._CMD = lambda m1, m2, s1z, s2z, D, ecc, srate, f_ini, L, M, **kwargs : \
                     CMD_lalsim_inspiral(exe = self._exe,
                                         m1 = m1,
                                         m2 = m2,
@@ -171,7 +178,8 @@ class Generator(object):
                                         D = D,
                                         srate = srate,
                                         f_ini = f_ini,
-                                        approx = self._approx)
+                                        approx = self._approx,
+                                        **kwargs)
                 def _pretreat(t, hr, hi, r, M, **kwargs):
                     hr *= np.sqrt(4 * np.pi / 5) * dim_h(r, M)
                     hi *= -np.sqrt(4 * np.pi / 5) * dim_h(r, M)
@@ -180,7 +188,7 @@ class Generator(object):
                 self._allow_ecc = False
                 break
             if case('SEOBNREv1'):
-                self._CMD = lambda m1, m2, s1z, s2z, D, ecc, srate, f_ini, L, M : \
+                self._CMD = lambda m1, m2, s1z, s2z, D, ecc, srate, f_ini, L, M, **kwargs: \
                     CMD_SEOBNREv1(exe = self._exe, 
                                   m1 = m1, 
                                   m2 = m2,
@@ -189,7 +197,8 @@ class Generator(object):
                                   D = D,
                                   ecc = ecc,
                                   srate = srate,
-                                  f_ini = f_ini)
+                                  f_ini = f_ini,
+                                  **kwargs)
                 def _pretreat(t, hr, hi, r, M, **kwargs):
                     hr *= dim_h(r, M)
                     hi *= dim_h(r, M)
@@ -198,7 +207,7 @@ class Generator(object):
                 self._allow_ecc = True
                 break
             if case('SEOBNREv4'):
-                self._CMD = lambda m1, m2, s1z, s2z, D, ecc, srate, f_ini, L, M : \
+                self._CMD = lambda m1, m2, s1z, s2z, D, ecc, srate, f_ini, L, M, **kwargs: \
                     CMD_SEOBNREv4(exe = self._exe,
                                   m1 = m1,
                                   m2 = m2,
@@ -207,7 +216,8 @@ class Generator(object):
                                   D = D,
                                   ecc = ecc,
                                   srate = srate,
-                                  f_ini = f_ini)
+                                  f_ini = f_ini,
+                                  **kwargs)
                 def _pretreat(t, hr, hi, r, M, **kwargs):
                     hr *= dim_h(r, M)
                     hi *= dim_h(r, M)
@@ -219,7 +229,7 @@ class Generator(object):
                 case('new_SEOBNREv2') or \
                 case('new_SEOBNREv4'):
                 self._approx = self._approx.split('_')[-1]
-                self._CMD = lambda m1, m2, s1z, s2z, D, ecc, srate, f_ini, L, M : \
+                self._CMD = lambda m1, m2, s1z, s2z, D, ecc, srate, f_ini, L, M, **kwargs: \
                     CMD_new_SEOBNRE(exe = self._exe,
                                     m1 = m1,
                                     m2 = m2,
@@ -229,7 +239,8 @@ class Generator(object):
                                     ecc = ecc,
                                     srate = srate,
                                     f_ini = f_ini,
-                                    approx = self._approx)
+                                    approx = self._approx,
+                                    **kwargs)
                 def _pretreat(t, hr, hi, r, M, **kwargs):
                     hr *= np.sqrt(4 * np.pi / 5) * dim_h(r, M)
                     hi *= -np.sqrt(4 * np.pi / 5) * dim_h(r, M)
@@ -239,7 +250,7 @@ class Generator(object):
                 break
             
             if case('SEOBNREv4HM'):
-                self._CMD = lambda m1, m2, s1z, s2z, D, ecc, srate, f_ini, L, M : \
+                self._CMD = lambda m1, m2, s1z, s2z, D, ecc, srate, f_ini, L, M, **kwargs: \
                     CMD_new_SEOBNREv4HM(exe = self._exe,
                                         m1 = m1,
                                         m2 = m2,
@@ -250,7 +261,8 @@ class Generator(object):
                                         f_ini = f_ini,
                                         approx = self._approx,
                                         modeL = L,
-                                        modeM = M)
+                                        modeM = M,
+                                        **kwargs)
                 def _pretreat(t, hr, hi, r, M, **kwargs):
                     hr *= dim_h(r, M)
                     hi *= dim_h(r, M)
@@ -261,7 +273,7 @@ class Generator(object):
                 break
 
             if case('pyEOBCal'):
-                self._CMD = lambda m1, m2, s1z, s2z, D, ecc, srate, f_ini, L, M :\
+                self._CMD = lambda m1, m2, s1z, s2z, D, ecc, srate, f_ini, L, M, **kwargs:\
                     CMD_pyEOBCal(exe = self._exe,
                                  m1 = m1,
                                  m2 = m2,
@@ -269,7 +281,8 @@ class Generator(object):
                                  s2z = s2z,
                                  ecc = ecc,
                                  srate = srate,
-                                 f_ini = f_ini)
+                                 f_ini = f_ini,
+                                 **kwargs)
                 def _pretreat(t, hr, hi, r, M, **kwargs):
                     #t = t / dim_t(M)
                     return t, hr, hi
@@ -278,30 +291,33 @@ class Generator(object):
                 break
 
             if case('SEOBNREv5'):
-                self._CMD = lambda m1, m2, s1z, s2z, D, ecc, srate, f_ini, L, M :\
+                self._CMD = lambda m1, m2, s1z, s2z, D, ecc, srate, f_ini, L, M, **kwargs:\
                     CMD_SEOBNREv5(exe = self._exe,
                                   q = m1 / m2,
                                   deltaT = dim_t(m1+m2)/srate,
                                   ecc = ecc,
                                   s1z = s1z,
                                   s2z = s2z,
-                                  f_ini = f_ini / dim_t(m1 + m2))
+                                  f_ini = f_ini / dim_t(m1 + m2),
+                                  **kwargs)
                 def _pretreat(t, hr, hi, r, M, **kwargs):
                     t = t / dim_t(M)
                     return t, hr, hi
                 self._pretreat = _pretreat
                 self._allow_ecc = True
                 break
-            
+
             if case('SEOBNREv6'):
-                self._CMD = lambda m1, m2, s1z, s2z, D, ecc, srate, f_ini, L, M :\
-                    CMD_SEOBNREv6(exe = self._exe,
+                self._CMD = lambda m1, m2, s1z, s2z, D, ecc, srate, f_ini, L, M, **kwargs:\
+                    CMD_SEOBNREv5(exe = self._exe,
                                   q = m1 / m2,
                                   deltaT = dim_t(m1+m2)/srate,
                                   ecc = ecc,
                                   s1z = s1z,
                                   s2z = s2z,
-                                  f_ini = f_ini / dim_t(m1 + m2))
+                                  f_ini = f_ini / dim_t(m1 + m2),
+                                  version = -2,
+                                  **kwargs)
                 def _pretreat(t, hr, hi, r, M, **kwargs):
                     t = t / dim_t(M)
                     return t, hr, hi
@@ -333,7 +349,8 @@ class Generator(object):
                  srate,
                  f_ini,
                  L,
-                 M):
+                 M,
+                 **kwargs):
         EXE = self._CMD(m1 = m1,
                         m2 = m2,
                         s1z = s1z,
@@ -343,7 +360,8 @@ class Generator(object):
                         srate = srate,
                         f_ini = f_ini,
                         L = L,
-                        M = M)
+                        M = M,
+                        **kwargs)
         return EXE
     
     @property
@@ -362,7 +380,8 @@ class Generator(object):
                  L,
                  M,
                  timeout = 60,
-                 jobtag = '_test'):
+                 jobtag = '_test',
+                 **kwargs):
         EXE = self._CMD(m1 = m1,
                         m2 = m2,
                         s1z = s1z,
@@ -372,7 +391,8 @@ class Generator(object):
                         srate = srate,
                         f_ini = f_ini,
                         L = L,
-                        M = M)
+                        M = M,
+                        **kwargs)
         if self._verbose:
             sys.stderr.write(f'{LOG}:{jobtag}-> \n{EXE}\n')
         cev, ret =  cmd_stdout_cev(EXE, 

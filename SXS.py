@@ -165,6 +165,46 @@ class SXSObject(object):
         self.initial_ADM_energy = pms['initial_ADM_energy']
         
     @property
+    def mQ1(self):
+        return self.q / (1 + self.q)
+
+    @property
+    def mQ2(self):
+        return 1 / (1 + self.q)
+
+    @property
+    def chi1Vec(self):
+        return np.array([self.s1x, self.s1y, self.s1z])
+
+    @property
+    def chi2Vec(self):
+        return np.array([self.s2x, self.s2y, self.s2z])
+
+    @property
+    def chiSVec(self):
+        return 0.5*(self.chi1Vec + self.chi2Vec)
+    
+    @property
+    def chiAVec(self):
+        return 0.5 * (self.chi1Vec - self.chi2Vec)
+
+    @property
+    def spin1Vec(self):
+        return self.chi1Vec * np.power(self.mQ1, 2)
+    
+    @property
+    def spin2Vec(self):
+        return self.chi2Vec * np.power(self.mQ2, 2)
+
+    @property
+    def chiKerr(self):
+        return self.spin1Vec + self.spin2Vec
+
+    @property
+    def eta(self):
+        return self.q / (1+self.q) / (1+self.q)
+
+    @property
     def SXSnum(self):
         return self._SXSnum
     
@@ -396,10 +436,6 @@ class SXSparameters(SXSObject):
         return self._Mtotal / (1 + self.q)
 
     @property
-    def eta(self):
-        return self.q / (1+self.q) / (1+self.q)
-    
-    @property
     def f_ini(self):
         if self._f_ini <= 0:
             return self.Sf_ini * dim_t(self._Mtotal)
@@ -412,6 +448,9 @@ class SXSparameters(SXSObject):
     @property
     def f_ini_dimless(self):
         return self.f_ini / dim_t(self.m1 + self.m2)
+
+    def CalculateAdjParamsV4(self):
+        return SEOBHyperCoefficients_v4(self.eta, self.chiKerr[2])
 
 
 class SXSh22(SXSparameters, h22base):
@@ -480,6 +519,7 @@ class SXSh22(SXSparameters, h22base):
     def duration_dimM(self):
         return self.duration * self.dim_t
         
+    
         
 class SXSCompGenerator(Generator):
     def __init__(self, approx, executable, sxsh22, psd = None, modeL = None, modeM = None,verbose = False):
@@ -510,8 +550,7 @@ class SXSCompGenerator(Generator):
                                     f_ini = self._core.f_ini,
                                     L = self._modeL,
                                     M = self._modeM)
-
-        
+    
     @property
     def SXS(self):
         return self._core
@@ -542,7 +581,8 @@ class SXSCompGenerator(Generator):
                      timeout = 60,
                      Mtotal = None,
                      verbose = None,
-                     fini = None):
+                     fini = None,
+                     **kwargs):
         if verbose is None:
             verbose = self._verbose
         if verbose:
@@ -577,7 +617,8 @@ class SXSCompGenerator(Generator):
                             L = self._modeL,
                             M = self._modeM,
                             jobtag = jobtag,
-                            timeout = timeout)
+                            timeout = timeout,
+                            **kwargs)
 
         if verbose:
             sys.stderr.write(f'{LOG}:Generator runs out, check the results...\n')
@@ -603,7 +644,7 @@ class SXSCompGenerator(Generator):
             if self._verbose:
                 sys.stderr.write(f'{LOG}:ecc is unused in approx: {self._approx}, now calculate overlap.\n')
             fini = kwargs.get('fini')
-            h22_wf = self.get_waveform(jobtag = jobtag, ecc = eccentricity, fini = fini)
+            h22_wf = self.get_waveform(jobtag = jobtag, ecc = eccentricity, fini = fini, **kwargs)
             Mtotal = kwargs.get('Mtotal')
             if hasattr(Mtotal, '__len__'):
                 ret = self.__core_calculate_overlap_MtotalList(h22_wf, MtotalList = Mtotal, verbose = self._verbose)
@@ -964,6 +1005,10 @@ class CompResults(object):
     @property
     def tc_fit(self):
         return self._fit_tc
+
+    @property
+    def dephase_fit(self):
+        return self._fit_tc * self.generator.SXS.dim_t
     
     @property
     def phic_fit(self):
@@ -1351,3 +1396,108 @@ def parse_SXSeccV1(SXSnum):
             e0 = 0
             break
     return e0
+
+
+def SEOBHyperCoefficients_v4(eta, a):
+    coeff00K = 1.7336
+    coeff01K = -1.62045
+    coeff02K = -1.38086
+    coeff03K = 1.43659
+    coeff10K = 10.2573
+    coeff11K = 2.26831
+    coeff12K = 0
+    coeff13K = -0.426958
+    coeff20K = -126.687
+    coeff21K = 17.3736
+    coeff22K = 6.16466
+    coeff23K = 0
+    coeff30K = 267.788
+    coeff31K = -27.5201
+    coeff32K = 31.1746
+    coeff33K = -59.1658
+
+    coeff00dSO = -44.5324
+    coeff01dSO = 0
+    coeff02dSO = 0
+    coeff03dSO = 66.1987
+    coeff10dSO = 0
+    coeff11dSO = 0
+    coeff12dSO = -343.313
+    coeff13dSO = -568.651
+    coeff20dSO = 0
+    coeff21dSO = 2495.29
+    coeff22dSO = 0
+    coeff23dSO = 147.481
+    coeff30dSO = 0
+    coeff31dSO = 0
+    coeff32dSO = 0
+    coeff33dSO = 0
+
+    coeff00dSS = 6.06807
+    coeff01dSS = 0
+    coeff02dSS = 0
+    coeff03dSS = 0
+    coeff10dSS = -36.0272
+    coeff11dSS = 37.1964
+    coeff12dSS = 0
+    coeff13dSS = -41.0003
+    coeff20dSS = 0
+    coeff21dSS = 0
+    coeff22dSS = -326.325
+    coeff23dSS = 528.511
+    coeff30dSS = 706.958
+    coeff31dSS = 0
+    coeff32dSS = 1161.78
+    coeff33dSS = 0.
+
+    coeff00DT = 2.50499
+    coeff01DT = 13.0064
+    coeff02DT = 11.5435
+    coeff03DT = 0
+    coeff10DT = 45.8838
+    coeff11DT = -40.3183
+    coeff12DT = 0
+    coeff13DT = -19.0538
+    coeff20DT = 13.0879
+    coeff21DT = 0
+    coeff22DT = 0
+    coeff23DT = 0.192775
+    coeff30DT = -716.044
+    coeff31DT = 0
+    coeff32DT = 0
+    coeff33DT = 0
+
+
+    chi = a / (1. - 2. * eta)
+    eta2 = eta * eta
+    eta3 = eta2 * eta
+    chi2 = chi * chi
+    chi3 = chi2 * chi
+    KK = \
+        coeff00K + coeff01K * chi + coeff02K * chi2 + coeff03K * chi3 + \
+        coeff10K * eta + coeff11K * eta * chi + coeff12K * eta * chi2 + \
+        coeff13K * eta * chi3 + coeff20K * eta2 + coeff21K * eta2 * chi + \
+        coeff22K * eta2 * chi2 + coeff23K * eta2 * chi3 + coeff30K * eta3 + \
+        coeff31K * eta3 * chi + coeff32K * eta3 * chi2 + coeff33K * eta3 * chi3
+    
+    dSO = \
+            coeff00dSO + coeff01dSO * chi + coeff02dSO * chi2 + coeff03dSO * chi3 + \
+            coeff10dSO * eta + coeff11dSO * eta * chi + coeff12dSO * eta * chi2 + \
+            coeff13dSO * eta * chi3 + coeff20dSO * eta2 + coeff21dSO * eta2 * chi + \
+            coeff22dSO * eta2 * chi2 + coeff23dSO * eta2 * chi3 + coeff30dSO * eta3 + \
+            coeff31dSO * eta3 * chi + coeff32dSO * eta3 * chi2 + coeff33dSO * eta3 * chi3
+    
+    dSS = \
+            coeff00dSS + coeff01dSS * chi + coeff02dSS * chi2 + coeff03dSS * chi3 + \
+            coeff10dSS * eta + coeff11dSS * eta * chi + coeff12dSS * eta * chi2 + \
+            coeff13dSS * eta * chi3 + coeff20dSS * eta2 + coeff21dSS * eta2 * chi + \
+            coeff22dSS * eta2 * chi2 + coeff23dSS * eta2 * chi3 + coeff30dSS * eta3 + \
+            coeff31dSS * eta3 * chi + coeff32dSS * eta3 * chi2 + coeff33dSS * eta3 * chi3
+    
+    dtPeak = \
+        coeff00DT + coeff01DT * chi + coeff02DT * chi2 + coeff03DT * chi3 + \
+        coeff10DT * eta + coeff11DT * eta * chi + coeff12DT * eta * chi2 + \
+        coeff13DT * eta * chi3 + coeff20DT * eta2 + coeff21DT * eta2 * chi + \
+        coeff22DT * eta2 * chi2 + coeff23DT * eta2 * chi3 + coeff30DT * eta3 + \
+        coeff31DT * eta3 * chi + coeff32DT * eta3 * chi2 + coeff33DT * eta3 * chi3
+    return KK, dSO, dSS, dtPeak

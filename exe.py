@@ -10,6 +10,7 @@ mlb.use('Agg')
 
 import numpy as np
 from .SXS import SXSh22, save_namecol, DEFAULT_NOSPIN_SXS_LIST, DEFAULT_LOWSPIN_SXS_LIST, DEFAULT_HIGHSPIN_SXS_LIST
+from .Utils import switch
 from pathlib import Path
 from optparse import OptionParser
 from .psd import DetectorPSD
@@ -24,13 +25,15 @@ def getMCFlikelihood(argv):
 
     parser = OptionParser(description='Waveform Comparation With SXS')
     parser.add_option('--executable', type = 'str', default = 'lalsim-inspiral', help = 'Exe command')
-    parser.add_option('--approx', type = 'str', default = 'SEOBNRv1', help = 'Version of the code')
+    parser.add_option('--approx', type = 'str', default = 'SEOBNREv5', help = 'Version of the code')
     parser.add_option('--fini', type = 'float', default = 0, help = 'Initial orbital frequency')
     parser.add_option('--SXS', type = 'str', default = '0070', help = 'SXS template for comparision')
     parser.add_option('--mtotal', type = 'float', default = 40, help = 'Total mass')
     parser.add_option('--srate', type = 'float', default = 16384, help = 'Sample rate')
-
+ 
     parser.add_option('--prefix', type = 'str', default = '.', help = 'dir for results saving.')
+    parser.add_option('--jobtag', type = 'str', default = '_lnprob', help = 'jobtag.')
+
     parser.add_option('--psd', type = 'str', help = 'Detector psd.')
     parser.add_option('--flow', type = 'float', default = 0, help = 'Lower frequency cut off for psd.')
     parser.add_option('--timeout', type = 'int', default = 60, help = 'Time limit for waveform generation')
@@ -63,22 +66,44 @@ def getMCFlikelihood(argv):
                 table = table,
                 srcloc_all = srcloc_all)
     ge = NR.construct_generator(approx, exe, psd = psd)
-    # K, dSO, dSS
-    def get_lnprob(pms):
-        if pms[0] < -10 or pms[0] > 10 or \
-            pms[1] < -1e4 or pms[1] > 1e4 or \
-            pms[2] < -1e3 or pms[2] > 1e3:
-            return -np.inf
-        ret = ge.get_overlap(jobtag = args.jobtag, timeout = args.timeout,
-                    KK = pms[0], dSO = pms[1], dSS = pms[2])
-        eps = 1 - ret.max_FF
-        if eps > 1:
-            return -np.inf
-        dephase = ret.dephase_fit
-        return -(pow(eps/0.01,2) + pow(dephase/5,2 ))/2
-    
     pms0 = NR.CalculateAdjParamsV4()
-    return get_lnprob, args, pms0
+    KK_default = pms0[0]
+    dSO_default = pms0[1]
+    dSS_default = pms0[2]
+    dtPeak_default = pms0[3]
+    for case in switch(Smode):
+        if case('nospin'):
+            pms_init = (KK_default, dtPeak_default)
+            # K, dtPeak
+            def get_lnprob(pms):
+                if pms[0] < -10 or pms[0] > 10 or pms[1] < -10 or pms[1] > 100:
+                    return -np.inf
+                ret = ge.get_overlap(jobtag = args.jobtag, timeout = args.timeout,
+                            KK = pms[0], dSO = dSO_default, dSS = dSS_default)
+                eps = 1 - ret.max_FF
+                if eps > 1:
+                    return -np.inf
+                dephase = ret.dephase_fit
+                return -( pow(eps/0.01, 2) + pow(dephase/5, 2) )/2
+            break
+        else:
+            pms_init = pms0
+            # K, dSO, dSS
+            def get_lnprob(pms):
+                if pms[0] < -10 or pms[0] > 10 or \
+                    pms[1] < -1e4 or pms[1] > 1e4 or \
+                    pms[2] < -1e3 or pms[2] > 1e3 or \
+                    pms[1] < -10 or pms[1] > 100:
+                    return -np.inf
+                ret = ge.get_overlap(jobtag = args.jobtag, timeout = args.timeout,
+                            KK = pms[0], dSO = pms[1], dSS = pms[2])
+                eps = 1 - ret.max_FF
+                if eps > 1:
+                    return -np.inf
+                dephase = ret.dephase_fit
+                return -( pow(eps/0.01, 2) + pow(dephase/5, 2) )/2
+            break
+    return get_lnprob, args, pms_init
 
     
 

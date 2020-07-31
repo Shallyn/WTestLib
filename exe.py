@@ -94,7 +94,7 @@ def getMCFlikelihood(argv):
                 if pms[0] < -10 or pms[0] > 10 or \
                     pms[1] < -1e4 or pms[1] > 1e4 or \
                     pms[2] < -1e3 or pms[2] > 1e3 or \
-                    pms[1] < -10 or pms[1] > 100:
+                    pms[3] < -10 or pms[3] > 100:
                     return -np.inf
                 ret = ge.get_overlap(jobtag = args.jobtag, timeout = args.timeout,
                             KK = pms[0], dSO = pms[1], dSS = pms[2])

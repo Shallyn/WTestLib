@@ -598,7 +598,7 @@ class SXSCompGenerator(Generator):
             sys.stderr.write(f'{WARNING}: parameter ecc is unused.\n')
         if verbose:
             sys.stderr.write(f'{LOG}:Calling Generator to generate waveform...\n')
-        if Mtotal is None:
+        if Mtotal is None or not hasattr(Mtotal, '__len__'):
             m1 = self._core.m1
             m2 = self._core.m2
         else:
@@ -644,8 +644,8 @@ class SXSCompGenerator(Generator):
             if self._verbose:
                 sys.stderr.write(f'{LOG}:ecc is unused in approx: {self._approx}, now calculate overlap.\n')
             fini = kwargs.get('fini')
-            h22_wf = self.get_waveform(jobtag = jobtag, ecc = eccentricity, fini = fini, **kwargs)
             Mtotal = kwargs.get('Mtotal')
+            h22_wf = self.get_waveform(jobtag = jobtag, ecc = eccentricity, fini = fini, **kwargs)
             if hasattr(Mtotal, '__len__'):
                 ret = self.__core_calculate_overlap_MtotalList(h22_wf, MtotalList = Mtotal, verbose = self._verbose)
                 return ret
@@ -829,7 +829,7 @@ class CompResults(object):
                           SXS_linestyle = None, SXS_color = None, 
                           SXS_alpha = None, SXS_linewidth = None,
                           **kwargs):
-        if self.CEV_STATE_fit is not CEV.SUCCESS:
+        if self.CEV_STATE_fit is not CEV.SUCCESS and self._h22_fit is not None:
             sys.stderr.write(f'{WARNING}:State is not success, skip waveform plotting.\n')
         else:
             filename = fname

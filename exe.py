@@ -80,7 +80,7 @@ def getMCFlikelihood(argv):
                 if pms[0] < -10 or pms[0] > 10 or pms[1] < -10 or pms[1] > 100:
                     return -np.inf
                 ret = ge.get_overlap(jobtag = args.jobtag, timeout = args.timeout,
-                            KK = pms[0], dSO = dSO_default, dSS = dSS_default)
+                            KK = pms[0], dSO = dSO_default, dSS = dSS_default, dtPeak = pms[1])
                 eps = 1 - ret.max_FF
                 if eps > 1:
                     return -np.inf
@@ -97,7 +97,7 @@ def getMCFlikelihood(argv):
                     pms[3] < -10 or pms[3] > 100:
                     return -np.inf
                 ret = ge.get_overlap(jobtag = args.jobtag, timeout = args.timeout,
-                            KK = pms[0], dSO = pms[1], dSS = pms[2])
+                            KK = pms[0], dSO = pms[1], dSS = pms[2], dtPeak = pms[3])
                 eps = 1 - ret.max_FF
                 if eps > 1:
                     return -np.inf

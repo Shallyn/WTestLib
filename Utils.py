@@ -177,7 +177,7 @@ def cmd_stdout_cev(CMD, name_out, timeout = 60):
             data = np.loadtxt(name_out)
             os.remove(name_out)
             if len(data) == 0:
-                return CEV.FAILURE, None
+                return CEV.GEN_FAIL, None
             return CEV.SUCCESS, data
         time_cost = time.time() - t_start
         if time_cost > timeout:

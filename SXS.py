@@ -598,7 +598,7 @@ class SXSCompGenerator(Generator):
             sys.stderr.write(f'{WARNING}: parameter ecc is unused.\n')
         if verbose:
             sys.stderr.write(f'{LOG}:Calling Generator to generate waveform...\n')
-        if Mtotal is None or not hasattr(Mtotal, '__len__'):
+        if Mtotal is None or hasattr(Mtotal, '__len__'):
             m1 = self._core.m1
             m2 = self._core.m2
         else:

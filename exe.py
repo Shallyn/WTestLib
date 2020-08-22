@@ -301,6 +301,7 @@ def parseargs_compWithFreqCut(argv):
     parser.add_option('--allow-ecc-resp', action = 'store_true', help = 'Would fit respectively.')
     parser.add_option('--min-mtotal', type = 'float', default = 10, help = 'Min Total mass')
     parser.add_option('--max-mtotal', type = 'float', default = 200, help = 'Max Total mass')
+    parser.add_option('--estep', type = 'float', default = 0.001, help = 'e step')
     parser.add_option('--num-mtotal', type = 'int', default = 100, help = 'Number of cases')
     parser.add_option('--prefix', type = 'str', default = '.', help = 'dir for results saving.')
     parser.add_option('--verbose', action = 'store_true', help = 'If added, will print verbose message.')
@@ -451,7 +452,7 @@ def compWithFreqCut(argv = None):
             if allow_ecc_fit and fini == 0.002:
                 ge_fit = s.construct_generator(approx, exe, psd = onePSD)
                 ret_fit = ge_fit.get_overlap(jobtag = jobtag, minecc = 0, maxecc = 0, 
-                                    timeout = timeout, verbose = verbose, Preset = True, estep = 0.001)
+                                    timeout = timeout, verbose = verbose, Preset = True, estep = args.estep)
                 e0 = ret_fit.ecc_fit
             else:
                 if fini == 0:

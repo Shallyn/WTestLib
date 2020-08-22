@@ -149,7 +149,10 @@ class SXSObject(object):
         # eccentricity
         self.Sf_ini = pms['initial_orbital_frequency'] / np.pi
         # Relaxed Eccentricity
-        self.ecc = pms['relaxed_eccentricity']
+        try:
+            self.ecc = pms['reference_eccentricity']
+        except:
+            self.ecc = pms['relaxed_eccentricity']
         # remnant
         self.final_mass = pms['remnant_mass']
         fspin = pms['remnant_dimensionless_spin']

@@ -72,6 +72,10 @@ class ModeBase(object):
         time = np.asarray(time)
         self._time = time - time[0]
         self._mode = np.asarray(hreal) + 1.j * np.asarray(himag)
+
+    @property
+    def length(self):
+        return len(self._time)
             
     @property
     def time(self):

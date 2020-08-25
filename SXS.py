@@ -637,6 +637,45 @@ class SXSCompGenerator(Generator):
         t, hr, hi = self._pretreat(t, hr, hi, self._core._D, self._core._Mtotal)
         h22_wf = h22base(t, hr, hi, self._core._srate)
         return h22_wf
+
+    def get_lnprob(self, jobtag = 'test', **kwargs):
+        h22_wf = self.get_waveform(jobtag = jobtag, **kwargs)
+        if isinstance(h22_wf, CEV):
+            return -np.inf
+        NR = self._core.copy()
+        psdfunc = self._psd
+        # Check sample rate
+        #dimt = dim_t(self._core.Mtotal)
+        wf_1, wf_2, _ = h22_alignment(NR, h22_wf)
+        fs = wf_1.srate
+        NFFT = len(wf_1)
+        df = fs/NFFT
+        freqs = np.abs(np.fft.fftfreq(NFFT, 1./fs))
+        power_vec = psdfunc(freqs)
+        htilde_1 = wf_1.h22f
+        htilde_2 = wf_2.h22f
+        O11 = np.sum(htilde_1 * htilde_1.conjugate() / power_vec).real * df
+        O22 = np.sum(htilde_2 * htilde_2.conjugate() / power_vec).real * df
+        Ox = htilde_1 * htilde_2.conjugate() / power_vec
+        Oxt = np.fft.ifft(Ox) * fs / np.sqrt(O11 * O22)
+        Oxt_abs = np.abs(Oxt)
+        idx = np.where(Oxt_abs == max(Oxt_abs))[0][0]
+        lth = len(Oxt_abs)
+        if idx > lth / 2:
+            tc = (idx - lth) / fs
+        else:
+            tc = idx / fs
+        idxPeak = min(wf_1.argpeak, wf_2.argpeak)
+        idx_start = int(0.1*idxPeak)
+        idx_end = int(0.9*idxPeak)
+
+        dPhiCum = (wf_1.phase[idx_start:idx_end] - wf_1.phase[idx_start]) - (wf_2.phase[idx_start:idx_end] - wf_2.phase[idx_start])
+        dPhiCum = np.sum(np.power(dPhiCum,2))
+        eps = 1 - max(Oxt_abs)
+        lnprob = -( pow(eps/0.01, 2) + pow(abs(tc)/5, 2) + dPhiCum )/2
+        return lnprob
+        
+
     
     def get_overlap(self, jobtag = 'test', minecc = 0, maxecc = 0, **kwargs):
         if self._verbose:
@@ -732,6 +771,7 @@ class SXSCompGenerator(Generator):
         NFFT = len(SXS)
         df_old = fs/NFFT
         for i, Mtotal in enumerate(MtotalList):
+            print(f'{Mtotal}/{max(MtotalList)}')
             df = df_old *  self._core.Mtotal / Mtotal
             fs = df * NFFT
             freqs = np.abs(np.fft.fftfreq(NFFT, 1./fs))

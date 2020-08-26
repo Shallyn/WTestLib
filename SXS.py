@@ -645,7 +645,7 @@ class SXSCompGenerator(Generator):
         NR = self._core.copy()
         psdfunc = self._psd
         # Check sample rate
-        #dimt = dim_t(self._core.Mtotal)
+        dimt = dim_t(self._core.Mtotal)
         wf_1, wf_2, _ = h22_alignment(NR, h22_wf)
         fs = wf_1.srate
         NFFT = len(wf_1)
@@ -661,18 +661,24 @@ class SXSCompGenerator(Generator):
         Oxt_abs = np.abs(Oxt)
         idx = np.where(Oxt_abs == max(Oxt_abs))[0][0]
         lth = len(Oxt_abs)
-        if idx > lth / 2:
-            tc = (idx - lth) / fs
+        if idx == lth-1 or idx == 1:
+            tc = 0
         else:
-            tc = idx / fs
+            if idx > lth / 2:
+                tc = (idx - lth) / fs
+            else:
+                tc = idx / fs
         idxPeak = min(wf_1.argpeak, wf_2.argpeak)
         idx_start = int(0.1*idxPeak)
         idx_end = int(0.9*idxPeak)
 
+        trange = (wf_1.time[idx_end] - wf_1.time[idx_start]) * dimt
         dPhiCum = (wf_1.phase[idx_start:idx_end] - wf_1.phase[idx_start]) - (wf_2.phase[idx_start:idx_end] - wf_2.phase[idx_start])
-        dPhiCum = np.sum(np.power(dPhiCum,2))
+        dPhiCum = np.sum(np.power(dPhiCum,2)) / trange
         eps = 1 - max(Oxt_abs)
-        lnprob = -( pow(eps/0.01, 2) + pow(abs(tc)/5, 2) + dPhiCum )/2
+        tc_dephase = tc * dimt
+        # lnprob = -( pow(eps/0.01, 2) + pow(tc_dephase/5, 2) + dPhiCum )/2
+        lnprob = -(pow(eps/0.01, 2) + pow(tc_dephase/5, 2) + dPhiCum/0.001)/2
         return lnprob
         
 

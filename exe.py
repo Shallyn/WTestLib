@@ -87,6 +87,28 @@ def getMCFlikelihood(argv):
                 dephase = ret.dephase_fit
                 return -( pow(eps/0.01, 2) + pow(dephase/5, 2) )/2
             break
+        if case('deltaphase'):
+            pms_init = pms0
+            def get_lnprob(pms):
+                if pms[0] < -10 or pms[0] > 10 or \
+                    pms[1] < -1e4 or pms[1] > 1e4 or \
+                    pms[2] < -1e3 or pms[2] > 1e3 or \
+                    pms[3] < -10 or pms[3] > 100:
+                    return -np.inf
+                ret = ge.get_lnprob(jobtag = args.jobtag, timeout = args.timeout,
+                            KK = pms[0], dSO = pms[1], dSS = pms[2], dtPeak = pms[3])
+                return ret
+            break
+        if case('deltaphase_nospin'):
+            pms_init = (KK_default, dtPeak_default)
+            def get_lnprob(pms):
+                if pms[0] < -10 or pms[0] > 10 or pms[1] < -10 or pms[1] > 100:
+                    return -np.inf
+                ret = ge.get_lnprob(jobtag = args.jobtag, timeout = args.timeout,
+                            KK = pms[0], dSO = dSO_default, dSS = dSS_default, dtPeak = pms[1])
+                return ret
+            break
+
         else:
             pms_init = pms0
             # K, dSO, dSS

@@ -783,6 +783,8 @@ class SXSCompGenerator(Generator):
         fs = SXS.srate
         NFFT = len(SXS)
         df_old = fs/NFFT
+        Stilde = SXS.h22f
+        htilde = h22_wf.h22f
         for i, Mtotal in enumerate(MtotalList):
             print(f'{Mtotal}/{max(MtotalList)}')
             df = df_old *  self._core.Mtotal / Mtotal
@@ -795,8 +797,6 @@ class SXSCompGenerator(Generator):
                 ret_FF[i] = 2
                 ret_tmove[i] = tmove
                 continue
-            Stilde = SXS.h22f
-            htilde = h22_wf.h22f
             O11 = np.sum(Stilde * Stilde.conjugate() / power_vec).real * df
             O22 = np.sum(htilde * htilde.conjugate() / power_vec).real * df
             Ox = Stilde * htilde.conjugate() / power_vec

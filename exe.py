@@ -27,7 +27,7 @@ def getMCFlikelihood(argv):
     parser.add_option('--executable', type = 'str', default = 'lalsim-inspiral', help = 'Exe command')
     parser.add_option('--approx', type = 'str', default = 'SEOBNREv5', help = 'Version of the code')
     parser.add_option('--fini', type = 'float', default = 0, help = 'Initial orbital frequency')
-    parser.add_option('--SXS', type = 'str', default = '0070', help = 'SXS template for comparision')
+    parser.add_option('--SXS', type = 'str', default = '0071', help = 'SXS template for comparision')
     parser.add_option('--mtotal', type = 'float', default = 40, help = 'Total mass')
     parser.add_option('--srate', type = 'float', default = 16384, help = 'Sample rate')
  
@@ -126,7 +126,10 @@ def getMCFlikelihood(argv):
                 dephase = ret.dephase_fit
                 return -( pow(eps/0.01, 2) + pow(dephase/5, 2) )/2
             break
-    return get_lnprob, args, pms_init
+    def get_waveform(pms):
+        return ge.get_waveform(jobtag = args.jobtag, timeout = args.timeout,
+                        KK = pms[0], dSO = pms[1], dSS = pms[2], dtPeak = pms[3])
+    return get_lnprob, args, pms_init, get_waveform
 
     
 
@@ -324,6 +327,7 @@ def parseargs_compWithFreqCut(argv):
     parser.add_option('--min-mtotal', type = 'float', default = 10, help = 'Min Total mass')
     parser.add_option('--max-mtotal', type = 'float', default = 200, help = 'Max Total mass')
     parser.add_option('--estep', type = 'float', default = 0.001, help = 'e step')
+    parser.add_option('--eccentricity', type = 'float', help = 'Will use this eccentricity')
     parser.add_option('--num-mtotal', type = 'int', default = 100, help = 'Number of cases')
     parser.add_option('--prefix', type = 'str', default = '.', help = 'dir for results saving.')
     parser.add_option('--verbose', action = 'store_true', help = 'If added, will print verbose message.')
@@ -376,6 +380,7 @@ def compWithFreqCut(argv = None):
     allow_ecc_fit = args.allow_ecc_fit
     allow_ecc_pn = args.allow_ecc_pn
     allow_ecc_pass0 = args.allow_ecc_pass0
+    ecc_pre = args.eccentricity
     if allow_ecc_pass0:
         allow_ecc = True
         ecc_skipNAN = True
@@ -395,7 +400,34 @@ def compWithFreqCut(argv = None):
     if not savedir.exists():
         savedir.mkdir(parents=True)
     # Setting ErrorMsg filename.
-    if allow_ecc_pn:
+    if ecc_pre is not None:
+        for SXSnum in SXSnum_list:        
+            s = SXSh22(SXSnum, f_ini = fini, 
+                    modeL = None,
+                    modeM = None, 
+                    table = table,
+                    srcloc = srcloc,
+                    srcloc_all = srcloc_all,
+                    verbose = verbose, 
+                    ishertz = False)
+            ge = s.construct_generator(approx, exe, psd = psd)
+
+            # Setting saveing prefix
+            fresults = savedir / f'results_{SXSnum}_{jobtag}.csv'
+            # Setting Results savimg filename.
+            save_namecol(fresults, data = [['#q', '#chi1', '#chi2', '#Mtotal', '#FF', f'#ecc={ecc_pre}']])
+            ret = ge.get_overlap(jobtag = jobtag, minecc = 0, maxecc = 0, eccentricity = ecc_pre,
+                                timeout = timeout, verbose = verbose, Mtotal = Mtotal_list)
+            length = len(Mtotal_list)
+            q_list = s.q*np.ones(len(Mtotal_list)).reshape(1,length)
+            s1z_list = s.s1z*np.ones(len(Mtotal_list)).reshape(1,length)
+            s2z_list = s.s2z*np.ones(len(Mtotal_list)).reshape(1,length)
+            FF_list = ret[2].reshape(1,length)
+            Mtotal_list_out = Mtotal_list.reshape(1, length)
+            data = np.concatenate((q_list, s1z_list, s2z_list, Mtotal_list_out, FF_list), axis = 0)
+            add_csv(fresults, data.T.tolist())
+
+    elif allow_ecc_pn:
         for SXSnum in SXSnum_list:        
             s = SXSh22(SXSnum, f_ini = fini, 
                     modeL = None,

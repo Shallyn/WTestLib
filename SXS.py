@@ -558,7 +558,7 @@ class SXSCompGenerator(Generator):
     def SXS(self):
         return self._core
         
-    def get_CMD(self, ecc = None):
+    def get_CMD(self, ecc = None, **kwargs):
         if self._core.CEV_STATE != CEV.NORMAL:
             sys.stderr.write(f'{WARNING}:Abnormal SXSh22...\n')
             return self._core.CEV_STATE
@@ -575,7 +575,8 @@ class SXSCompGenerator(Generator):
                             srate = self._core.srate,
                             f_ini = self._core.f_ini,
                             L = self._modeL,
-                            M = self._modeM)
+                            M = self._modeM,
+                            **kwargs)
         return ret
 
     
@@ -601,6 +602,7 @@ class SXSCompGenerator(Generator):
             sys.stderr.write(f'{WARNING}: parameter ecc is unused.\n')
         if verbose:
             sys.stderr.write(f'{LOG}:Calling Generator to generate waveform...\n')
+            sys.stderr.write(f'{LOG}:CMD:{self.get_CMD(ecc = ecc, **kwargs)}\n')
         if Mtotal is None or hasattr(Mtotal, '__len__'):
             m1 = self._core.m1
             m2 = self._core.m2
@@ -639,7 +641,7 @@ class SXSCompGenerator(Generator):
         return h22_wf
 
     def get_lnprob(self, jobtag = 'test', **kwargs):
-        h22_wf = self.get_waveform(jobtag = jobtag, **kwargs)
+        h22_wf = self.get_waveform(jobtag = jobtag, verbose = True, **kwargs)
         if isinstance(h22_wf, CEV):
             return -np.inf
         NR = self._core.copy()
@@ -685,8 +687,9 @@ class SXSCompGenerator(Generator):
             eps = 1 - max(Oxt_abs)
             tc_dephase = tc * dimt
             # lnprob = -( pow(eps/0.01, 2) + pow(tc_dephase/5, 2) + dPhiCum )/2
-            lnprob.append( -(pow(eps/0.01, 2) + pow(tc_dephase/5, 2) + dPhiCum/0.001)/2 )
-        return min(lnprob)
+            # lnprob.append( -(pow(eps/0.01, 2) + pow(tc_dephase/5, 2) + dPhiCum/0.001)/2 )
+            lnprob.append(eps)
+        return lnprob
         
 
     

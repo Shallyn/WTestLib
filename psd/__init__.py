@@ -75,6 +75,15 @@ class DetectorPSD(object):
             if case('cut'):
                 self._psd = get_lowCutPSD(flow = flow, fhigh = fhigh)
                 break
+            if case('LISA'):
+                self._psd = get_PSD_Space_fit(name = 'LISA')
+                break
+            if case('Taiji'):
+                self._psd = get_PSD_Space_fit(name = 'Taiji')
+                break
+            if case('Tianqin'):
+                self._psd = get_PSD_Space_fit(name = 'Tianqin')
+                break
             self._psd = lambda x : 1
         self._file = file
             
@@ -201,3 +210,36 @@ def PSD_advLIGO_fit(f):
     else:
         return ret
 
+"""
+    CQG. 36.105011
+"""
+def get_PSD_Space_fit(name = 'LISA'):
+    C_SI = 299792458
+    name_low = name.lower()
+    for case in switch(name_low):
+        if case('lisa'):
+            P_OMS = np.power(1.5e-11, 2)
+            fP_acc = lambda f : np.power(3.e-9, 2) * (1 + np.power(4.e-4/f,2))
+            L = 2.5e-9
+            break
+        if case('taiji'):
+            P_OMS = np.power(8e-11, 2)
+            fP_acc = lambda f : np.power(3.e-9, 2) * (1 + np.power(4.e-4/f,2))
+            L = 3.e-9
+            break
+        if case('tianqin'):
+            P_OMS = np.power(1.e-12, 2)
+            fP_acc = lambda f : np.power(1.e-9, 2) * (1 + np.power(1.e-4/f,2))
+            L = np.sqrt(3) * 1e8
+            break
+        raise Exception(f'Unrecognized PSD name {name}')
+    def func_PSD(f):
+        fstar = C_SI/(2*np.pi*L)
+        ret = (10 / (3*L*L)) * \
+            (P_OMS + 2*(1+ np.power(np.cos(f/fstar),2))*\
+            (fP_acc(f)/np.power(2*np.pi*f,4)) ) * \
+            (1 + 6.*np.power(f/fstar,2)/10.)
+        return ret
+    
+    return func_PSD
+    

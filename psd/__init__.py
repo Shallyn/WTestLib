@@ -219,23 +219,23 @@ def get_PSD_Space_fit(name = 'LISA'):
     for case in switch(name_low):
         if case('lisa'):
             P_OMS = np.power(1.5e-11, 2)
-            fP_acc = lambda f : np.power(3.e-9, 2) * (1 + np.power(4.e-4/f,2))
-            L = 2.5e-9
+            fP_acc = lambda f : np.power(3.e-15, 2) * (1 + np.power(4.e-4/f,2))
+            L = 2.5e9
             break
         if case('taiji'):
             P_OMS = np.power(8e-11, 2)
-            fP_acc = lambda f : np.power(3.e-9, 2) * (1 + np.power(4.e-4/f,2))
-            L = 3.e-9
+            fP_acc = lambda f : np.power(3.e-15, 2) * (1 + np.power(4.e-4/f,2))
+            L = 3.e9
             break
         if case('tianqin'):
             P_OMS = np.power(1.e-12, 2)
-            fP_acc = lambda f : np.power(1.e-9, 2) * (1 + np.power(1.e-4/f,2))
+            fP_acc = lambda f : np.power(1.e-15, 2) * (1 + np.power(1.e-4/f,2))
             L = np.sqrt(3) * 1e8
             break
         raise Exception(f'Unrecognized PSD name {name}')
     def func_PSD(f):
         fstar = C_SI/(2*np.pi*L)
-        ret = (10 / (3*L*L)) * \
+        ret = (10. / (3.*L*L)) * \
             (P_OMS + 2*(1+ np.power(np.cos(f/fstar),2))*\
             (fP_acc(f)/np.power(2*np.pi*f,4)) ) * \
             (1 + 6.*np.power(f/fstar,2)/10.)

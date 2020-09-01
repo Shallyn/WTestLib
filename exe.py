@@ -326,6 +326,7 @@ def parseargs_compWithFreqCut(argv):
     parser.add_option('--allow-ecc-resp', action = 'store_true', help = 'Would fit respectively.')
     parser.add_option('--min-mtotal', type = 'float', default = 10, help = 'Min Total mass')
     parser.add_option('--max-mtotal', type = 'float', default = 200, help = 'Max Total mass')
+    parser.add_option('--logscale-mtotal', action = 'store_true', help = 'Use log scale')
     parser.add_option('--estep', type = 'float', default = 0.001, help = 'e step')
     parser.add_option('--eccentricity', type = 'float', help = 'Will use this eccentricity')
     parser.add_option('--num-mtotal', type = 'int', default = 100, help = 'Number of cases')
@@ -369,7 +370,10 @@ def compWithFreqCut(argv = None):
     Mtotal_min = args.min_mtotal
     Mtotal_max = args.max_mtotal
     Mtotal_num = args.num_mtotal
-    Mtotal_list = np.linspace(Mtotal_min, Mtotal_max, Mtotal_num)
+    if args.logscale:
+        Mtotal_list = np.logspace(np.log10(Mtotal_min), np.log10(Mtotal_max), Mtotal_num)
+    else:
+        Mtotal_list = np.linspace(Mtotal_min, Mtotal_max, Mtotal_num)
     if len(SXSnum_list) == 0:
         SXSnum_list.append('0001')
 

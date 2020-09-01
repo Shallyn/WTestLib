@@ -177,6 +177,7 @@ def parseargs(argv):
     parser.add_option('--modeL', type = 'int', help = 'mode L for HM')
     parser.add_option('--modeM', type = 'int', help = 'mode M for HM')
     parser.add_option('--psd', type = 'str', help = 'Detector psd.')
+    parser.add_option('--scan-mtotal', action = 'store_true', help = 'Scan Mtotal')
     parser.add_option('--flow', type = 'float', default = 0, help = 'Lower frequency cut off for psd.')
     parser.add_option('--timeout', type = 'int', default = 60, help = 'Time limit for waveform generation')
     args = parser.parse_args(argv)
@@ -274,6 +275,52 @@ def main(argv = None):
             errmsg.append(ret.ErrorMsg)
         
         np.savetxt(ferrmsg, np.array([errmsg]), fmt = '%s', delimiter = '\n')
+    elif args.scan_mtotal:
+        # Setting ErrorMsg filename.
+        ferrmsg = savedir / f'errMessageLog_{jobtag}.txt'
+        errmsg = []
+        # Setting Results savimg filename.
+        fresults = savedir / f'results_{jobtag}.csv'
+
+        save_namecol(fresults)
+        
+        for SXSnum in SXSnum_list:
+            # Setting saveing prefix
+            Sprefix = savedir / SXSnum
+            if not Sprefix.exists():
+                Sprefix.mkdir()
+            
+            s = SXSh22(SXSnum, f_ini = fini, 
+                    modeL = modeL,
+                    modeM = modeM, 
+                    table = table,
+                    srcloc = srcloc,
+                    srcloc_all = srcloc_all,
+                    verbose = verbose, 
+                    ishertz = ishertz)
+            ge = s.construct_generator(approx, exe, psd = psd)
+            ret = ge.get_overlap(jobtag = jobtag, minecc = minecc, maxecc = maxecc, scan_mtotal = True,
+                                timeout = timeout, verbose = verbose, Preset = Preset, estep = estep)
+            
+
+            if isplot:
+                # Setting saving file prefix
+                fig_SA_scan = Sprefix / 'fig_SA_scan.png'
+                fig_waveform = Sprefix / 'fig_waveform_fit.png'
+                ret.plot_results(fig_SA_scan)
+                ret.plot_waveform_fit(fig_waveform)
+                
+            # Setting saving files
+            file_SA_scan = Sprefix / 'SA_scan.txt'
+            file_waveform = Sprefix / 'waveform_fit.txt'
+            
+            ret.save_fit(fresults)
+            ret.save_results(file_SA_scan)
+            ret.save_waveform_fit(file_waveform)
+            errmsg.append(ret.ErrorMsg)
+        
+        np.savetxt(ferrmsg, np.array([errmsg]), fmt = '%s', delimiter = '\n')
+
     else:
         for SXSnum in SXSnum_list:
             Sprefix = savedir / SXSnum
@@ -322,6 +369,7 @@ def parseargs_compWithFreqCut(argv):
     parser.add_option('--allow-ecc', action = 'store_true', help = 'Would use default NR ecc, if nan, will use 0.')
     parser.add_option('--allow-ecc-pass0', action = 'store_true', help = 'Would use default NR ecc, if nan, will skip')
     parser.add_option('--allow-ecc-fit', action = 'store_true', help = 'Would find best fit ecc.')
+    parser.add_option('--scan-mtotal', action = 'store_true', help = 'Scan Mtotal')
     parser.add_option('--allow-ecc-pn', action = 'store_true', help = 'Would solve correspond ecc by PN')
     parser.add_option('--allow-ecc-resp', action = 'store_true', help = 'Would fit respectively.')
     parser.add_option('--min-mtotal', type = 'float', default = 10, help = 'Min Total mass')
@@ -509,7 +557,7 @@ def compWithFreqCut(argv = None):
 
             if allow_ecc_fit and fini == 0.002:
                 ge_fit = s.construct_generator(approx, exe, psd = onePSD)
-                ret_fit = ge_fit.get_overlap(jobtag = jobtag, minecc = 0, maxecc = 0, 
+                ret_fit = ge_fit.get_overlap(jobtag = jobtag, minecc = 0, maxecc = 0, scan_mtotal = args.scan_mtotal,
                                     timeout = timeout, verbose = verbose, Preset = True, estep = args.estep)
                 e0 = ret_fit.ecc_fit
             else:

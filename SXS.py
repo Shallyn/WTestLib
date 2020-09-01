@@ -686,10 +686,10 @@ class SXSCompGenerator(Generator):
                     tc = idx / fs
             eps = 1 - max(Oxt_abs)
             tc_dephase = tc * dimt
-            # lnprob = -( pow(eps/0.01, 2) + pow(tc_dephase/5, 2) + dPhiCum )/2
+            lnprob = -( pow(eps/0.01, 2) + pow(tc_dephase/5, 2) + dPhiCum )/2
             # lnprob.append( -(pow(eps/0.01, 2) + pow(tc_dephase/5, 2) + dPhiCum/0.001)/2 )
-            lnprob.append(eps)
-        return lnprob
+            # lnprob.append(eps)
+        return min(lnprob)
         
 
     
@@ -761,11 +761,13 @@ class SXSCompGenerator(Generator):
             sys.stderr.write('Done\n')
         return tc, phic, Oxt_abs[idx], tmove, CEV.SUCCESS.value
     
-    def __core_calculate_overlap_MtotalList(self, h22_wf, MtotalList, verbose = None):
+    def __core_calculate_overlap_MtotalList(self, h22_wf, MtotalList = None, verbose = None):
         if verbose is None:
             verbose = self._verbose
         if verbose:
             sys.stderr.write(f'{LOG}:Checking input mode status...\n')
+        if MtotalList is None:
+            MtotalList = (10, 40, 70, 100, 130, 160, 190)
         ret_tc = np.zeros(len(MtotalList))
         ret_phic = np.zeros(len(MtotalList))
         ret_FF = np.zeros(len(MtotalList)) - 1
@@ -823,7 +825,7 @@ class SXSCompGenerator(Generator):
 
     def __core_scan_ecc_overlap(self, estep = 0.02, maxitr = None, verbose = False,
                                 prec_x = 1e-6, prec_y = 1e-6, jobtag = 'test', Mtotal = None,
-                                minecc = 0, maxecc = 0, timeout = 60, Preset = False, **kwargs):
+                                minecc = 0, maxecc = 0, timeout = 60, Preset = False, scan_mtotal = False, **kwargs):
         # Parse ecc
         if self._verbose:
             sys.stderr.write(f'{LOG}:Parsing ecc...')
@@ -837,10 +839,21 @@ class SXSCompGenerator(Generator):
             sys.stderr.write(f'{LOG}:Construct self-adaptivor...')
         if ecc_range[1] - ecc_range[0] < estep * 10:
             estep = (ecc_range[1] - ecc_range[0]) / 10
-        def ecc_wf(ecc):
-            h22_wf = self.get_waveform(ecc = ecc, verbose = False, jobtag = jobtag, timeout = timeout)
-            ret = self.__core_calculate_overlap(h22_wf, verbose = False, Mtotal = Mtotal)
-            return ret
+        if scan_mtotal:
+            def ecc_wf(ecc):
+                h22_wf = self.get_waveform(ecc = ecc, verbose = False, jobtag = jobtag, timeout = timeout)
+                tcL, phicL, FFL, tmoveL = self.__core_calculate_overlap_MtotalList(h22_wf, verbose = False)
+                idx = np.argmax(FFL)
+                if FFL[idx] < 0:
+                    status = CEV.GEN_FAIL
+                else:
+                    status = CEV.SUCCESS
+                return tcL[idx], phicL[idx], FFL[idx], tmoveL[idx], status
+        else:
+            def ecc_wf(ecc):
+                h22_wf = self.get_waveform(ecc = ecc, verbose = False, jobtag = jobtag, timeout = timeout)
+                ret = self.__core_calculate_overlap(h22_wf, verbose = False, Mtotal = Mtotal)
+                return ret
         SA = self_adaptivor(ecc_wf, ecc_range, estep, outindex = 2, verbose = verbose)
         if self._verbose:
             sys.stderr.write('Done\n')

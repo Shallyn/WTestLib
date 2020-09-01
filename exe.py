@@ -418,7 +418,7 @@ def compWithFreqCut(argv = None):
     Mtotal_min = args.min_mtotal
     Mtotal_max = args.max_mtotal
     Mtotal_num = args.num_mtotal
-    if args.logscale:
+    if args.logscale_mtotal:
         Mtotal_list = np.logspace(np.log10(Mtotal_min), np.log10(Mtotal_max), Mtotal_num)
     else:
         Mtotal_list = np.linspace(Mtotal_min, Mtotal_max, Mtotal_num)

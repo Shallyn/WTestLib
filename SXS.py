@@ -843,7 +843,7 @@ class SXSCompGenerator(Generator):
             def ecc_wf(ecc):
                 h22_wf = self.get_waveform(ecc = ecc, verbose = False, jobtag = jobtag, timeout = timeout)
                 tcL, phicL, FFL, tmoveL = self.__core_calculate_overlap_MtotalList(h22_wf, verbose = False)
-                idx = np.argmax(FFL)
+                idx = np.argmin(FFL)
                 if FFL[idx] < 0:
                     status = CEV.GEN_FAIL
                 else:

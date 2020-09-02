@@ -1332,7 +1332,7 @@ def parse_ecc(ecc, minecc, maxecc, Preset = None):
             elip_max = min(0.6, xecc + 0.2)
             elip_min = max(0, xecc - 0.1)
     else:
-        elip_max = min(0.6, ecc + 0.1)
+        elip_max = min(0.6, ecc + 0.2)
         elip_min = max(0, ecc - 0.1)
 
     ecc_range = [elip_min, elip_max]

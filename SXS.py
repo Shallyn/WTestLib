@@ -848,7 +848,7 @@ class SXSCompGenerator(Generator):
                     status = CEV.GEN_FAIL
                 else:
                     status = CEV.SUCCESS
-                return tcL[idx], phicL[idx], FFL[idx], tmoveL[idx], status
+                return tcL[idx], phicL[idx], FFL[idx], tmoveL[idx], status.value
         else:
             def ecc_wf(ecc):
                 h22_wf = self.get_waveform(ecc = ecc, verbose = False, jobtag = jobtag, timeout = timeout)

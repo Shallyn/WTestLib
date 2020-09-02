@@ -387,6 +387,8 @@ def parseargs_compWithFreqCut(argv):
     parser.add_option('--flow', type = 'float', default = 0, help = 'Lower frequency cut off for psd.')
     parser.add_option('--fhigh', type = 'float', help = 'Higher frequency cut off for psd.')
     parser.add_option('--timeout', type = 'int', default = 60, help = 'Time limit for waveform generation')
+
+    parser.add_option('--maxecc', type = 'float', default = 0, help = 'When fit')
     args = parser.parse_args(argv)
     return args
 
@@ -447,6 +449,10 @@ def compWithFreqCut(argv = None):
     savedir = prefix / approx
     verbose = args.verbose
     onePSD = DetectorPSD(None)
+    if args.maxecc > 0:
+        epret = False
+    else:
+        epret = True
 
     # Mkdir for data saving
     if not savedir.exists():
@@ -560,8 +566,8 @@ def compWithFreqCut(argv = None):
                     ge_fit = s.construct_generator(approx, exe, psd = psd)
                 else:
                     ge_fit = s.construct_generator(approx, exe, psd = onePSD)
-                ret_fit = ge_fit.get_overlap(jobtag = jobtag, minecc = 0, maxecc = 0, scan_mtotal = args.scan_mtotal,
-                                    timeout = timeout, verbose = verbose, Preset = True, estep = args.estep)
+                ret_fit = ge_fit.get_overlap(jobtag = jobtag, minecc = 0, maxecc = args.maxecc, scan_mtotal = args.scan_mtotal,
+                                    timeout = timeout, verbose = verbose, Preset = epret, estep = args.estep)
                 e0 = ret_fit.ecc_fit
             else:
                 if fini == 0:

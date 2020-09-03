@@ -216,6 +216,8 @@ def PSD_advLIGO_fit(f):
 def get_PSD_Space_fit(name = 'LISA', flow = 0, fhigh = None):
     C_SI = 299792458
     name_low = name.lower()
+    if fhigh is None:
+        fhigh = np.inf
     for case in switch(name_low):
         if case('lisa'):
             P_OMS = np.power(1.5e-11, 2)

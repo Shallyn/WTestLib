@@ -76,13 +76,13 @@ class DetectorPSD(object):
                 self._psd = get_lowCutPSD(flow = flow, fhigh = fhigh)
                 break
             if case('LISA'):
-                self._psd = get_PSD_Space_fit(name = 'LISA')
+                self._psd = get_PSD_Space_fit(name = 'LISA', flow = flow, fhigh = fhigh)
                 break
             if case('Taiji'):
-                self._psd = get_PSD_Space_fit(name = 'Taiji')
+                self._psd = get_PSD_Space_fit(name = 'Taiji', flow = flow, fhigh = fhigh)
                 break
             if case('Tianqin'):
-                self._psd = get_PSD_Space_fit(name = 'Tianqin')
+                self._psd = get_PSD_Space_fit(name = 'Tianqin', flow = flow, fhigh = fhigh)
                 break
             self._psd = lambda x : 1
         self._file = file
@@ -213,7 +213,7 @@ def PSD_advLIGO_fit(f):
 """
     CQG. 36.105011
 """
-def get_PSD_Space_fit(name = 'LISA'):
+def get_PSD_Space_fit(name = 'LISA', flow = 0, fhigh = None):
     C_SI = 299792458
     name_low = name.lower()
     for case in switch(name_low):
@@ -239,6 +239,14 @@ def get_PSD_Space_fit(name = 'LISA'):
             (P_OMS + 2*(1+ np.power(np.cos(f/fstar),2))*\
             (fP_acc(f)/np.power(2*np.pi*f,4)) ) * \
             (1 + 6.*np.power(f/fstar,2)/10.)
+        if hasattr(f, '__len__'):
+            f = np.asarray(f)
+            ret[np.where(f < flow)] = np.inf
+            ret[np.where(f > fhigh)] = np.inf
+        elif f < flow:
+            ret = np.inf
+        elif f > fhigh:
+            ret = np.inf
         return ret
     
     return func_PSD

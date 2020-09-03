@@ -17,6 +17,61 @@ from .psd import DetectorPSD
 from .h22datatype import get_fmin, get_fini_dimless
 import sys
 
+#-----Recover EOB vs SXS-----#
+def RecoverEOBvsSXS(argv):
+    from .SXS import DEFAULT_SRCLOC_ALL
+    parser = OptionParser(description='Waveform Comparation With SXS')
+
+    parser.add_option('--executable', type = 'str', default = 'lalsim-inspiral', help = 'Exe command')
+    parser.add_option('--approx', type = 'str', default = 'SEOBNREv5', help = 'Version of the code')
+    parser.add_option('--fini', type = 'float', default = 0, help = 'Initial orbital frequency')
+    parser.add_option('--SXS', type = 'str', default = '0071', help = 'SXS template for comparision')
+    parser.add_option('--srate', type = 'float', default = 16384, help = 'Sample rate')
+
+    parser.add_option('--prefix', type = 'str', default = '.', help = 'dir for results saving.')
+    parser.add_option('--jobtag', type = 'str', default = '_lnprob', help = 'jobtag.')
+
+    parser.add_option('--eccentricity', type = 'float', default = 0.0, help = 'model eccentricity')
+
+    parser.add_option('--table', type = 'str', default = '/home/liuxiaolin/Documents/SXS/table_data2.json', help = 'SXS json file')
+    parser.add_option('--srcloc', type = 'str', default = '/home/liuxiaolin/Documents/SXS/SXS_Data_txt', help = 'SXS h22 data path')
+    parser.add_option('--srcloc-all', type = 'str', default = str(DEFAULT_SRCLOC_ALL), help = 'Path of SXS waveform data all modes')
+    parser.add_option('--timeout', type = 'int', default = 60, help = 'Time limit for waveform generation')
+
+    parser.add_option('--psd', type = 'str', help = 'Detector psd.')
+    parser.add_option('--flow', type = 'float', default = 0, help = 'Lower frequency cut off for psd.')
+
+    args, _ = parser.parse_args(sys.argv)
+
+    jobtag = args.jobtag
+    exe = args.executable
+    approx = args.approx
+    SXSnum = args.SXS
+    fini = args.fini
+    psd = DetectorPSD(args.psd, flow = args.flow)
+    ecc = args.eccentricity
+    timeout = args.timeout
+    table = args.table
+    srcloc = args.srcloc
+    srcloc_all = args.srcloc_all
+    prefix = Path(args.prefix)
+
+    s = SXSh22(SXSnum, f_ini = fini,
+            modeL = None,
+            modeM = None,
+            table = table,
+            srcloc = srcloc,
+            srcloc_all = srcloc_all,
+            verbose = True,
+            ishertz = False)
+
+    ge = s.construct_generator(approx, exe, psd = psd)
+    ret = ge.get_overlap(jobtag = jobtag, minecc = 0, maxecc = 0, eccentricity = ecc,
+                        timeout = timeout, verbose = True, Preset = False, estep = args.estep)
+    ret.recover(prefix)
+    return 0
+
+
 #-----Used For MCMC Calibration----#
 def getMCFlikelihood(argv):
     from .SXS import DEFAULT_TABLE

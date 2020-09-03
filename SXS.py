@@ -698,7 +698,7 @@ class SXSCompGenerator(Generator):
             sys.stderr.write(f'{LOG}:Checking ecc is allowed or not.\n')
         eccentricity = kwargs.get('eccentricity')
         preset = kwargs.get('Preset')
-        if not self.allow_ecc or (minecc == 0 and maxecc == 0 and preset is not True):
+        if not self.allow_ecc or (minecc == 0 and maxecc == 0 and preset is not True) or eccentricity is not None:
             if self._verbose:
                 sys.stderr.write(f'{LOG}:ecc is unused in approx: {self._approx}, now calculate overlap.\n')
             fini = kwargs.get('fini')
@@ -1042,6 +1042,7 @@ class CompResults(object):
                                               timeout = 86400)
             fit.apply(-self.tc_fit + self.tmove_fit, self.phic_fit)
             self._h22_fit = fit
+
     @property
     def h22_fit(self):
         return self._h22_fit

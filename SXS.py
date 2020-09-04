@@ -680,7 +680,7 @@ class SXSCompGenerator(Generator):
                     tc = idx / fs
             eps = 1 - max(Oxt_abs)
             tc_dephase = tc * dimt
-            lnprob = -( pow(eps/0.01, 2) + pow(tc_dephase/5, 2) + dPhiCum )/2
+            lnprob.append(-( pow(eps/0.01, 2) + pow(tc_dephase/5, 2) + dPhiCum )/2)
             # lnprob.append( -(pow(eps/0.01, 2) + pow(tc_dephase/5, 2) + dPhiCum/0.001)/2 )
             # lnprob.append(eps)
         return min(lnprob)

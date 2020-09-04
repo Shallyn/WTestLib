@@ -14,6 +14,7 @@ from pathlib import Path
 from .generator import Generator, self_adaptivor
 import csv,codecs,h5py
 from .psd import DetectorPSD
+from .SXSlist import *
 
 DEFAULT_SRCLOC = Path('/Users/drizl/Documents/2018/SEOBNRE/Program_Test/SXS_Data_txt')
 DEFAULT_SRCLOC_ALL = Path('/Users/drizl/Documents/2018/SEOBNRE/Program_Test/SXS_Data')
@@ -28,15 +29,6 @@ DEFAULT_FIT_PLOT_COLOR = 'seagreen'
 DEFAULT_FIT_ALPHA = 1.0 
 DEFAULT_FIT_LINEWIDTH = 1.0
 
-DEFAULT_NOSPIN_SXS_LIST = ('0071', '0169', '0168', '0294', '0167', 
-                        '0295', '0296', '0166', '0297', '0298',
-                        '0299', '0300', '0301', '0302', '0303')
-DEFAULT_LOWSPIN_SXS_LIST = ('0222', '0038', '0041', '0004', '0005', '0005', 
-                        '0014', '0148', '0170', '0171', '0203', '0205',
-                        '0240', '0241', '0242')
-DEFAULT_HIGHSPIN_SXS_LIST = ('0025', '0151', '0154', '0155', '0157', '0158',
-                        '0159', '0160', '0177', '0178', '0202', '0231', '0280')
-DEFAULT_NOSPIN_ECC_SXS_LIST = [str(x) for x in range(1355, 1375)]
 #-------------Load File--------------#
 def loadSXSh5data(fname, modeL, modeM):
     f = h5py.File(fname, 'r')
@@ -232,6 +224,8 @@ class SXSObject(object):
             f.write(f'final kick vz {self.final_kick_vz}\n')
         return
 
+    def ecc_range(self):
+        return parse_ecc(self.ecc, )
 
 class SXSAllMode(SXSObject):
     def __init__(self, SXSnum, table = DEFAULT_TABLE, srcloc = DEFAULT_SRCLOC_ALL):

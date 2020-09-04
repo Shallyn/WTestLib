@@ -127,6 +127,12 @@ def getMCFlikelihood(argv):
     dSO_default = pms0[1]
     dSS_default = pms0[2]
     dtPeak_default = pms0[3]
+    ecc_default = NR.ecc
+    if type(ecc_default) is str:
+        try:
+            ecc_default = float(ecc[1:])
+        except:
+            ecc_default = 0.5
     for case in switch(Smode):
         if case('nospin'):
             pms_init = (KK_default, dtPeak_default)
@@ -161,6 +167,16 @@ def getMCFlikelihood(argv):
                     return -np.inf
                 ret = ge.get_lnprob(jobtag = args.jobtag, timeout = args.timeout,
                             KK = pms[0], dSO = dSO_default, dSS = dSS_default, dtPeak = pms[1])
+                return ret
+            break
+
+        if case('deltaphase_nospin_withecc'):
+            pms_init = (KK_default, dtPeak_default, ecc_default)
+            def get_lnprob(pms):
+                if pms[0] < -10 or pms[0] > 10 or pms[1] < -10 or pms[1] > 100 or pms[2] < 0 or pms[2] > 0.7:
+                    return -np.inf
+                ret = ge.get_lnprob(jobtag = args.jobtag, timeout = args.timeout,
+                            KK = pms[0], dSO = dSO_default, dSS = dSS_default, dtPeak = pms[1], eccentricity = pms[2])
                 return ret
             break
 

@@ -156,8 +156,8 @@ def getMCFlikelihood(argv):
     min_dso = args.min_dso if args.min_dso is not None else -1e4
     max_dtpeak = args.max_dtpeak if args.max_dtpeak is not None else 100
     min_dtpeak = args.min_dtpeak if args.min_dtpeak is not None else -10
-    max_ecc = args.max_eccentricity if args.max_eccentricity is not None else 0
-    min_ecc = args.min_eccentricity if args.min_eccentricity is not None else 0.7
+    max_ecc = args.max_eccentricity if args.max_eccentricity is not None else 0.7
+    min_ecc = args.min_eccentricity if args.min_eccentricity is not None else 0
     for case in switch(Smode):
         if case('nospin'):
             pms_init = (KK_default, dtPeak_default)

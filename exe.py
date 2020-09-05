@@ -99,6 +99,21 @@ def getMCFlikelihood(argv):
     parser.add_option('--srcloc', type = 'str', default = str(DEFAULT_SRCLOC), help = 'Path of SXS waveform data.')
     parser.add_option('--srcloc-all', type = 'str', default = str(DEFAULT_SRCLOC_ALL), help = 'Path of SXS waveform data all modes')
 
+    parser.add_option('--max-k', type = 'float', help = 'Upper bound of parameters 1')
+    parser.add_option('--min-k', type = 'float', help = 'Lower bound of parameters 1')
+
+    parser.add_option('--max-dso', type = 'float', help = 'Upper bound of parameters 2')
+    parser.add_option('--min-dso', type = 'float', help = 'Lower bound of parameters 2')
+
+    parser.add_option('--max-dss', type = 'float', help = 'Upper bound of parameters 3')
+    parser.add_option('--min-dss', type = 'float', help = 'Lower bound of parameters 3')
+
+    parser.add_option('--max-dtpeak', type = 'float', help = 'Upper bound of parameters 4')
+    parser.add_option('--min-dtpeak', type = 'float', help = 'Lower bound of parameters 4')
+
+    parser.add_option('--max-eccentricity', type = 'float', help = 'Upper bound of parameters 5')
+    parser.add_option('--min-eccentricity', type = 'float', help = 'Lower bound of parameters 5')
+
     args, _ = parser.parse_args(argv)
 
     exe = args.executable
@@ -133,12 +148,22 @@ def getMCFlikelihood(argv):
             ecc_default = float(ecc[1:])
         except:
             ecc_default = 0.5
+    max_k = args.max_k if args.max_k is not None else 10
+    min_k = args.min_k if args.min_k is not None else -10
+    max_dss = args.max_dss if args.max_dss is not None else 1e3
+    min_dss = args.min_dss if args.min_dss is not None else -1e3
+    max_dso = args.max_dso if args.max_dso is not None else 1e4
+    min_dso = args.min_dso if args.min_dso is not None else -1e4
+    max_dtpeak = args.max_dtpeak if args.max_dtpeak is not None else -10
+    min_dtpeak = args.min_dtpeak if args.min_dtpeak is not None else 100
+    max_ecc = args.max_eccentricity if args.max_eccentricity is not None else 0
+    min_ecc = args.min_eccentricity if args.min_eccentricity is not None else 0.7
     for case in switch(Smode):
         if case('nospin'):
             pms_init = (KK_default, dtPeak_default)
             # K, dtPeak
             def get_lnprob(pms):
-                if pms[0] < -10 or pms[0] > 10 or pms[1] < -10 or pms[1] > 100:
+                if pms[0] < min_k or pms[0] > max_k or pms[1] < min_dtpeak or pms[1] > max_dtpeak:
                     return -np.inf
                 ret = ge.get_overlap(jobtag = args.jobtag, timeout = args.timeout,
                             KK = pms[0], dSO = dSO_default, dSS = dSS_default, dtPeak = pms[1])
@@ -151,10 +176,10 @@ def getMCFlikelihood(argv):
         if case('deltaphase'):
             pms_init = pms0
             def get_lnprob(pms):
-                if pms[0] < -10 or pms[0] > 10 or \
-                    pms[1] < -1e4 or pms[1] > 1e4 or \
-                    pms[2] < -1e3 or pms[2] > 1e3 or \
-                    pms[3] < -10 or pms[3] > 100:
+                if pms[0] < min_k or pms[0] > max_k or \
+                    pms[1] < min_dso or pms[1] > max_dso or \
+                    pms[2] < min_dss or pms[2] > max_dss or \
+                    pms[3] < min_dtpeak or pms[3] > max_dtpeak:
                     return -np.inf
                 ret = ge.get_lnprob(jobtag = args.jobtag, timeout = args.timeout,
                             KK = pms[0], dSO = pms[1], dSS = pms[2], dtPeak = pms[3])
@@ -163,7 +188,7 @@ def getMCFlikelihood(argv):
         if case('deltaphase_nospin'):
             pms_init = (KK_default, dtPeak_default)
             def get_lnprob(pms):
-                if pms[0] < -10 or pms[0] > 10 or pms[1] < -10 or pms[1] > 100:
+                if pms[0] < min_k or pms[0] > max_k or pms[1] < min_dtpeak or pms[1] > max_dtpeak:
                     return -np.inf
                 ret = ge.get_lnprob(jobtag = args.jobtag, timeout = args.timeout,
                             KK = pms[0], dSO = dSO_default, dSS = dSS_default, dtPeak = pms[1])
@@ -173,7 +198,7 @@ def getMCFlikelihood(argv):
         if case('deltaphase_nospin_withecc'):
             pms_init = (KK_default, dtPeak_default, ecc_default)
             def get_lnprob(pms):
-                if pms[0] < -10 or pms[0] > 10 or pms[1] < -10 or pms[1] > 100 or pms[2] < 0 or pms[2] > 0.7:
+                if pms[0] < min_k or pms[0] > max_k or pms[1] < min_dtpeak or pms[1] > max_dtpeak or pms[2] < min_ecc or pms[2] > max_ecc:
                     return -np.inf
                 ret = ge.get_lnprob(jobtag = args.jobtag, timeout = args.timeout,
                             KK = pms[0], dSO = dSO_default, dSS = dSS_default, dtPeak = pms[1], eccentricity = pms[2])
@@ -184,10 +209,10 @@ def getMCFlikelihood(argv):
             pms_init = pms0
             # K, dSO, dSS
             def get_lnprob(pms):
-                if pms[0] < -10 or pms[0] > 10 or \
-                    pms[1] < -1e4 or pms[1] > 1e4 or \
-                    pms[2] < -1e3 or pms[2] > 1e3 or \
-                    pms[3] < -10 or pms[3] > 100:
+                if pms[0] < min_k or pms[0] > max_k or \
+                    pms[1] < min_dso or pms[1] > max_dso or \
+                    pms[2] < min_dss or pms[2] > max_dss or \
+                    pms[3] < min_dtpeak or pms[3] > max_dtpeak:
                     return -np.inf
                 ret = ge.get_overlap(jobtag = args.jobtag, timeout = args.timeout,
                             KK = pms[0], dSO = pms[1], dSS = pms[2], dtPeak = pms[3])

@@ -195,6 +195,38 @@ def getMCFlikelihood(argv):
                 return ret
             break
 
+        if case('deltaphase_nospin_orbecc'):
+            from .SXSlist import DEFAULT_ECC_ORBIT_DICT
+            if SXSnum in DEFAULT_ECC_ORBIT_DICT:
+                f0, e0 = DEFAULT_ECC_ORBIT_DICT[SXSnum]
+                NR = SXSh22(SXSnum = SXSnum,
+                            f_ini = f0,
+                            Mtotal = mtotal,
+                            srate = srate,
+                            srcloc = srcloc,
+                            table = table,
+                            srcloc_all = srcloc_all)
+                ge = NR.construct_generator(approx, exe, psd = psd)
+                pms_init = (KK_default, dtPeak_default, e0)
+                eB = 40 * np.log(2)
+                chiE = 0.1 + 0.4 * np.exp(-eB * np.abs(e0))
+                e_min = np.abs(e0) * (1-chiE)
+                e_max = np.abs(e0) * (1+chiE)
+                if e0<0:
+                    e_min = -e_max
+                    e_max = -e_min
+                def get_lnprob(pms):
+                    if pms[0] < min_k or pms[0] > max_k or pms[1] < min_dtpeak or pms[1] > max_dtpeak or pms[2] < min_ecc or pms[2] > max_ecc:
+                        return -np.inf
+                    ret = ge.get_lnprob(jobtag = args.jobtag, timeout = args.timeout,
+                                KK = pms[0], dSO = dSO_default, dSS = dSS_default, dtPeak = pms[1], eccentricity = pms[2])
+                    return ret
+
+
+            else:
+                raise Exception(f'No such case {SXSnum}')
+            break
+
         if case('deltaphase_nospin_withecc'):
             pms_init = (KK_default, dtPeak_default, ecc_default)
             def get_lnprob(pms):

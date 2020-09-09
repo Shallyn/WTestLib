@@ -210,16 +210,20 @@ def getMCFlikelihood(argv):
                 pms_init = (KK_default, dtPeak_default, e0)
                 eB = 40 * np.log(2)
                 chiE = 0.1 + 0.4 * np.exp(-eB * np.abs(e0))
-                e_min = np.abs(e0) * (1-chiE)
-                e_max = np.abs(e0) * (1+chiE)
+                e_minA = np.abs(e0) * (1-chiE)
+                e_maxA = np.abs(e0) * (1+chiE)
                 if e0<0:
-                    e_min = -e_max
-                    e_max = -e_min
+                    min_ecc = -e_maxA
+                    max_ecc = -e_minA
+                else:
+                    min_ecc = e_minA
+                    max_ecc = e_maxA
+
                 def get_lnprob(pms):
                     if pms[0] < min_k or pms[0] > max_k or pms[1] < min_dtpeak or pms[1] > max_dtpeak or pms[2] < min_ecc or pms[2] > max_ecc:
                         return -np.inf
                     ret = ge.get_lnprob(jobtag = args.jobtag, timeout = args.timeout,
-                                KK = pms[0], dSO = dSO_default, dSS = dSS_default, dtPeak = pms[1], eccentricity = pms[2])
+                                KK = pms[0], dSO = dSO_default, dSS = dSS_default, dtPeak = pms[1], ecc = pms[2])
                     return ret
 
 
@@ -233,7 +237,7 @@ def getMCFlikelihood(argv):
                 if pms[0] < min_k or pms[0] > max_k or pms[1] < min_dtpeak or pms[1] > max_dtpeak or pms[2] < min_ecc or pms[2] > max_ecc:
                     return -np.inf
                 ret = ge.get_lnprob(jobtag = args.jobtag, timeout = args.timeout,
-                            KK = pms[0], dSO = dSO_default, dSS = dSS_default, dtPeak = pms[1], eccentricity = pms[2])
+                            KK = pms[0], dSO = dSO_default, dSS = dSS_default, dtPeak = pms[1], ecc = pms[2])
                 return ret
             break
 
@@ -254,9 +258,9 @@ def getMCFlikelihood(argv):
                 dephase = ret.dephase_fit
                 return -( pow(eps/0.01, 2) + pow(dephase/5, 2) )/2
             break
-    def get_waveform(pms):
+    def get_waveform(KK = KK_default, dSO = dSO_default, dSS = dSS_default, dtPeak = dtPeak_default, ecc = ecc_default, **kwargs):
         return ge.get_waveform(jobtag = args.jobtag, timeout = args.timeout,
-                        KK = pms[0], dSO = pms[1], dSS = pms[2], dtPeak = pms[3])
+                        KK = KK, dSO = dSO, dSS = dSS, dtPeak = dtPeak, ecc = ecc)
     return get_lnprob, args, pms_init, get_waveform
 
     

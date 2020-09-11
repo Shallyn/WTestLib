@@ -656,6 +656,8 @@ class SXSCompGenerator(Generator):
 
         trange = (wf_1.time[idx_end] - wf_1.time[idx_start]) * dim_t(Mtotal_init)
         dPhiCum = (wf_1.phase[idx_start:idx_end] - wf_1.phase[idx_start]) - (wf_2.phase[idx_start:idx_end] - wf_2.phase[idx_start])
+        if trange == 0:
+            return -np.inf
         dPhiCum = np.sum(np.power(dPhiCum,2)) / trange
         lnprob = []
         for Mtotal in Mtotal_list:

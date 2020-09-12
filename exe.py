@@ -16,6 +16,7 @@ from optparse import OptionParser
 from .psd import DetectorPSD
 from .h22datatype import get_fmin, get_fini_dimless
 import sys
+from .SXSlist import DEFAULT_ECC_ORBIT_DICT
 
 #-----Recover EOB vs SXS-----#
 def RecoverEOBvsSXS(argv):
@@ -196,7 +197,6 @@ def getMCFlikelihood(argv):
             break
 
         if case('deltaphase_nospin_orbecc'):
-            from .SXSlist import DEFAULT_ECC_ORBIT_DICT
             if SXSnum in DEFAULT_ECC_ORBIT_DICT:
                 f0, e0 = DEFAULT_ECC_ORBIT_DICT[SXSnum]
                 NR = SXSh22(SXSnum = SXSnum,
@@ -240,6 +240,58 @@ def getMCFlikelihood(argv):
                             KK = pms[0], dSO = dSO_default, dSS = dSS_default, dtPeak = pms[1], ecc = pms[2])
                 return ret
             break
+        if case('deltaphase_nospin_adjdt'):
+            pms_dt_init = [ 4.93803970e+02, -1.11676765e+04,  1.01656992e+05, -4.03487263e+05, 5.83501606e+05]
+            dt_init = 0
+            for i in range(len(pms_dt_init)):
+                dt_init += pms_dt_init[i]*np.power(NR.eta, i)
+            pms_init = (KK_default, dtPeak_default)
+            def get_lnprob(pms):
+                if pms[0] < min_dtpeak or pms[0] > max_dtpeak:
+                    return -np.inf
+                ret = ge.get_lnprob(jobtag = args.jobtag, timeout = args.timeout,
+                            KK = KK_default, dSO = dSO_default, dSS = dSS_default, dtPeak = pms[0])
+                return ret
+            break
+
+        if case('deltaphase_nospin_adjdt_withecc'):
+            pms_dt_init = [ 4.93803970e+02, -1.11676765e+04,  1.01656992e+05, -4.03487263e+05, 5.83501606e+05]
+            dt_init = 0
+            for i in range(len(pms_dt_init)):
+                dt_init += pms_dt_init[i]*np.power(NR.eta, i)
+            if SXSnum in DEFAULT_ECC_ORBIT_DICT:
+                f0, e0 = DEFAULT_ECC_ORBIT_DICT[SXSnum]
+                NR = SXSh22(SXSnum = SXSnum,
+                            f_ini = f0,
+                            Mtotal = mtotal,
+                            srate = srate,
+                            srcloc = srcloc,
+                            table = table,
+                            srcloc_all = srcloc_all)
+                ge = NR.construct_generator(approx, exe, psd = psd)
+                pms_init = (dt_init, e0)
+                eB = 40 * np.log(2)
+                chiE = 0.1 + 0.4 * np.exp(-eB * np.abs(e0))
+                e_minA = np.abs(e0) * (1-chiE)
+                e_maxA = np.abs(e0) * (1+chiE)
+                if e0<0:
+                    min_ecc = -e_maxA
+                    max_ecc = -e_minA
+                else:
+                    min_ecc = e_minA
+                    max_ecc = e_maxA
+
+                def get_lnprob(pms):
+                    if pms[0] < min_dtpeak or pms[0] > max_dtpeak or pms[1] < min_ecc or pms[1] > max_ecc:
+                        return -np.inf
+                    ret = ge.get_lnprob(jobtag = args.jobtag, timeout = args.timeout,
+                                KK = KK_default, dSO = dSO_default, dSS = dSS_default, dtPeak = pms[0], ecc = pms[1])
+                    return ret
+            else:
+                raise Exception(f'No such case {SXSnum}')
+            break
+
+
 
         else:
             pms_init = pms0

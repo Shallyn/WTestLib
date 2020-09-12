@@ -245,7 +245,7 @@ def getMCFlikelihood(argv):
             dt_init = 0
             for i in range(len(pms_dt_init)):
                 dt_init += pms_dt_init[i]*np.power(NR.eta, i)
-            pms_init = (dtPeak_default)
+            pms_init = [dtPeak_default]
             def get_lnprob(pms):
                 if pms[0] < min_dtpeak or pms[0] > max_dtpeak:
                     return -np.inf

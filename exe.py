@@ -270,16 +270,18 @@ def getMCFlikelihood(argv):
                             srcloc_all = srcloc_all)
                 ge = NR.construct_generator(approx, exe, psd = psd)
                 pms_init = (dt_init, e0)
-                eB = 40 * np.log(2)
-                chiE = 0.1 + 0.4 * np.exp(-eB * np.abs(e0))
-                e_minA = np.abs(e0) * (1-chiE)
-                e_maxA = np.abs(e0) * (1+chiE)
-                if e0<0:
-                    min_ecc = -e_maxA
-                    max_ecc = -e_minA
-                else:
-                    min_ecc = e_minA
-                    max_ecc = e_maxA
+                # eB = 40 * np.log(2)
+                # chiE = 0.1 + 0.4 * np.exp(-eB * np.abs(e0))
+                # e_minA = np.abs(e0) * (1-chiE)
+                # e_maxA = np.abs(e0) * (1+chiE)
+                # if e0<0:
+                #     min_ecc = -e_maxA
+                #     max_ecc = -e_minA
+                # else:
+                #     min_ecc = e_minA
+                #     max_ecc = e_maxA
+                min_ecc = e0 - 0.02
+                max_ecc = e0 + 0.02
 
                 def get_lnprob(pms):
                     if pms[0] < min_dtpeak or pms[0] > max_dtpeak or pms[1] < min_ecc or pms[1] > max_ecc:

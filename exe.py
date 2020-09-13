@@ -208,7 +208,7 @@ def getMCFlikelihood(argv):
                             srcloc_all = srcloc_all)
                 ge = NR.construct_generator(approx, exe, psd = psd)
                 pms_init = (KK_default, dtPeak_default, e0)
-                if args.delta_ecc is None
+                if args.delta_ecc is None:
                     eB = 40 * np.log(2)
                     chiE = 0.1 + 0.4 * np.exp(-eB * np.abs(e0))
                     e_minA = np.abs(e0) * (1-chiE)

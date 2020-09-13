@@ -114,7 +114,7 @@ def getMCFlikelihood(argv):
 
     parser.add_option('--max-eccentricity', type = 'float', help = 'Upper bound of parameters 5')
     parser.add_option('--min-eccentricity', type = 'float', help = 'Lower bound of parameters 5')
-
+    parser.add_option('--delta-ecc', type = 'float', default = 0.02, help = 'Eccentricity range')
     args, _ = parser.parse_args(argv)
 
     exe = args.executable
@@ -280,8 +280,9 @@ def getMCFlikelihood(argv):
                 # else:
                 #     min_ecc = e_minA
                 #     max_ecc = e_maxA
-                min_ecc = e0 - 0.02
-                max_ecc = e0 + 0.02
+                egap = args.delta_ecc
+                min_ecc = e0 - egap
+                max_ecc = e0 + egap
 
                 def get_lnprob(pms):
                     if pms[0] < min_dtpeak or pms[0] > max_dtpeak or pms[1] < min_ecc or pms[1] > max_ecc:

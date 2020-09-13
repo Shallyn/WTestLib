@@ -114,7 +114,7 @@ def getMCFlikelihood(argv):
 
     parser.add_option('--max-eccentricity', type = 'float', help = 'Upper bound of parameters 5')
     parser.add_option('--min-eccentricity', type = 'float', help = 'Lower bound of parameters 5')
-    parser.add_option('--delta-ecc', type = 'float', default = 0.02, help = 'Eccentricity range')
+    parser.add_option('--delta-ecc', type = 'float',  help = 'Eccentricity range')
     args, _ = parser.parse_args(argv)
 
     exe = args.executable
@@ -208,16 +208,20 @@ def getMCFlikelihood(argv):
                             srcloc_all = srcloc_all)
                 ge = NR.construct_generator(approx, exe, psd = psd)
                 pms_init = (KK_default, dtPeak_default, e0)
-                eB = 40 * np.log(2)
-                chiE = 0.1 + 0.4 * np.exp(-eB * np.abs(e0))
-                e_minA = np.abs(e0) * (1-chiE)
-                e_maxA = np.abs(e0) * (1+chiE)
-                if e0<0:
-                    min_ecc = -e_maxA
-                    max_ecc = -e_minA
+                if args.delta_ecc is None
+                    eB = 40 * np.log(2)
+                    chiE = 0.1 + 0.4 * np.exp(-eB * np.abs(e0))
+                    e_minA = np.abs(e0) * (1-chiE)
+                    e_maxA = np.abs(e0) * (1+chiE)
+                    if e0<0:
+                        min_ecc = -e_maxA
+                        max_ecc = -e_minA
+                    else:
+                        min_ecc = e_minA
+                        max_ecc = e_maxA
                 else:
-                    min_ecc = e_minA
-                    max_ecc = e_maxA
+                    min_ecc = e0 - args.delta_ecc
+                    max_ecc = e0 + args.delta_ecc
 
                 def get_lnprob(pms):
                     if pms[0] < min_k or pms[0] > max_k or pms[1] < min_dtpeak or pms[1] > max_dtpeak or pms[2] < min_ecc or pms[2] > max_ecc:
@@ -280,7 +284,7 @@ def getMCFlikelihood(argv):
                 # else:
                 #     min_ecc = e_minA
                 #     max_ecc = e_maxA
-                egap = args.delta_ecc
+                egap = args.delta_ecc if args.delta_ecc is not None else 0.02
                 min_ecc = e0 - egap
                 max_ecc = e0 + egap
 

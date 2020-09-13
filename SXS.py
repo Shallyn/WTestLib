@@ -660,6 +660,7 @@ class SXSCompGenerator(Generator):
             return -np.inf
         dPhiCum = np.sum(np.power(dPhiCum,2)) / trange
         lnprob = []
+        # eps_lst = []
         for Mtotal in Mtotal_list:
             dimt = dim_t(Mtotal)
             df = df_old *  Mtotal_init / Mtotal
@@ -682,9 +683,11 @@ class SXSCompGenerator(Generator):
                     tc = idx / fs
             eps = 1 - max(Oxt_abs)
             tc_dephase = tc * dimt
-            lnprob.append(-( pow(eps/0.01, 2) + pow(tc_dephase/5, 2) + dPhiCum )/2)
+            lnprob.append(-( pow(eps/0.01, 2) + pow(tc_dephase/5, 2) + dPhiCum ))
             # lnprob.append( -(pow(eps/0.01, 2) + pow(tc_dephase/5, 2) + dPhiCum/0.001)/2 )
             # lnprob.append(eps)
+            # eps_lst.append(eps)
+        # return max(eps_lst)
         return min(lnprob)
         
 

@@ -41,7 +41,6 @@ def GridSearch_dt_ecc(argv = None):
     parser.add_option('--psd', type = 'str', help = 'Detector psd.')
     parser.add_option('--flow', type = 'float', default = 0, help = 'Lower frequency cut off for psd.')
     parser.add_option('--timeout', type = 'int', default = 60, help = 'Time limit for waveform generation')
-    parser.add_option('--max-step', type = 'int', default = 1000, help = 'Max iteration step')
     parser.add_option('--mode', type = 'str', default = 'all', help = 'Search mode.')
 
     parser.add_option('--table', type = 'str', default = str(DEFAULT_TABLE), help = 'Path of SXS table.')

@@ -62,7 +62,7 @@ def GridSearch_dt_ecc(argv):
     parser.add_option('--mag', type = 'float', default = 10, help = 'Thresh of dx_init / dx (>1)')
     parser.add_option('--filter-thresh', type = 'float', default = 0.4, help = 'Thresh of grid search (<1)')
     parser.add_option('--max-step', type = 'int', default = 100, help = 'Max iter depth')
-    args, _ = parser.parse_args(sys.argv)
+    args, _ = parser.parse_args(argv)
 
     exe = args.executable
     approx = args.approx

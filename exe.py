@@ -17,59 +17,102 @@ from .psd import DetectorPSD
 from .h22datatype import get_fmin, get_fini_dimless
 import sys
 from .SXSlist import DEFAULT_ECC_ORBIT_DICT
+from .MultiGrid import MultiGrid
 
 #-----Recover EOB vs SXS-----#
-def RecoverEOBvsSXS(argv):
+def GridSearch_dt_ecc(argv):
+    from .SXS import DEFAULT_TABLE
+    from .SXS import DEFAULT_SRCLOC
     from .SXS import DEFAULT_SRCLOC_ALL
+    from .generator import self_adaptivor
+
     parser = OptionParser(description='Waveform Comparation With SXS')
 
     parser.add_option('--executable', type = 'str', default = 'lalsim-inspiral', help = 'Exe command')
     parser.add_option('--approx', type = 'str', default = 'SEOBNREv5', help = 'Version of the code')
     parser.add_option('--fini', type = 'float', default = 0, help = 'Initial orbital frequency')
     parser.add_option('--SXS', type = 'str', default = '0071', help = 'SXS template for comparision')
+    parser.add_option('--mtotal', type = 'float', default = 40, help = 'Total mass')
     parser.add_option('--srate', type = 'float', default = 16384, help = 'Sample rate')
-
+ 
     parser.add_option('--prefix', type = 'str', default = '.', help = 'dir for results saving.')
     parser.add_option('--jobtag', type = 'str', default = '_lnprob', help = 'jobtag.')
 
-    parser.add_option('--eccentricity', type = 'float', default = 0.0, help = 'model eccentricity')
-
-    parser.add_option('--table', type = 'str', default = '/home/liuxiaolin/Documents/SXS/table_data2.json', help = 'SXS json file')
-    parser.add_option('--srcloc', type = 'str', default = '/home/liuxiaolin/Documents/SXS/SXS_Data_txt', help = 'SXS h22 data path')
-    parser.add_option('--srcloc-all', type = 'str', default = str(DEFAULT_SRCLOC_ALL), help = 'Path of SXS waveform data all modes')
-    parser.add_option('--timeout', type = 'int', default = 60, help = 'Time limit for waveform generation')
-
     parser.add_option('--psd', type = 'str', help = 'Detector psd.')
     parser.add_option('--flow', type = 'float', default = 0, help = 'Lower frequency cut off for psd.')
+    parser.add_option('--timeout', type = 'int', default = 60, help = 'Time limit for waveform generation')
+    parser.add_option('--max-step', type = 'int', default = 1000, help = 'Max iteration step')
+    parser.add_option('--mode', type = 'str', default = 'all', help = 'Search mode.')
 
+    parser.add_option('--table', type = 'str', default = str(DEFAULT_TABLE), help = 'Path of SXS table.')
+    parser.add_option('--srcloc', type = 'str', default = str(DEFAULT_SRCLOC), help = 'Path of SXS waveform data.')
+    parser.add_option('--srcloc-all', type = 'str', default = str(DEFAULT_SRCLOC_ALL), help = 'Path of SXS waveform data all modes')
+
+    parser.add_option('--gridsearch', action = 'store_true', help = 'Grid search, only for dt & ecc')
+    parser.add_option('--num-dtpeak', type = 'int', default = 75, help = 'numbers for grid search')
+    parser.add_option('--num-ecc', type = 'int', default = 50, help = 'numbers for grid search')
+
+    parser.add_option('--max-dtpeak', type = 'float', help = 'Upper bound of parameters 4')
+    parser.add_option('--min-dtpeak', type = 'float', help = 'Lower bound of parameters 4')
+
+    parser.add_option('--max-ecc', type = 'float', help = 'Upper bound of parameters 5')
+    parser.add_option('--min-ecc', type = 'float', help = 'Lower bound of parameters 5')
+
+    parser.add_option('--eps', type = 'float', default = 1e-6, help = 'Thresh of div')
+    parser.add_option('--mag', type = 'float', default = 10, help = 'Thresh of dx_init / dx (>1)')
+    parser.add_option('--filter-thresh', type = 'float', default = 0.4, help = 'Thresh of grid search (<1)')
+    parser.add_option('--max-step', type = 'int', default = 100, help = 'Max iter depth')
     args, _ = parser.parse_args(sys.argv)
 
-    jobtag = args.jobtag
     exe = args.executable
     approx = args.approx
     SXSnum = args.SXS
+    mtotal = args.mtotal
     fini = args.fini
-    psd = DetectorPSD(args.psd, flow = args.flow)
-    ecc = args.eccentricity
-    timeout = args.timeout
+    srate = args.srate
     table = args.table
     srcloc = args.srcloc
     srcloc_all = args.srcloc_all
-    prefix = Path(args.prefix)
+    psd = DetectorPSD(args.psd, flow = args.flow)
 
-    s = SXSh22(SXSnum, f_ini = fini,
-            modeL = None,
-            modeM = None,
-            table = table,
-            srcloc = srcloc,
-            srcloc_all = srcloc_all,
-            verbose = True,
-            ishertz = False)
-
-    ge = s.construct_generator(approx, exe, psd = psd)
-    ret = ge.get_overlap(jobtag = jobtag, minecc = 0, maxecc = 0, eccentricity = ecc,
-                        timeout = timeout, verbose = True, Preset = False, estep = args.estep)
-    ret.recover(prefix)
+    max_dtpeak = args.max_dtpeak if args.max_dtpeak is not None else 100
+    min_dtpeak = args.min_dtpeak if args.min_dtpeak is not None else -10
+    dt_range = (min_dtpeak, max_dtpeak)
+    max_ecc = args.max_ecc if args.max_ecc is not None else 0.7
+    min_ecc = args.min_ecc if args.min_ecc is not None else 0
+    num_dt = args.num_dtpeak
+    num_ecc = args.num_ecc
+    ecc_range = (min_ecc, max_ecc)
+    eps = args.eps
+    mag = args.mag
+    filter_thresh = args.filter_thresh
+    max_step = args.max_step
+    if SXSnum in DEFAULT_ECC_ORBIT_DICT:
+        f0, _ = DEFAULT_ECC_ORBIT_DICT[SXSnum]
+        NR = SXSh22(SXSnum = SXSnum,
+                    f_ini = f0,
+                    Mtotal = mtotal,
+                    srate = srate,
+                    srcloc = srcloc,
+                    table = table,
+                    srcloc_all = srcloc_all)
+        ge = NR.construct_generator(approx, exe, psd = psd)
+        pms0 = NR.CalculateAdjParamsV4()
+        KK_default = pms0[0]
+        dSO_default = pms0[1]
+        dSS_default = pms0[2]
+        def get_lnprob(dt, ecc):
+            if dt < min_dtpeak or dt > max_dtpeak or ecc < min_ecc or ecc > max_ecc:
+                return -np.inf
+            ret = ge.get_lnprob(jobtag = args.jobtag, timeout = args.timeout,
+                        KK = KK_default, dSO = dSO_default, dSS = dSS_default, dtPeak = dt, ecc = ecc)
+            return ret
+        prefix = Path(args.prefix)
+        fsave = str(prefix / f'grid_{SXSnum}.txt')
+        if not prefix.exists():
+            prefix.mkdir(parents = True)
+        MG = MultiGrid(get_lnprob, dt_range, ecc_range, num_dt, num_ecc)
+        MG.run(fsave, eps = eps, magnification = mag, filter_thresh = filter_thresh, maxiter = max_step)
     return 0
 
 
@@ -117,8 +160,8 @@ def getMCFlikelihood(argv):
     parser.add_option('--delta-ecc', type = 'float',  help = 'Eccentricity range')
 
     parser.add_option('--gridsearch', action = 'store_true', help = 'Grid search, only for dt & ecc')
-    parser.add_option('--grid-num-dtpeak', type = 'float', help = 'numbers for grid search')
-    parser.add_option('--grid-num-ecc', type = 'float', help = 'numbers for grid search')
+    parser.add_option('--grid-num-dtpeak', type = 'int', default = 100, help = 'numbers for grid search')
+    parser.add_option('--grid-num-ecc', type = 'int', default = 100, help = 'numbers for grid search')
 
     args, _ = parser.parse_args(argv)
 
@@ -191,7 +234,7 @@ def getMCFlikelihood(argv):
                     return -np.inf
                 ret = ge.get_lnprob(jobtag = args.jobtag, timeout = args.timeout,
                             KK = pms[0], dSO = pms[1], dSS = pms[2], dtPeak = pms[3])
-                return ret
+                return ret[0]
             break
         if case('deltaphase_nospin'):
             pms_init = (KK_default, dtPeak_default)
@@ -200,7 +243,7 @@ def getMCFlikelihood(argv):
                     return -np.inf
                 ret = ge.get_lnprob(jobtag = args.jobtag, timeout = args.timeout,
                             KK = pms[0], dSO = dSO_default, dSS = dSS_default, dtPeak = pms[1])
-                return ret
+                return ret[0]
             break
 
         if case('deltaphase_nospin_orbecc'):
@@ -235,7 +278,7 @@ def getMCFlikelihood(argv):
                         return -np.inf
                     ret = ge.get_lnprob(jobtag = args.jobtag, timeout = args.timeout,
                                 KK = pms[0], dSO = dSO_default, dSS = dSS_default, dtPeak = pms[1], ecc = pms[2])
-                    return ret
+                    return ret[0]
 
 
             else:
@@ -249,7 +292,7 @@ def getMCFlikelihood(argv):
                     return -np.inf
                 ret = ge.get_lnprob(jobtag = args.jobtag, timeout = args.timeout,
                             KK = pms[0], dSO = dSO_default, dSS = dSS_default, dtPeak = pms[1], ecc = pms[2])
-                return ret
+                return ret[0]
             break
         if case('deltaphase_nospin_adjdt'):
             pms_dt_init = [ 4.93803970e+02, -1.11676765e+04,  1.01656992e+05, -4.03487263e+05, 5.83501606e+05]
@@ -262,7 +305,7 @@ def getMCFlikelihood(argv):
                     return -np.inf
                 ret = ge.get_lnprob(jobtag = args.jobtag, timeout = args.timeout,
                             KK = KK_default, dSO = dSO_default, dSS = dSS_default, dtPeak = pms[0])
-                return ret
+                return ret[0]
             break
 
         if case('deltaphase_nospin_adjdt_withecc'):
@@ -300,36 +343,10 @@ def getMCFlikelihood(argv):
                         return -np.inf
                     ret = ge.get_lnprob(jobtag = args.jobtag, timeout = args.timeout,
                                 KK = KK_default, dSO = dSO_default, dSS = dSS_default, dtPeak = pms[0], ecc = pms[1])
-                    return ret
+                    return ret[0]
             else:
                 raise Exception(f'No such case {SXSnum}')
             break
-
-        if case('gridsearch'):
-            max_dtpeak = args.max_dtpeak if args.max_dtpeak is not None else 100
-            min_dtpeak = args.min_dtpeak if args.min_dtpeak is not None else -10
-            max_ecc = args.max_eccentricity if args.max_eccentricity is not None else 0.7
-            min_ecc = args.min_eccentricity if args.min_eccentricity is not None else 0
-            if SXSnum in DEFAULT_ECC_ORBIT_DICT:
-                f0, e0 = DEFAULT_ECC_ORBIT_DICT[SXSnum]
-                NR = SXSh22(SXSnum = SXSnum,
-                            f_ini = f0,
-                            Mtotal = mtotal,
-                            srate = srate,
-                            srcloc = srcloc,
-                            table = table,
-                            srcloc_all = srcloc_all)
-                ge = NR.construct_generator(approx, exe, psd = psd)
-                pms_init = ((min_dtpeak, max_dtpeak), (min_ecc, max_ecc)) # this is parameter range
-                def get_lnprob(pms):
-                    if pms[0] < min_dtpeak or pms[0] > max_dtpeak or pms[1] < min_ecc or pms[1] > max_ecc:
-                        return -np.inf
-                    ret = ge.get_lnprob(jobtag = args.jobtag, timeout = args.timeout,
-                                KK = KK_default, dSO = dSO_default, dSS = dSS_default, dtPeak = pms[0], ecc = pms[1])
-                    return ret
-
-            else:
-                raise Exception(f'No such case {SXSnum}')
 
 
         else:

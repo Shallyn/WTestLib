@@ -13,5 +13,6 @@ from . import h22datatype
 from . import psd
 from . import exe
 from . import SXSlist
-__all__ = ['Utils', 'SXS', 'generator', 'h22datatype', 'psd', 'exe', 'SXSlist']
+from . import MultiGrid
+__all__ = ['Utils', 'SXS', 'generator', 'h22datatype', 'psd', 'exe', 'SXSlist', 'MultiGrid']
 

@@ -101,11 +101,9 @@ def GridSearch_dt_ecc(argv = None):
         dSO_default = pms0[1]
         dSS_default = pms0[2]
         def get_lnprob(dt, ecc):
-            if dt < min_dtpeak or dt > max_dtpeak or ecc < min_ecc or ecc > max_ecc:
-                return -np.inf
             ret = ge.get_lnprob(jobtag = args.jobtag, timeout = args.timeout,
                         KK = KK_default, dSO = dSO_default, dSS = dSS_default, dtPeak = dt, ecc = ecc)
-            return ret
+            return ret[0]
         prefix = Path(args.prefix)
         fsave = str(prefix / f'grid_{SXSnum}.txt')
         if not prefix.exists():

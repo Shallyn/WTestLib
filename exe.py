@@ -20,7 +20,7 @@ from .SXSlist import DEFAULT_ECC_ORBIT_DICT
 from .MultiGrid import MultiGrid
 
 #-----Recover EOB vs SXS-----#
-def GridSearch_dt_ecc(argv):
+def GridSearch_dt_ecc(argv = None):
     from .SXS import DEFAULT_TABLE
     from .SXS import DEFAULT_SRCLOC
     from .SXS import DEFAULT_SRCLOC_ALL

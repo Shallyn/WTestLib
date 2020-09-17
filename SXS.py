@@ -1394,12 +1394,19 @@ def resave_results(prefix, target):
     pre_list = prefix.split('/')
     prefix = pre_list.pop(-1)
     loc = Path('/'.join(pre_list))
+    print(loc)
     lth = len(prefix)
-    save_namecol(target)
-    for file in loc.iterdir():
-        if file.name[:lth] == prefix:
-            sys.stderr.write(f'{LOG}:Saving {file.name} to {target}...\n')
-            data = load_csv(file)
+    for fname in loc.iterdir():
+        if fname.name[:lth] == prefix:
+            break
+    with open(fname, 'r') as f:
+        firstline = f.readline()
+    
+    save_namecol(target, data = [firstline.split(',')])
+    for fname in loc.iterdir():
+        if fname.name[:lth] == prefix:
+            sys.stderr.write(f'{LOG}:Saving {fname.name} to {target}...\n')
+            data = load_csv(fname)
             add_csv(target, data)
 
 def parse_SXSeccV1(SXSnum):

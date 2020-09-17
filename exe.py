@@ -115,6 +115,11 @@ def getMCFlikelihood(argv):
     parser.add_option('--max-eccentricity', type = 'float', help = 'Upper bound of parameters 5')
     parser.add_option('--min-eccentricity', type = 'float', help = 'Lower bound of parameters 5')
     parser.add_option('--delta-ecc', type = 'float',  help = 'Eccentricity range')
+
+    parser.add_option('--gridsearch', action = 'store_true', help = 'Grid search, only for dt & ecc')
+    parser.add_option('--grid-num-dtpeak', type = 'float', help = 'numbers for grid search')
+    parser.add_option('--grid-num-ecc', type = 'float', help = 'numbers for grid search')
+
     args, _ = parser.parse_args(argv)
 
     exe = args.executable
@@ -128,6 +133,8 @@ def getMCFlikelihood(argv):
     srcloc_all = args.srcloc_all
 
     Smode = args.mode.lower()
+    if args.gridsearch:
+        Smode = 'gridsearch'
 
     psd = DetectorPSD(args.psd, flow = args.flow)
     NR = SXSh22(SXSnum = SXSnum,
@@ -298,6 +305,31 @@ def getMCFlikelihood(argv):
                 raise Exception(f'No such case {SXSnum}')
             break
 
+        if case('gridsearch'):
+            max_dtpeak = args.max_dtpeak if args.max_dtpeak is not None else 100
+            min_dtpeak = args.min_dtpeak if args.min_dtpeak is not None else -10
+            max_ecc = args.max_eccentricity if args.max_eccentricity is not None else 0.7
+            min_ecc = args.min_eccentricity if args.min_eccentricity is not None else 0
+            if SXSnum in DEFAULT_ECC_ORBIT_DICT:
+                f0, e0 = DEFAULT_ECC_ORBIT_DICT[SXSnum]
+                NR = SXSh22(SXSnum = SXSnum,
+                            f_ini = f0,
+                            Mtotal = mtotal,
+                            srate = srate,
+                            srcloc = srcloc,
+                            table = table,
+                            srcloc_all = srcloc_all)
+                ge = NR.construct_generator(approx, exe, psd = psd)
+                pms_init = ((min_dtpeak, max_dtpeak), (min_ecc, max_ecc)) # this is parameter range
+                def get_lnprob(pms):
+                    if pms[0] < min_dtpeak or pms[0] > max_dtpeak or pms[1] < min_ecc or pms[1] > max_ecc:
+                        return -np.inf
+                    ret = ge.get_lnprob(jobtag = args.jobtag, timeout = args.timeout,
+                                KK = KK_default, dSO = dSO_default, dSS = dSS_default, dtPeak = pms[0], ecc = pms[1])
+                    return ret
+
+            else:
+                raise Exception(f'No such case {SXSnum}')
 
 
         else:

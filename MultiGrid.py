@@ -285,10 +285,10 @@ class GridFuncPointsCollector(object):
 
     def generate_grid(self, N_x = None, N_y = None):
         xp, yp, _ = self.get_points()
-        x_min = np.min(xp)
-        x_max = np.max(xp)
-        y_min = np.min(yp)
-        y_max = np.max(yp)
+        x_min = np.min(xp) - self._gridfunc.grid.dx
+        x_max = np.max(xp) + self._gridfunc.grid.dx
+        y_min = np.min(yp) - self._gridfunc.grid.dy
+        y_max = np.max(yp) + self._gridfunc.grid.dy
         if N_x is None:
             N_x = self._gridfunc.grid.N_x
         if N_y is None:

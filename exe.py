@@ -47,6 +47,8 @@ def GridSearch_dt_ecc(argv = None):
     parser.add_option('--srcloc', type = 'str', default = str(DEFAULT_SRCLOC), help = 'Path of SXS waveform data.')
     parser.add_option('--srcloc-all', type = 'str', default = str(DEFAULT_SRCLOC_ALL), help = 'Path of SXS waveform data all modes')
 
+    parser.add_option('--k', type = 'float', help = 'Parameter K')
+
     parser.add_option('--gridsearch', action = 'store_true', help = 'Grid search, only for dt & ecc')
     parser.add_option('--num-dtpeak', type = 'int', default = 75, help = 'numbers for grid search')
     parser.add_option('--num-ecc', type = 'int', default = 50, help = 'numbers for grid search')
@@ -97,7 +99,7 @@ def GridSearch_dt_ecc(argv = None):
                     srcloc_all = srcloc_all)
         ge = NR.construct_generator(approx, exe, psd = psd)
         pms0 = NR.CalculateAdjParamsV4()
-        KK_default = pms0[0]
+        KK_default = args.k if args.k is not None else pms0[0]
         dSO_default = pms0[1]
         dSS_default = pms0[2]
         def get_lnprob(dt, ecc):

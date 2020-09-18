@@ -637,7 +637,7 @@ class SXSCompGenerator(Generator):
     def get_lnprob(self, jobtag = 'test', **kwargs):
         h22_wf = self.get_waveform(jobtag = jobtag, verbose = True, **kwargs)
         if isinstance(h22_wf, CEV):
-            return -np.inf
+            return -np.inf, -1
         NR = self._core.copy()
         psdfunc = self._psd
         # Check sample rate
@@ -657,7 +657,7 @@ class SXSCompGenerator(Generator):
         trange = (wf_1.time[idx_end] - wf_1.time[idx_start]) * dim_t(Mtotal_init)
         dPhiCum = (wf_1.phase[idx_start:idx_end] - wf_1.phase[idx_start]) - (wf_2.phase[idx_start:idx_end] - wf_2.phase[idx_start])
         if trange == 0:
-            return -np.inf
+            return -np.inf, -1
         dPhiCum = np.sum(np.power(dPhiCum,2)) / trange
         lnprob = []
         FF = []

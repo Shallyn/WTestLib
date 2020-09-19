@@ -257,7 +257,7 @@ def getMCFlikelihood(argv):
                             table = table,
                             srcloc_all = srcloc_all)
                 ge = NR.construct_generator(approx, exe, psd = psd)
-                pms_init = (KK_default, dtPeak_default, e0)
+                
                 if args.delta_ecc is None:
                     eB = 40 * np.log(2)
                     chiE = 0.1 + 0.4 * np.exp(-eB * np.abs(e0))
@@ -275,6 +275,9 @@ def getMCFlikelihood(argv):
                 max_ecc = args.max_eccentricity if args.max_eccentricity is not None else max_ecc_x
                 min_ecc = args.min_eccentricity if args.min_eccentricity is not None else min_ecc_x
 
+                if e0 < min_ecc or e0 > max_ecc:
+                    e0 = (max_ecc + min_ecc) / 2
+                pms_init = (KK_default, dtPeak_default, e0)
                 def get_lnprob(pms):
                     if pms[0] < min_k or pms[0] > max_k or pms[1] < min_dtpeak or pms[1] > max_dtpeak or pms[2] < min_ecc or pms[2] > max_ecc:
                         return -np.inf

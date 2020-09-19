@@ -161,6 +161,7 @@ def getMCFlikelihood(argv):
     parser.add_option('--gridsearch', action = 'store_true', help = 'Grid search, only for dt & ecc')
     parser.add_option('--grid-num-dtpeak', type = 'int', default = 100, help = 'numbers for grid search')
     parser.add_option('--grid-num-ecc', type = 'int', default = 100, help = 'numbers for grid search')
+    parser.add_option('--seed', type = 'int', help = 'random seed')
 
     args, _ = parser.parse_args(argv)
 
@@ -422,7 +423,6 @@ def parseargs(argv):
     parser.add_option('--flow', type = 'float', default = 0, help = 'Lower frequency cut off for psd.')
     parser.add_option('--timeout', type = 'int', default = 60, help = 'Time limit for waveform generation')
 
-    parser.add_option('--seed', type = 'int', help = 'random seed')
     args = parser.parse_args(argv)
     return args
 

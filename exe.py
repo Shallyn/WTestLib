@@ -263,14 +263,16 @@ def getMCFlikelihood(argv):
                     e_minA = np.abs(e0) * (1-chiE)
                     e_maxA = np.abs(e0) * (1+chiE)
                     if e0<0:
-                        min_ecc = -e_maxA
-                        max_ecc = -e_minA
+                        min_ecc_x = -e_maxA
+                        max_ecc_x = -e_minA
                     else:
-                        min_ecc = e_minA
-                        max_ecc = e_maxA
+                        min_ecc_x = e_minA
+                        max_ecc_x = e_maxA
                 else:
-                    min_ecc = e0 - args.delta_ecc
-                    max_ecc = e0 + args.delta_ecc
+                    min_ecc_x = e0 - args.delta_ecc
+                    max_ecc_x = e0 + args.delta_ecc
+                max_ecc = args.max_eccentricity if args.max_eccentricity is not None else max_ecc_x
+                min_ecc = args.min_eccentricity if args.min_eccentricity is not None else min_ecc_x
 
                 def get_lnprob(pms):
                     if pms[0] < min_k or pms[0] > max_k or pms[1] < min_dtpeak or pms[1] > max_dtpeak or pms[2] < min_ecc or pms[2] > max_ecc:

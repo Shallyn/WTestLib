@@ -419,6 +419,8 @@ def parseargs(argv):
     parser.add_option('--scan-mtotal', action = 'store_true', help = 'Scan Mtotal')
     parser.add_option('--flow', type = 'float', default = 0, help = 'Lower frequency cut off for psd.')
     parser.add_option('--timeout', type = 'int', default = 60, help = 'Time limit for waveform generation')
+
+    parser.add_option('--seed', type = 'int', default = 0, help = 'random seed')
     args = parser.parse_args(argv)
     return args
 

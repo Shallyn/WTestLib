@@ -376,8 +376,11 @@ def getMCFlikelihood(argv):
                 return -( pow(eps/0.01, 2) + pow(dephase/5, 2) )/2
             break
     def get_waveform(KK = KK_default, dSO = dSO_default, dSS = dSS_default, dtPeak = dtPeak_default, ecc = ecc_default, **kwargs):
-        return ge.get_waveform(jobtag = args.jobtag, timeout = args.timeout,
-                        KK = KK, dSO = dSO, dSS = dSS, dtPeak = dtPeak, ecc = ecc)
+        wf = ge.get_waveform(jobtag = args.jobtag, timeout = args.timeout,
+                        KK = KK, dSO = dSO, dSS = dSS, dtPeak = dtPeak, ecc = ecc, **kwargs)
+        ret = ge.get_lnprob(jobtag = args.jobtag, timeout = args.timeout,
+                    KK = KK, dSO = dSO, dSS = dSS, dtPeak = dtPeak, ecc = ecc)
+        return wf, ret
     return get_lnprob, args, pms_init, get_waveform
 
     

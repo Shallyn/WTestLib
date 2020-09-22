@@ -70,8 +70,13 @@ def loaddata(filename, idx_cut = 0):
 class ModeBase(object):
     def __init__(self, time, hreal, himag):
         time = np.asarray(time)
+        self._t0 = time[0]
         self._time = time - time[0]
         self._mode = np.asarray(hreal) + 1.j * np.asarray(himag)
+
+    @property
+    def t0(self):
+        return self._t0
 
     @property
     def length(self):
@@ -222,7 +227,7 @@ class h22base(ModeBase):
         plt.savefig(fname, dpi = 200)
         plt.close()
 
-def h22_alignment(wfA, wfB):
+def h22_alignment(wfA, wfB, peak_A = None, peak_B = None):
     fs_A = wfA.srate
     fs_B = wfB.srate
     fs = fs_A
@@ -233,8 +238,10 @@ def h22_alignment(wfA, wfB):
         else:
             wfB.resample(fs_A)
             fs = fs_A
-    peak_A = wfA.argpeak
-    peak_B = wfB.argpeak           
+    if peak_A is None:
+        peak_A = wfA.argpeak
+    if peak_B is None:
+        peak_B = wfB.argpeak           
 
     if peak_A > peak_B:
         idx_A = peak_A - peak_B

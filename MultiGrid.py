@@ -9,7 +9,242 @@ Created on Sun Jun 23 17:06:37 2019
 import numpy as np
 from pathlib import Path
 import os
-class GridAtom(object):
+
+# 1D
+class Grid1DAtom(object):
+    def __init__(self, N_x):
+        if N_x <= 0:
+            raise Exception(f'Negative N = {N_x}')
+        self._N_x = N_x
+
+    @property
+    def N_x(self):
+        return self._N_x
+
+    @property
+    def dxAtom(self):
+        return 1 / (self._N_x + 1)
+
+    @property
+    def xAtom(self):
+        return np.asarray([(i+1)*self.dxAtom for i in range(self._N_x)])
+
+    @property
+    def length(self):
+        return int(self._N_x)
+
+    def __getitem__(self, key):
+        return self.xAtom[key]
+
+class Grid1D(Grid1DAtom):
+    def __init__(self, x_min, x_max, N_x):
+        super(Grid1D, self).__init__(N_x)
+        if x_min >= x_max:
+            raise Exception(f'Range incorrect: x_min = {x_min}, x_max = {x_max}')
+        self._x_min = x_min
+        self._x_max = x_max
+
+    @property
+    def xlen(self):
+        return self._x_max - self._x_min
+
+    @property
+    def dx(self):
+        return self.xlen * self.dxAtom
+
+    @property
+    def x(self):
+        return self._x_min + (self._x_max - self._x_min) * self.xAtom
+
+    def __getitem__(self, key):
+        return self.x[key]
+    
+    def __call__(self, func):
+        x_list = self.x
+        fx_list = np.zeros(self.length)
+        for i in range(self.length):
+            fx_list[i] = func(x_list[i])
+        return Grid1DFunc(fx_list, self)
+
+
+class Grid1DFunc(object):
+    def __init__(self, fx, grid):
+        self._grid = grid
+        self._values = np.asarray(fx)
+    
+    @property
+    def grid(self):
+        return self._grid
+
+    @property
+    def values(self):
+        return self._values
+
+    @property
+    def value(self):
+        return self._values
+
+    @property
+    def length(self):
+        return self._grid.length
+
+    def __getitem__(self, key):
+        if isinstance(key, tuple):
+            raise Exception(f'Incorporate slice {key}')
+        return self._grid.x[key], self._values[key]
+
+    def calculate_divergence_from_index(self, index):
+        ix = int(index)
+        val = self._values
+        dx = self._grid.dx
+        # df / dx
+        if ix == 0:
+            dfdx = (val[ix + 1] - val[ix]) / dx
+        elif ix == self._grid.N_x - 1:
+            dfdx = (val[ix] - val[ix-1]) / dx
+        else:
+            dfdx = (val[ix+1] - val[ix-1]) / dx / 2
+        return dfdx
+
+    def filter(self, thresh = 0.5):
+        isorted = np.argsort(self._values)[::-1]
+        ithresh = int(thresh * self.length)
+        icollect = isorted[:ithresh]
+        return Grid1DFuncPointsCollector(self, icollect)
+
+    def save(self, fname):
+        fpath = Path(fname)
+        x = self._grid.x
+        val = self._values
+        if fpath.exists():
+            with open(fpath, 'a') as f:
+                for i in range(len(x)):
+                    f.write("%.16e %.16e\n"%(x[i], val[i]))
+        else:
+            np.savetxt(fpath, np.stack([x,val], axis = 1))
+
+
+# Grid points collect
+class Grid1DFuncPointsCollector(object):
+    def __init__(self, gridfunc, indexes):
+        self._gridfunc = gridfunc
+        self._indexes = indexes
+
+    @property
+    def gridfunc(self):
+        return self._gridfunc
+
+    def get_points(self):
+        return self._gridfunc.grid.x[self._indexes], self._gridfunc.values[self._indexes]
+
+    def __iter__(self):
+        xR = self._gridfunc.grid.x
+        for ind in self._indexes:
+            yield ind, xR[ind], self._gridfunc.values[ind]
+
+    def iterAtom(self):
+        xR = self._gridfunc.grid.xAtom
+        for ind in self._indexes:
+            yield ind, xR[ind], self._gridfunc.values[ind]
+
+        
+    # DBSCN cluster
+    # Input collector of [(x,...), (y,...), (fxy,...)], and thresh epsilon
+    # Return collector of indexes [(ind,...), (ind,...),...]
+    def DBSCAN_cluster(self, eps = 1.1):
+        CluIndOut = []
+        eps = self._gridfunc.grid.dxAtom * eps
+        unvisited = self._indexes.copy().tolist()
+        visited = []
+        xRA = self._gridfunc.grid.xAtom
+        while len(unvisited) > 0:
+            ip = np.random.choice(unvisited)
+            unvisited.remove(ip)
+            visited.append(ip)
+            xp = xRA[ip]
+            CluNew = []
+            for ind, x, _ in self.iterAtom():
+                if np.abs(x - xp) < eps:
+                    CluNew.append(ind)
+            iiClu = 0
+            while iiClu < len(CluNew):
+                ipi = CluNew[iiClu]
+                if ipi in unvisited:
+                    unvisited.remove(ipi)
+                    visited.append(ipi)
+                    xi = xRA[ipi]
+                    for ind, x, _ in self.iterAtom():
+                        if ind not in CluNew and np.abs(x - xi) < eps:
+                            CluNew.append(ind)
+                iiClu += 1
+            CluIndOut.append(CluNew)
+        ret = []
+        for idx_list in CluIndOut:
+            ret.append(Grid1DFuncPointsCollector(self._gridfunc, np.asarray(idx_list)))
+        return ret
+
+    def generate_grid(self, N_x = None):
+        xp, _ = self.get_points()
+        x_min = np.min(xp) - self._gridfunc.grid.dx
+        x_max = np.max(xp) + self._gridfunc.grid.dx
+        if N_x is None:
+            N_x = self._gridfunc.grid.N_x
+        GrdNew = Grid1D(x_min, x_max, N_x)
+        return GrdNew
+    
+# Used when searching for (x,y) that can maximize func(x,y)
+class MultiGrid1D(object):
+    def __init__(self, func, x_range, N_x):
+        x_min = x_range[0]
+        x_max = x_range[1]
+        self._grid = Grid1D(x_min, x_max, N_x)
+        self._func = func
+
+    @property
+    def grid(self):
+        return self._grid
+    
+    def run(self, fsave, eps = 1e-6, magnification = 10, filter_thresh = 0.4, maxiter = 100):
+        fpath = Path(fsave)
+        if fpath.exists():
+            f = open(fpath, 'w')
+            f.close()
+        GrdF = self._grid(self._func)
+        GrdF.save(fsave)
+        GPoints = GrdF.filter(thresh=filter_thresh)
+        GPointsClusterList = GPoints.DBSCAN_cluster()
+        GrdFuncList = []
+        for GPCobj in GPointsClusterList:
+            Grd = GPCobj.generate_grid()
+            GrdF = Grd(self._func)
+            GrdF.save(fsave)
+            GrdFuncList.append(GrdF)
+        ind = 0
+        dx_init = self._grid.dx
+        while (len(GrdFuncList) > 0 and ind < maxiter):
+            ind = ind + 1
+            GrdF = GrdFuncList[0]
+            # check program end
+            dx = GrdF.grid.dx
+            div = GrdF.calculate_divergence_from_index(np.argmax(GrdF.values))
+            if np.abs(div) < eps and dx < dx_init/magnification:
+                GrdFuncList.remove(GrdF)
+                continue
+            GPoints = GrdF.filter(thresh = filter_thresh)
+            GPointsClusterList = GPoints.DBSCAN_cluster()
+            GrdFuncListNew = []
+            for GPCobj in GrdFuncListNew:
+                GrdNew = GPCobj.generate_grid()
+                GrdFNew = GrdNew(self._func)
+                GrdFNew.save(fsave)
+                GrdFuncListNew.append(GrdFNew)
+            GrdFuncList.remove(GrdF)
+            GrdFuncList = GrdFuncList + GrdFuncListNew
+        return                
+
+
+# 2D
+class Grid2DAtom(object):
     def __init__(self, N_x, N_y):
         if N_x <= 0 or N_y <= 0:
             raise Exception(f'Negative N_x = {N_x} or N_y = {N_y}')
@@ -76,7 +311,7 @@ class GridAtom(object):
         iy = int(index/self._N_x)
         return ix, iy
 
-class Grid2D(GridAtom):
+class Grid2D(Grid2DAtom):
     def __init__(self, x_min, x_max, y_min, y_max, N_x, N_y):
         super(Grid2D, self).__init__(N_x, N_y)
         if x_min >= x_max or y_min >= y_max:

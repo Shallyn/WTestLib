@@ -488,6 +488,12 @@ class SXSh22(SXSparameters, h22base):
     @property
     def rawData(self):
         return self._rawData
+    
+    def cut_ringdown(self):
+        mode = self._mode
+        time = self._time
+        indpeak = self.argpeak
+        return h22base(time[:indpeak], mode.real[:indpeak], mode.imag[:indpeak], self.srate)
         
     def construct_generator(self, approx, executable, psd = None):
         return SXSCompGenerator(approx, executable, self, psd = psd,
@@ -634,11 +640,14 @@ class SXSCompGenerator(Generator):
         h22_wf = h22base(t, hr, hi, self._core._srate)
         return h22_wf
 
-    def get_lnprob(self, jobtag = 'test', **kwargs):
+    def get_lnprob(self, jobtag = 'test', no_RD = False, **kwargs):
         h22_wf = self.get_waveform(jobtag = jobtag, verbose = True, **kwargs)
         if isinstance(h22_wf, CEV):
             return -np.inf, -1
-        NR = self._core.copy()
+        if no_RD:
+            NR = self._core.cut_ringdown()
+        else:
+            NR = self._core.copy()
         psdfunc = self._psd
         # Check sample rate
         Mtotal_init = self._core.Mtotal

@@ -690,7 +690,7 @@ class SXSCompGenerator(Generator):
             # lnprob.append(eps)
             # eps_lst.append(eps)
         # return max(eps_lst)
-        return min(lnprob), min(FF)
+        return min(lnprob), max(FF)
         
 
     

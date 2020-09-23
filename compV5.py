@@ -191,8 +191,9 @@ def main(argv = None):
         MG.run(fsave, eps = eps, magnification = mag, filter_thresh = filter_thresh, maxiter = max_step)
     else:
         data = np.loadtxt(fsave)
-        ind = np.argmax(data[:,1])
-        ecc = data[ind, 0]
+        ecc_list, lnp_list = data[:,0], data[:,1]
+        ind = np.argmax(lnp_list)
+        ecc = ecc_list[ind]
         h22_wf = ge.get_waveform(jobtag = args.jobtag, timeout = args.timeout, verbose = True,
                         KK = KK, dSO = dSO, dSS = dSS, dtPeak = dtpeak, ecc = ecc, ret = -1, dump = str(prefix))
         if isinstance(h22_wf, CEV):
@@ -217,6 +218,12 @@ def main(argv = None):
         plt.plot(t2, wf_2.phaseFrom0, label = SXSnum)
         plt.legend()
         plt.savefig(prefix / 'waveform.png', dpi = 200)
+        plt.close()
+
+        plt.plot(ecc_list, lnp_list)
+        plt.xlabel('ecc')
+        plt.ylabel('lnprob')
+        plt.savefig(prefix / 'lnprob.png', dpi = 200)
         plt.close()
     return 0
 

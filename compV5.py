@@ -148,17 +148,17 @@ def main(argv = None):
         idx_start = int(per_start*idxPeak)
         idx_end = int(per_end*idxPeak)
 
-        timeH = wf_1.time[idx_start:idx_end] * dim_t(Mtotal_init)
+        timeH = wf_1.time[idx_start:idx_end]
         trange = timeH[-1] - timeH[0]
         dPhiCum = (wf_1.phase[idx_start:idx_end] - wf_1.phase[idx_start]) - (wf_2.phase[idx_start:idx_end] - wf_2.phase[idx_start])
-        dAmpCum = wf_1.amp[idx_start:idx_end] - wf_2.amp[idx_start:idx_end]
+        dAmpCum = (wf_1.amp[idx_start:idx_end] - wf_2.amp[idx_start:idx_end]) / wf_1.amp[idx_start:idx_end]
         Pre = 3. * np.power(timeH - timeH[-1], 2) / np.power(trange, 3)
 
         if trange == 0:
             return -65536
 
         dPhiCum = np.sum(Pre * np.power(dPhiCum, 2))
-        dAmpCum = np.sum(Pre * np.power(dAmpCum, 2))
+        dAmpCum = np.sum(Pre * np.power(dAmpCum, 2)) / 0.05
         lnprob = 0
         FF_list = []
         # eps_lst = []
@@ -232,7 +232,7 @@ def main(argv = None):
         h2 = wf_2.amp * np.exp(1.j * phase2)
         tW = t1[idx_start:idx_end]
         Window = 3. * np.power(tW - tW[-1], 2) / np.power(tW[-1] - tW[0], 3)
-        dAmpW = wf_1.amp[idx_start:idx_end] - wf_2.amp[idx_start:idx_end]
+        dAmpW = (wf_1.amp[idx_start:idx_end] - wf_2.amp[idx_start:idx_end]) / wf_1.amp[idx_start:idx_end]
         dPhiW = (wf_1.phase[idx_start:idx_end] - wf_1.phase[idx_start]) - (wf_2.phase[idx_start:idx_end] - wf_2.phase[idx_start])
         xmin = t1[0] - 0.05 * t1[-1]
         xmax = t1[-1] + 0.05 * t1[-1]
@@ -263,7 +263,7 @@ def main(argv = None):
 
         plt.subplot(414)
         plt.plot(tW, Window, label = 'window')
-        plt.plot(tW, np.power(dPhiW, 2), label = 'dAmp')
+        plt.plot(tW, np.power(dPhiW, 2), label = 'dPhi')
         plt.plot(tW, np.power(dAmpW, 2), label = 'dAmp')
         plt.yscale('log')
         plt.xlim([xmin, xmax])

@@ -244,7 +244,6 @@ def main(argv = None):
         plt.plot(t2, wf_2.amp, label = SXSnum)
         plt.vlines(tW[0], np.min(wf_2.amp), np.max(wf_2.amp), linestyle = '--')
         plt.vlines(tW[-1], np.min(wf_2.amp), np.max(wf_2.amp), linestyle = '--')
-        plt.plot(tW, np.power(dAmpW, 2), label = 'dAmp')
         plt.xlim([xmin, xmax])
         plt.legend()
 
@@ -253,12 +252,14 @@ def main(argv = None):
         plt.plot(t2, phase2, label = SXSnum)
         plt.vlines(tW[0], np.min(phase1), np.max(phase1), linestyle = '--')
         plt.vlines(tW[-1], np.min(phase1), np.max(phase1), linestyle = '--')
-        plt.plot(tW, np.power(dPhiW, 2), label = 'dAmp')
         plt.xlim([xmin, xmax])
         plt.legend()
 
         plt.subplot(414)
         plt.plot(tW, Window, label = 'window')
+        plt.plot(tW, np.power(dPhiW, 2), label = 'dAmp')
+        plt.plot(tW, np.power(dAmpW, 2), label = 'dAmp')
+        plt.yscale('log')
         plt.xlim([xmin, xmax])
         plt.legend()
         plt.savefig(prefix / 'waveform.png', dpi = 200)

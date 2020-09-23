@@ -95,7 +95,7 @@ def main(argv = None):
     psd = DetectorPSD(args.psd, flow = args.flow)
 
     if SXSnum in DEFAULT_ECC_ORBIT_DICT:
-        f0, _ = DEFAULT_ECC_ORBIT_DICT[SXSnum]
+        f0, e0 = DEFAULT_ECC_ORBIT_DICT[SXSnum]
     else:
         f0 = fini
 
@@ -172,9 +172,12 @@ def main(argv = None):
             lnprob += -pow(eps/0.03, 2)
         lnprob += -dPhiCum-dAmpCum
         return lnprob
-
-    max_ecc = args.max_ecc if args.max_ecc is not None else 0.7
-    min_ecc = args.min_ecc if args.min_ecc is not None else 0
+    if e0 > 0:
+        max_ecc = args.max_ecc if args.max_ecc is not None else 0.5
+        min_ecc = args.min_ecc if args.min_ecc is not None else 0
+    else:
+        max_ecc = args.max_ecc if args.max_ecc is not None else 0
+        min_ecc = args.min_ecc if args.min_ecc is not None else -0.5
     num_ecc = args.num_ecc
     ecc_range = (min_ecc, max_ecc)
     eps = args.eps
@@ -210,24 +213,28 @@ def main(argv = None):
         t2 = wf_2.time
         phase2 = wf_2.phase - wf_2.phase[idx_start]
         h2 = wf_2.amp * np.exp(1.j * phase2)
-        plt.figure(figsize = (14, 7))
+        Window = 3. * np.power(t1 - t1[-1], 2) / np.power(t1[-1] - t1[0], 3)
+        plt.figure(figsize = (14, 9))
         plt.title(f'ecc={ecc}')
-        plt.subplot(311)
+        plt.subplot(411)
         plt.plot(t1, h1.real, label = 'EOB')
         plt.plot(t2, h2.real, label = SXSnum)
         plt.legend()
-        plt.subplot(312)
+        plt.subplot(412)
         plt.plot(t1, wf_1.amp, label = 'EOB')
         plt.plot(t2, wf_2.amp, label = SXSnum)
         plt.legend()
-        plt.subplot(313)
-        plt.plot(t1, wf_1.phaseFrom0, label = 'EOB')
-        plt.plot(t2, wf_2.phaseFrom0, label = SXSnum)
+        plt.subplot(413)
+        plt.plot(t1, phase1, label = 'EOB')
+        plt.plot(t2, phase2, label = SXSnum)
+        plt.legend()
+        plt.subplot(414)
+        plt.plot(t1, Window, label = 'window')
         plt.legend()
         plt.savefig(prefix / 'waveform.png', dpi = 200)
         plt.close()
 
-        plt.scatter(ecc_list, lnp_list)
+        plt.scatter(ecc_list, lnp_list, marker = '.')
         plt.xlabel('ecc')
         plt.ylabel('lnprob')
         plt.savefig(prefix / 'lnprob.png', dpi = 200)

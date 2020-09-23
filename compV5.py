@@ -129,7 +129,6 @@ def main(argv = None):
         Mtotal_init = SNR.Mtotal
         Mtotal_list = np.array([10, 40, 70, 100, 130, 160, 190])
         MtotalFac_list = 1 - Mtotal_list / np.max(Mtotal_list)
-        print(np.sum(MtotalFac_list))
         wf_1, wf_2 = alignment(h22_wf, NR)
 
         fs = wf_1.srate
@@ -145,12 +144,14 @@ def main(argv = None):
         timeH = wf_1.time[idx_start:idx_end] * dim_t(Mtotal_init)
         trange = timeH[-1] - timeH[0]
         dPhiCum = (wf_1.phase[idx_start:idx_end] - wf_1.phase[idx_start]) - (wf_2.phase[idx_start:idx_end] - wf_2.phase[idx_start])
+        dAmpCum = wf_1.amp[idx_start:idx_end] - wf_2.amp[idx_start:idx_end]
         Pre = 3. * np.power(timeH - timeH[-1], 2) / np.power(trange, 3)
 
         if trange == 0:
             return -65536
 
-        dPhiCum = np.sum(Pre * np.power(dPhiCum,2))
+        dPhiCum = np.sum(Pre * np.power(dPhiCum, 2))
+        dAmpCum = np.sum(Pre * np.power(dAmpCum, 2))
         lnprob = 0
         FF_list = []
         # eps_lst = []
@@ -169,7 +170,7 @@ def main(argv = None):
             eps = (1 - FF) * Mfac
             FF_list.append(FF * Mfac)
             lnprob += -pow(eps/0.03, 2)
-        lnprob += -dPhiCum
+        lnprob += -dPhiCum-dAmpCum
         return lnprob
 
     max_ecc = args.max_ecc if args.max_ecc is not None else 0.7
@@ -186,8 +187,9 @@ def main(argv = None):
     if not prefix.exists():
         prefix.mkdir(parents = True)
     
-    MG = MultiGrid1D(get_lnprob, ecc_range, num_ecc)
-    MG.run(fsave, eps = eps, magnification = mag, filter_thresh = filter_thresh, maxiter = max_step)
+    if not Path(fsave).exists():
+        MG = MultiGrid1D(get_lnprob, ecc_range, num_ecc)
+        MG.run(fsave, eps = eps, magnification = mag, filter_thresh = filter_thresh, maxiter = max_step)
     data = np.loadtxt(fsave)
     ecc_list, lnp_list = data[:,0], data[:,1]
     ind = np.argmax(lnp_list)
@@ -200,11 +202,16 @@ def main(argv = None):
             return -1
         NR = SNR.cut_ringdown()
         wf_1, wf_2 = alignment(h22_wf, NR)
+        idxPeak = min(wf_1.argpeak, wf_2.argpeak)
+        idx_start = int(0.1*idxPeak)
         t1 = wf_1.time
-        h1 = wf_1.amp * np.exp(1.j * wf_1.phaseFrom0)
+        phase1 = wf_1.phase - wf_1.phase[idx_start]
+        h1 = wf_1.amp * np.exp(1.j * phase1)
         t2 = wf_2.time
-        h2 = wf_2.amp * np.exp(1.j * wf_2.phaseFrom0)
+        phase2 = wf_2.phase - wf_2.phase[idx_start]
+        h2 = wf_2.amp * np.exp(1.j * phase2)
         plt.figure(figsize = (14, 7))
+        plt.title(f'ecc={ecc}')
         plt.subplot(311)
         plt.plot(t1, h1.real, label = 'EOB')
         plt.plot(t2, h2.real, label = SXSnum)
@@ -220,7 +227,7 @@ def main(argv = None):
         plt.savefig(prefix / 'waveform.png', dpi = 200)
         plt.close()
 
-        plt.plot(ecc_list, lnp_list)
+        plt.scatter(ecc_list, lnp_list)
         plt.xlabel('ecc')
         plt.ylabel('lnprob')
         plt.savefig(prefix / 'lnprob.png', dpi = 200)

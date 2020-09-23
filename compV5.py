@@ -80,7 +80,7 @@ def main(argv = None):
     parser.add_option('--filter-thresh', type = 'float', default = 0.4, help = 'Thresh of grid search (<1)')
     parser.add_option('--max-step', type = 'int', default = 100, help = 'Max iter depth')
 
-    parser.add_option('--plot-recover', action = 'store_true', help = 'recover results')
+    parser.add_option('--plot', action = 'store_true', help = 'recover results')
     args, _ = parser.parse_args(argv)
 
     exe = args.executable
@@ -186,18 +186,18 @@ def main(argv = None):
     if not prefix.exists():
         prefix.mkdir(parents = True)
     
-    if not Path(fsave).exists():
-        MG = MultiGrid1D(get_lnprob, ecc_range, num_ecc)
-        MG.run(fsave, eps = eps, magnification = mag, filter_thresh = filter_thresh, maxiter = max_step)
-    else:
-        data = np.loadtxt(fsave)
-        ecc_list, lnp_list = data[:,0], data[:,1]
-        ind = np.argmax(lnp_list)
-        ecc = ecc_list[ind]
+    MG = MultiGrid1D(get_lnprob, ecc_range, num_ecc)
+    MG.run(fsave, eps = eps, magnification = mag, filter_thresh = filter_thresh, maxiter = max_step)
+    data = np.loadtxt(fsave)
+    ecc_list, lnp_list = data[:,0], data[:,1]
+    ind = np.argmax(lnp_list)
+    ecc = ecc_list[ind]
+    print(f'best fit: {(ecc, lnp_list[ind])}')
+    if args.plot:
         h22_wf = ge.get_waveform(jobtag = args.jobtag, timeout = args.timeout, verbose = True,
                         KK = KK, dSO = dSO, dSS = dSS, dtPeak = dtpeak, ecc = ecc, ret = -1, dump = str(prefix))
         if isinstance(h22_wf, CEV):
-            return -65536
+            return -1
         NR = SNR.cut_ringdown()
         wf_1, wf_2 = alignment(h22_wf, NR)
         t1 = wf_1.time

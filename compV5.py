@@ -81,6 +81,7 @@ def main(argv = None):
     parser.add_option('--max-step', type = 'int', default = 100, help = 'Max iter depth')
 
     parser.add_option('--plot', action = 'store_true', help = 'recover results')
+    parser.add_option('--testecc', type = 'float', help = 'used for test')
     args, _ = parser.parse_args(argv)
 
     exe = args.executable
@@ -114,8 +115,8 @@ def main(argv = None):
     dtpeak = pms0[3]
 
 
-    def get_lnprob(ecc):
-        h22_wf = ge.get_waveform(jobtag = args.jobtag, timeout = args.timeout, verbose = True,
+    def get_lnprob(ecc, is_test = False):
+        h22_wf = ge.get_waveform(jobtag = args.jobtag, timeout = args.timeout, verbose = is_test,
                         KK = KK, dSO = dSO, dSS = dSS, dtPeak = dtpeak, ecc = ecc, ret = -1)
         if isinstance(h22_wf, CEV):
             return -65536
@@ -170,8 +171,15 @@ def main(argv = None):
             eps = (1 - FF) * Mfac
             FF_list.append(FF * Mfac)
             lnprob += -pow(eps/0.03, 2)
+        if is_test:
+            return lnprob, FF_list, dPhiCum, dAmpCum
         lnprob += -dPhiCum-dAmpCum
         return lnprob
+    
+    if args.testecc is not None:
+        ret = get_lnprob(args.testecc, is_test = True)
+        print(ret)
+        return 0
     max_ecc = args.max_ecc if args.max_ecc is not None else 0.5
     min_ecc = args.min_ecc if args.min_ecc is not None else 0
     if e0 < 0 and min_ecc > 0:
@@ -203,33 +211,55 @@ def main(argv = None):
                         KK = KK, dSO = dSO, dSS = dSS, dtPeak = dtpeak, ecc = ecc, ret = -1, dump = str(prefix))
         if isinstance(h22_wf, CEV):
             return -1
+        fwfname = prefix / 'bestfitwaveform.dat'
+        np.savetxt(fwfname, np.stack([h22_wf.time + h22_wf.t0, h22_wf.real, h22_wf.imag], axis = 1))
         NR = SNR.cut_ringdown()
         wf_1, wf_2 = alignment(h22_wf, NR)
         idxPeak = min(wf_1.argpeak, wf_2.argpeak)
         idx_start = int(0.1*idxPeak)
+        idx_end = int(0.9*idxPeak)
         t1 = wf_1.time
         phase1 = wf_1.phase - wf_1.phase[idx_start]
         h1 = wf_1.amp * np.exp(1.j * phase1)
         t2 = wf_2.time
         phase2 = wf_2.phase - wf_2.phase[idx_start]
         h2 = wf_2.amp * np.exp(1.j * phase2)
-        Window = 3. * np.power(t1 - t1[-1], 2) / np.power(t1[-1] - t1[0], 3)
+        tW = t1[idx_start:idx_end] * dim_t(SNR.Mtotal)
+        Window = 3. * np.power(tW - tW[-1], 2) / np.power(tW[-1] - tW[0], 3)
+        dAmpW = wf_1.amp[idx_start:idx_end] - wf_2.amp[idx_start:idx_end]
+        dPhiW = (wf_1.phase[idx_start:idx_end] - wf_1.phase[idx_start]) - (wf_2.phase[idx_start:idx_end] - wf_2.phase[idx_start])
+        xmin = t1[0] - 0.05 * t1[-1]
+        xmax = t1[-1] + 0.05 * t1[-1]
+
         plt.figure(figsize = (14, 9))
-        plt.title(f'ecc={ecc}')
         plt.subplot(411)
+        plt.title(f'ecc={ecc}')
         plt.plot(t1, h1.real, label = 'EOB')
         plt.plot(t2, h2.real, label = SXSnum)
+        plt.xlim([xmin, xmax])
         plt.legend()
+
         plt.subplot(412)
         plt.plot(t1, wf_1.amp, label = 'EOB')
         plt.plot(t2, wf_2.amp, label = SXSnum)
+        plt.vlines(tW[0], np.min(wf_2.amp), np.max(wf_2.amp), linestyle = '--')
+        plt.vlines(tW[-1], np.min(wf_2.amp), np.max(wf_2.amp), linestyle = '--')
+        plt.plot(tW, np.power(dAmpW, 2), label = 'dAmp')
+        plt.xlim([xmin, xmax])
         plt.legend()
+
         plt.subplot(413)
         plt.plot(t1, phase1, label = 'EOB')
         plt.plot(t2, phase2, label = SXSnum)
+        plt.vlines(tW[0], np.min(wf_2.amp), np.max(wf_2.amp), linestyle = '--')
+        plt.vlines(tW[-1], np.min(wf_2.amp), np.max(wf_2.amp), linestyle = '--')
+        plt.plot(tW, np.power(dPhiW, 2), label = 'dAmp')
+        plt.xlim([xmin, xmax])
         plt.legend()
+
         plt.subplot(414)
-        plt.plot(t1, Window, label = 'window')
+        plt.plot(tW, Window, label = 'window')
+        plt.xlim([xmin, xmax])
         plt.legend()
         plt.savefig(prefix / 'waveform.png', dpi = 200)
         plt.close()

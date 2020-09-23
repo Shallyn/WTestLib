@@ -71,6 +71,9 @@ def main(argv = None):
 
     parser.add_option('--k', type = 'float', help = 'Parameter K')
 
+    parser.add_option('--per-start', type = 'float', default = 0.1, help = 'start index percent')
+    parser.add_option('--per-end', type = 'float', default = 0.9, help = 'end index percent')
+
     parser.add_option('--num-ecc', type = 'int', default = 50, help = 'numbers for grid search')
     parser.add_option('--max-ecc', type = 'float', help = 'Upper bound of parameters 5')
     parser.add_option('--min-ecc', type = 'float', help = 'Lower bound of parameters 5')
@@ -113,7 +116,10 @@ def main(argv = None):
     dSO = pms0[1]
     dSS = pms0[2]
     dtpeak = pms0[3]
-
+    per_start = args.per_start
+    per_end = args.per_end
+    if per_start > per_end or np.abs(per_start - 0.5) > 0.5 or np.abs(per_end - 0.5) > 0.5:
+        raise Exception('Invalid per_start or per_end')
 
     def get_lnprob(ecc, is_test = False):
         h22_wf = ge.get_waveform(jobtag = args.jobtag, timeout = args.timeout, verbose = is_test,
@@ -139,8 +145,8 @@ def main(argv = None):
         htilde_2 = wf_2.h22f
 
         idxPeak = min(wf_1.argpeak, wf_2.argpeak)
-        idx_start = int(0.1*idxPeak)
-        idx_end = int(0.9*idxPeak)
+        idx_start = int(per_start*idxPeak)
+        idx_end = int(per_end*idxPeak)
 
         timeH = wf_1.time[idx_start:idx_end] * dim_t(Mtotal_init)
         trange = timeH[-1] - timeH[0]
@@ -216,8 +222,8 @@ def main(argv = None):
         NR = SNR.cut_ringdown()
         wf_1, wf_2 = alignment(h22_wf, NR)
         idxPeak = min(wf_1.argpeak, wf_2.argpeak)
-        idx_start = int(0.1*idxPeak)
-        idx_end = int(0.9*idxPeak)
+        idx_start = int(per_start*idxPeak)
+        idx_end = int(per_end*idxPeak)
         t1 = wf_1.time
         phase1 = wf_1.phase - wf_1.phase[idx_start]
         h1 = wf_1.amp * np.exp(1.j * phase1)

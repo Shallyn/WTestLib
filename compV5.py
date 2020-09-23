@@ -224,7 +224,7 @@ def main(argv = None):
         t2 = wf_2.time
         phase2 = wf_2.phase - wf_2.phase[idx_start]
         h2 = wf_2.amp * np.exp(1.j * phase2)
-        tW = t1[idx_start:idx_end] * dim_t(SNR.Mtotal)
+        tW = t1[idx_start:idx_end]
         Window = 3. * np.power(tW - tW[-1], 2) / np.power(tW[-1] - tW[0], 3)
         dAmpW = wf_1.amp[idx_start:idx_end] - wf_2.amp[idx_start:idx_end]
         dPhiW = (wf_1.phase[idx_start:idx_end] - wf_1.phase[idx_start]) - (wf_2.phase[idx_start:idx_end] - wf_2.phase[idx_start])
@@ -251,8 +251,8 @@ def main(argv = None):
         plt.subplot(413)
         plt.plot(t1, phase1, label = 'EOB')
         plt.plot(t2, phase2, label = SXSnum)
-        plt.vlines(tW[0], np.min(wf_2.amp), np.max(wf_2.amp), linestyle = '--')
-        plt.vlines(tW[-1], np.min(wf_2.amp), np.max(wf_2.amp), linestyle = '--')
+        plt.vlines(tW[0], np.min(phase1), np.max(phase1), linestyle = '--')
+        plt.vlines(tW[-1], np.min(phase1), np.max(phase1), linestyle = '--')
         plt.plot(tW, np.power(dPhiW, 2), label = 'dAmp')
         plt.xlim([xmin, xmax])
         plt.legend()

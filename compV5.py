@@ -80,6 +80,7 @@ def main(argv = None):
     parser.add_option('--filter-thresh', type = 'float', default = 0.4, help = 'Thresh of grid search (<1)')
     parser.add_option('--max-step', type = 'int', default = 100, help = 'Max iter depth')
 
+    parser.add_option('--plot-recover', action = 'store_true', help = 'recover results')
     args, _ = parser.parse_args(argv)
 
     exe = args.executable
@@ -185,7 +186,37 @@ def main(argv = None):
     if not prefix.exists():
         prefix.mkdir(parents = True)
     
-    MG = MultiGrid1D(get_lnprob, ecc_range, num_ecc)
-    MG.run(fsave, eps = eps, magnification = mag, filter_thresh = filter_thresh, maxiter = max_step)
+    if not Path(fsave).exists():
+        MG = MultiGrid1D(get_lnprob, ecc_range, num_ecc)
+        MG.run(fsave, eps = eps, magnification = mag, filter_thresh = filter_thresh, maxiter = max_step)
+    else:
+        data = np.loadtxt(fsave)
+        ind = np.argmax(data[:,1])
+        ecc = data[ind, 0]
+        h22_wf = ge.get_waveform(jobtag = args.jobtag, timeout = args.timeout, verbose = True,
+                        KK = KK, dSO = dSO, dSS = dSS, dtPeak = dtpeak, ecc = ecc, ret = -1, dump = str(prefix))
+        if isinstance(h22_wf, CEV):
+            return -65536
+        NR = SNR.cut_ringdown()
+        wf_1, wf_2 = alignment(h22_wf, NR)
+        t1 = wf_1.time
+        h1 = wf_1.amp * np.exp(1.j * wf_1.phaseFrom0)
+        t2 = wf_2.time
+        h2 = wf_2.amp * np.exp(1.j * wf_2.phaseFrom0)
+        plt.figure(figsize = (14, 7))
+        plt.subplot(311)
+        plt.plot(t1, h1.real, label = 'EOB')
+        plt.plot(t2, h2.real, label = SXSnum)
+        plt.legend()
+        plt.subplot(312)
+        plt.plot(t1, wf_1.amp, label = 'EOB')
+        plt.plot(t2, wf_2.amp, label = SXSnum)
+        plt.legend()
+        plt.subplot(313)
+        plt.plot(t1, wf_1.phaseFrom0, label = 'EOB')
+        plt.plot(t2, wf_2.phaseFrom0, label = SXSnum)
+        plt.legend()
+        plt.savefig(prefix / 'waveform.png', dpi = 200)
+        plt.close()
     return 0
 

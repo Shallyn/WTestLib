@@ -136,6 +136,7 @@ def CMD_SEOBNREv5(exe,
                   dSS = None,
                   dtPeak = None,
                   ret = 0,
+                  dump = None,
                   **kwargs):
     adjpms = ''
     if KK is not None:
@@ -146,6 +147,8 @@ def CMD_SEOBNREv5(exe,
         adjpms += f' --dss={dSS}'
     if dtPeak is not None:
         adjpms += f' --dtPeak={dtPeak}'
+    if dump is not None:
+        adjpms += f' --fileout={dump}'
     CMD = f'{exe} --mass-ratio={q} --f-min={f_ini} \
         --delta-t={deltaT} --eccentricity={ecc} \
         --chi1={s1z} --chi2={s2z} --version={version} --return={ret}' + adjpms

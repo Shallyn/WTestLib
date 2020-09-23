@@ -150,7 +150,7 @@ def main(argv = None):
 
         timeH = wf_1.time[idx_start:idx_end]
         trange = timeH[-1] - timeH[0]
-        dPhiCum = (wf_1.phase[idx_start:idx_end] - wf_1.phase[idx_start]) - (wf_2.phase[idx_start:idx_end] - wf_2.phase[idx_start])
+        dPhiCum = (wf_1.phaseFrom0[idx_start:idx_end] - wf_1.phaseFrom0[idx_start]) - (wf_2.phaseFrom0[idx_start:idx_end] - wf_2.phaseFrom0[idx_start])
         dAmpCum = (wf_1.amp[idx_start:idx_end] - wf_2.amp[idx_start:idx_end]) / wf_1.amp[idx_start:idx_end] / 0.05
         Pre = 3. * np.power(timeH - timeH[-1], 2) / np.power(trange, 3)
 
@@ -188,7 +188,7 @@ def main(argv = None):
         return 0
     max_ecc = args.max_ecc if args.max_ecc is not None else 0.5
     min_ecc = args.min_ecc if args.min_ecc is not None else 0
-    if e0 < 0 and min_ecc > 0:
+    if e0 < 0 and min_ecc >= 0:
         _tmp = max_ecc
         max_ecc = -min_ecc
         min_ecc = -_tmp
@@ -225,10 +225,10 @@ def main(argv = None):
         idx_start = int(per_start*idxPeak)
         idx_end = int(per_end*idxPeak)
         t1 = wf_1.time
-        phase1 = wf_1.phase - wf_1.phase[idx_start]
+        phase1 = wf_1.phaseFrom0 - wf_1.phaseFrom0[idx_start]
         h1 = wf_1.amp * np.exp(1.j * phase1)
         t2 = wf_2.time
-        phase2 = wf_2.phase - wf_2.phase[idx_start]
+        phase2 = wf_2.phaseFrom0 - wf_2.phaseFrom0[idx_start]
         h2 = wf_2.amp * np.exp(1.j * phase2)
         tW = t1[idx_start:idx_end]
         Window = 3. * np.power(tW - tW[-1], 2) / np.power(tW[-1] - tW[0], 3)

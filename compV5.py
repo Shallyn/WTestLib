@@ -172,12 +172,12 @@ def main(argv = None):
             lnprob += -pow(eps/0.03, 2)
         lnprob += -dPhiCum-dAmpCum
         return lnprob
-    if e0 > 0:
-        max_ecc = args.max_ecc if args.max_ecc is not None else 0.5
-        min_ecc = args.min_ecc if args.min_ecc is not None else 0
-    else:
-        max_ecc = args.max_ecc if args.max_ecc is not None else 0
-        min_ecc = args.min_ecc if args.min_ecc is not None else -0.5
+    max_ecc = args.max_ecc if args.max_ecc is not None else 0.5
+    min_ecc = args.min_ecc if args.min_ecc is not None else 0
+    if e0 < 0 and min_ecc > 0:
+        _tmp = max_ecc
+        max_ecc = -min_ecc
+        min_ecc = -_tmp
     num_ecc = args.num_ecc
     ecc_range = (min_ecc, max_ecc)
     eps = args.eps

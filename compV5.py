@@ -151,14 +151,14 @@ def main(argv = None):
         timeH = wf_1.time[idx_start:idx_end]
         trange = timeH[-1] - timeH[0]
         dPhiCum = (wf_1.phase[idx_start:idx_end] - wf_1.phase[idx_start]) - (wf_2.phase[idx_start:idx_end] - wf_2.phase[idx_start])
-        dAmpCum = (wf_1.amp[idx_start:idx_end] - wf_2.amp[idx_start:idx_end]) / wf_1.amp[idx_start:idx_end]
+        dAmpCum = (wf_1.amp[idx_start:idx_end] - wf_2.amp[idx_start:idx_end]) / wf_1.amp[idx_start:idx_end] / 0.05
         Pre = 3. * np.power(timeH - timeH[-1], 2) / np.power(trange, 3)
 
         if trange == 0:
             return -65536
 
         dPhiCum = np.sum(Pre * np.power(dPhiCum, 2))
-        dAmpCum = np.sum(Pre * np.power(dAmpCum, 2)) / 0.05
+        dAmpCum = np.sum(Pre * np.power(dAmpCum, 2))
         lnprob = 0
         FF_list = []
         # eps_lst = []
@@ -176,7 +176,7 @@ def main(argv = None):
             FF = max(Oxt_abs)
             eps = (1 - FF) * Mfac
             FF_list.append(FF * Mfac)
-            lnprob += -pow(eps/0.03, 2)
+            lnprob += -pow(eps/0.02, 2)
         if is_test:
             return lnprob, FF_list, dPhiCum, dAmpCum
         lnprob += -dPhiCum-dAmpCum

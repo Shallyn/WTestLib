@@ -131,7 +131,7 @@ class Grid1DFunc(object):
 
     def save_family(self, prefix):
         prefix = Path(prefix)
-        fname = Path(prefix) / f'{self._grid.family}.dat'
+        fname = prefix / f'grid_{self._grid.family}.dat'
         x = self._grid.x
         val = self._values
         np.savetxt(fname, np.stack([x,val], axis = 1))

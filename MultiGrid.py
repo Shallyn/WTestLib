@@ -37,12 +37,17 @@ class Grid1DAtom(object):
         return self.xAtom[key]
 
 class Grid1D(Grid1DAtom):
-    def __init__(self, x_min, x_max, N_x):
+    def __init__(self, x_min, x_max, N_x, family = '0'):
         super(Grid1D, self).__init__(N_x)
         if x_min >= x_max:
             raise Exception(f'Range incorrect: x_min = {x_min}, x_max = {x_max}')
         self._x_min = x_min
         self._x_max = x_max
+        self._family = family
+
+    @property
+    def family(self):
+        return self._family
 
     @property
     def xlen(self):
@@ -122,13 +127,22 @@ class Grid1DFunc(object):
                     f.write("%.16e %.16e\n"%(x[i], val[i]))
         else:
             np.savetxt(fpath, np.stack([x,val], axis = 1))
+        return
 
+    def save_family(self, prefix):
+        fname = f'{prefix}_{self._grid.family}.dat'
+        fpath = Path(fname)
+        x = self._grid.x
+        val = self._values
+        np.savetxt(fpath, np.stack([x,val], axis = 1))
+        return
 
 # Grid points collect
 class Grid1DFuncPointsCollector(object):
-    def __init__(self, gridfunc, indexes):
+    def __init__(self, gridfunc, indexes, family = '0'):
         self._gridfunc = gridfunc
         self._indexes = indexes
+        self._family = family
 
     @property
     def gridfunc(self):
@@ -179,8 +193,8 @@ class Grid1DFuncPointsCollector(object):
                 iiClu += 1
             CluIndOut.append(CluNew)
         ret = []
-        for idx_list in CluIndOut:
-            ret.append(Grid1DFuncPointsCollector(self._gridfunc, np.asarray(idx_list)))
+        for i, idx_list in enumerate(CluIndOut):
+            ret.append(Grid1DFuncPointsCollector(self._gridfunc, np.asarray(idx_list), family = f'{self._family}_{i}'))
         return ret
 
     def generate_grid(self, N_x = None):
@@ -189,7 +203,7 @@ class Grid1DFuncPointsCollector(object):
         x_max = np.max(xp) + self._gridfunc.grid.dx
         if N_x is None:
             N_x = self._gridfunc.grid.N_x
-        GrdNew = Grid1D(x_min, x_max, N_x)
+        GrdNew = Grid1D(x_min, x_max, N_x, family = self._family)
         return GrdNew
     
 # Used when searching for (x,y) that can maximize func(x,y)
@@ -209,6 +223,7 @@ class MultiGrid1D(object):
         if fpath.exists():
             f = open(fpath, 'w')
             f.close()
+        fprefix_family = fpath.parent / 'grid_family'
         GrdF = self._grid(self._func)
         GrdF.save(fsave)
         GPoints = GrdF.filter(thresh=filter_thresh)
@@ -237,6 +252,7 @@ class MultiGrid1D(object):
                 GrdNew = GPCobj.generate_grid()
                 GrdFNew = GrdNew(self._func)
                 GrdFNew.save(fsave)
+                GrdFNew.save_family(fprefix_family)
                 GrdFuncListNew.append(GrdFNew)
             GrdFuncList.remove(GrdF)
             GrdFuncList = GrdFuncList + GrdFuncListNew

@@ -130,8 +130,8 @@ class Grid1DFunc(object):
         return
 
     def save_family(self, prefix):
-        fname = f'{prefix}_{self._grid.family}.dat'
-        fpath = Path(fname)
+        prefix = Path(prefix)
+        fname = Path(prefix) / f'{self._grid.family}.dat'
         x = self._grid.x
         val = self._values
         np.savetxt(fpath, np.stack([x,val], axis = 1))
@@ -224,6 +224,8 @@ class MultiGrid1D(object):
             f = open(fpath, 'w')
             f.close()
         fprefix_family = fpath.parent / 'grid_family'
+        if not fprefix_family.exists():
+            fprefix_family.mkdir(parents = True)
         GrdF = self._grid(self._func)
         GrdF.save(fsave)
         GPoints = GrdF.filter(thresh=filter_thresh)

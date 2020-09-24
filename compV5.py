@@ -254,8 +254,6 @@ def main(argv = None):
             ithpeak = int(thpeak * h22_wf.srate)
         else:
             ithpeak = None
-        wf_1, wf_2 = alignment(h22_wf, NR, ithpeak)
-
         fwfname = prefix / 'bestfitwaveform.dat'
         np.savetxt(fwfname, np.stack([h22_wf.time + h22_wf.t0, h22_wf.real, h22_wf.imag], axis = 1))
         NR = SNR.cut_ringdown()

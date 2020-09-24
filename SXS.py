@@ -15,6 +15,7 @@ from .generator import Generator, self_adaptivor
 import csv,codecs,h5py
 from .psd import DetectorPSD
 from .SXSlist import *
+from .NRPhenom import calculate_NRPeakParams
 
 DEFAULT_SRCLOC = Path('/Users/drizl/Documents/2018/SEOBNRE/Program_Test/SXS_Data_txt')
 DEFAULT_SRCLOC_ALL = Path('/Users/drizl/Documents/2018/SEOBNRE/Program_Test/SXS_Data')
@@ -200,8 +201,19 @@ class SXSObject(object):
         return self.q / (1+self.q) / (1+self.q)
 
     @property
+    def dm(self):
+        return np.sqrt(1 - self.eta * 4)
+
+    @property
     def SXSnum(self):
         return self._SXSnum
+
+    def get_NRPeakParams(self):
+        eta = self.eta
+        chiS = self.chiSVec[-1]
+        chiA = self.chiAVec[-1]
+        chiX = chiS + chiA * self.dm / (1-eta*2)
+        return calculate_NRPeakParams(self.eta, chiX)
     
     def save_info(self, fname):
         with open(fname,'w') as f:
@@ -1591,3 +1603,4 @@ def SEOBHyperCoefficients_v4(eta, a):
         coeff22DT * eta2 * chi2 + coeff23DT * eta2 * chi3 + coeff30DT * eta3 + \
         coeff31DT * eta3 * chi + coeff32DT * eta3 * chi2 + coeff33DT * eta3 * chi3
     return KK, dSO, dSS, dtPeak
+

@@ -115,7 +115,7 @@ class Grid1DFunc(object):
         isorted = np.argsort(self._values)[::-1]
         ithresh = int(thresh * self.length)
         icollect = isorted[:ithresh]
-        return Grid1DFuncPointsCollector(self, icollect)
+        return Grid1DFuncPointsCollector(self, icollect, family = self._grid.family)
 
     def save(self, fname):
         fpath = Path(fname)

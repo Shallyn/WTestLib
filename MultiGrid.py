@@ -134,7 +134,7 @@ class Grid1DFunc(object):
         fname = Path(prefix) / f'{self._grid.family}.dat'
         x = self._grid.x
         val = self._values
-        np.savetxt(fpath, np.stack([x,val], axis = 1))
+        np.savetxt(fname, np.stack([x,val], axis = 1))
         return
 
 # Grid points collect

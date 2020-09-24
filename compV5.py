@@ -263,16 +263,26 @@ def main(argv = None):
         idxPeak = wf_2.argpeak
         idx_start = int(per_start*idxPeak)
         idx_end = int(per_end*idxPeak)
+        comp_slice = slice(idx_start, idx_end)
         t1 = wf_1.time
         phase1 = wf_1.phaseFrom0 - wf_1.phaseFrom0[idx_start]
         h1 = wf_1.amp * np.exp(1.j * phase1)
         t2 = wf_2.time
         phase2 = wf_2.phaseFrom0 - wf_2.phaseFrom0[idx_start]
         h2 = wf_2.amp * np.exp(1.j * phase2)
-        tW = t1[idx_start:idx_end]
+        tW = t1[comp_slice]
         Window = 3. * np.power(tW - tW[-1], 2) / np.power(tW[-1] - tW[0], 3)
-        dAmpW = (wf_1.amp[idx_start:idx_end] - wf_2.amp[idx_start:idx_end]) / wf_1.amp[idx_start:idx_end]
-        dPhiW = (wf_1.phase[idx_start:idx_end] - wf_1.phase[idx_start]) - (wf_2.phase[idx_start:idx_end] - wf_2.phase[idx_start])
+        dAmpW = (wf_1.amp[comp_slice] - wf_2.amp[comp_slice]) / wf_1.amp[comp_slice]
+        dPhiW = (wf_1.phase[comp_slice] - wf_1.phase[idx_start]) - (wf_2.phase[comp_slice] - wf_2.phase[idx_start])
+
+        ampNQC = wf_2.amp[comp_slice] / wf_1.amp[comp_slice]
+        phaseNQC = dPhiW
+
+        fnqcname = prefix / 'nqc.dat'
+        np.savetxt(fnqcname, np.stack([tW, ampNQC, phaseNQC], axis = 1))
+
+        fcutname = prefix / 'waveform_cut.dat'
+        np.savetxt(fcutname, np.stack([tW, wf_1.amp[comp_slice], phase1[comp_slice], wf_2.amp[comp_slice], phase2[comp_slice]], axis = 1))
         xmin = t1[0] - 0.05 * t1[-1]
         xmax = t1[-1] + 0.05 * t1[-1]
 

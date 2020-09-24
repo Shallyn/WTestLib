@@ -225,18 +225,18 @@ def main(argv = None):
     
     if not Path(fsave).exists():
         if FIT2D:
-            MG = MultiGrid(get_lnprob, dtpeak_range, ecc_range, num_dtpeak, num_ecc)
+            MG = MultiGrid(get_lnprob, ecc_range, dtpeak_range, num_ecc, num_dtpeak)
             MG.run(fsave, eps = eps, magnification = mag, filter_thresh = filter_thresh, maxiter = max_step)
         else:
             MG = MultiGrid1D(get_lnprob, ecc_range, num_ecc)
             MG.run(fsave, eps = eps, magnification = mag, filter_thresh = filter_thresh, maxiter = max_step)
     data = np.loadtxt(fsave)
     if FIT2D:
-        dtpeak_list, ecc_list, lnp_list = data[:,0], data[:,1], data[:,2]
+        ecc_list, dtpeak_list, lnp_list = data[:,0], data[:,1], data[:,2]
         ind = np.argmax(lnp_list)
         ecc_fit = ecc_list[ind]
         dtpeak_fit = dtpeak_list[ind]
-        print(f'best fit: {(dtpeak_fit, ecc_fit, lnp_list[ind])}')
+        print(f'best fit: {(ecc_fit, dtpeak_fit, lnp_list[ind])}')
     else:
         ecc_list, lnp_list = data[:,0], data[:,1]
         ind = np.argmax(lnp_list)

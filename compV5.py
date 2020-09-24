@@ -13,15 +13,18 @@ from .SXS import DEFAULT_TABLE, DEFAULT_SRCLOC, DEFAULT_SRCLOC_ALL, SXSh22, CEV
 from .h22datatype import h22_alignment, dim_t
 from .SXSlist import DEFAULT_ECC_ORBIT_DICT
 from optparse import OptionParser
-from .MultiGrid import MultiGrid1D
+from .MultiGrid import MultiGrid1D, MultiGrid
 from pathlib import Path
 
-def alignment(wfA, wfB):
+def alignment(wfA, wfB, ithpeak = None):
     fs_A = wfA.srate
     fs_B = wfB.srate
     if fs_A != fs_B:
         return None, None
-    ipeak_A = wfA.argpeak
+    if ithpeak is None:
+        ipeak_A = wfA.argpeak
+    else:
+        ipeak_A = ithpeak
     ipeak_B = wfB.argpeak
     if ipeak_A > ipeak_B:
         idx_A = ipeak_A - ipeak_B
@@ -78,6 +81,10 @@ def main(argv = None):
     parser.add_option('--max-ecc', type = 'float', help = 'Upper bound of parameters 5')
     parser.add_option('--min-ecc', type = 'float', help = 'Lower bound of parameters 5')
 
+    parser.add_option('--num-dtpeak', type = 'int', help = 'numbers for grid search')
+    parser.add_option('--max-dtpeak', type = 'float', help = 'Upper bound of parameters 4')
+    parser.add_option('--min-dtpeak', type = 'float', help = 'Lower bound of parameters 4')
+
     parser.add_option('--eps', type = 'float', default = 1e-6, help = 'Thresh of div')
     parser.add_option('--mag', type = 'float', default = 10, help = 'Thresh of dx_init / dx (>1)')
     parser.add_option('--filter-thresh', type = 'float', default = 0.4, help = 'Thresh of grid search (<1)')
@@ -115,20 +122,25 @@ def main(argv = None):
     KK = args.k if args.k is not None else pms0[0]
     dSO = pms0[1]
     dSS = pms0[2]
-    dtpeak = pms0[3]
+    dtpeak_default = pms0[3]
     per_start = args.per_start
     per_end = args.per_end
+    FIT2D = False
+    if args.num_dtpeak is not None:
+        FIT2D = True
+        num_dtpeak = args.num_dtpeak
+        max_dtpeak = args.max_dtpeak if args.max_dtpeak is not None else 100
+        min_dtpeak = args.min_dtpeak if args.min_dtpeak is not None else -10
+        dtpeak_range = (min_dtpeak, max_dtpeak)
     if per_start > per_end or np.abs(per_start - 0.5) > 0.5 or np.abs(per_end - 0.5) > 0.5:
         raise Exception('Invalid per_start or per_end')
-
-    def get_lnprob(ecc, is_test = False):
+    
+    def get_lnprob(ecc, dtpeak = dtpeak_default, is_test = False):
         h22_wf = ge.get_waveform(jobtag = args.jobtag, timeout = args.timeout, verbose = is_test,
                         KK = KK, dSO = dSO, dSS = dSS, dtPeak = dtpeak, ecc = ecc, ret = -1)
         if isinstance(h22_wf, CEV):
             return -65536
 
-        thpeak = np.abs(h22_wf.t0)
-        ithpeak = int(thpeak * h22_wf.srate)
         NR = SNR.cut_ringdown()
 
         psdfunc = psd
@@ -136,7 +148,14 @@ def main(argv = None):
         Mtotal_init = SNR.Mtotal
         Mtotal_list = np.array([10, 40, 70, 100, 130, 160, 190])
         MtotalFac_list = 1 - Mtotal_list / np.max(Mtotal_list)
-        wf_1, wf_2 = alignment(h22_wf, NR)
+
+        if FIT2D:
+            thpeak = np.abs(h22_wf.t0)
+            ithpeak = int(thpeak * h22_wf.srate)
+        else:
+            ithpeak = None
+        wf_1, wf_2 = alignment(h22_wf, NR, ithpeak)
+
 
         fs = wf_1.srate
         NFFT = len(wf_1)
@@ -144,7 +163,7 @@ def main(argv = None):
         htilde_1 = wf_1.h22f
         htilde_2 = wf_2.h22f
 
-        idxPeak = min(wf_1.argpeak, wf_2.argpeak)
+        idxPeak = wf_2.argpeak
         idx_start = int(per_start*idxPeak)
         idx_end = int(per_end*idxPeak)
 
@@ -205,23 +224,43 @@ def main(argv = None):
         prefix.mkdir(parents = True)
     
     if not Path(fsave).exists():
-        MG = MultiGrid1D(get_lnprob, ecc_range, num_ecc)
-        MG.run(fsave, eps = eps, magnification = mag, filter_thresh = filter_thresh, maxiter = max_step)
+        if FIT2D:
+            MG = MultiGrid(get_lnprob, dtpeak_range, ecc_range, num_dtpeak, num_ecc)
+            MG.run(fsave, eps = eps, magnification = mag, filter_thresh = filter_thresh, maxiter = max_step)
+        else:
+            MG = MultiGrid1D(get_lnprob, ecc_range, num_ecc)
+            MG.run(fsave, eps = eps, magnification = mag, filter_thresh = filter_thresh, maxiter = max_step)
     data = np.loadtxt(fsave)
-    ecc_list, lnp_list = data[:,0], data[:,1]
-    ind = np.argmax(lnp_list)
-    ecc = ecc_list[ind]
-    print(f'best fit: {(ecc, lnp_list[ind])}')
+    if FIT2D:
+        dtpeak_list, ecc_list, lnp_list = data[:,0], data[:,1], data[:,2]
+        ind = np.argmax(lnp_list)
+        ecc_fit = ecc_list[ind]
+        dtpeak_fit = dtpeak_list[ind]
+        print(f'best fit: {(dtpeak_fit, ecc_fit, lnp_list[ind])}')
+    else:
+        ecc_list, lnp_list = data[:,0], data[:,1]
+        ind = np.argmax(lnp_list)
+        ecc_fit = ecc_list[ind]
+        dtpeak_fit = dtpeak_default
+        print(f'best fit: {(ecc_fit, lnp_list[ind])}')
     if args.plot:
         h22_wf = ge.get_waveform(jobtag = args.jobtag, timeout = args.timeout, verbose = True,
-                        KK = KK, dSO = dSO, dSS = dSS, dtPeak = dtpeak, ecc = ecc, ret = -1, dump = str(prefix))
+                        KK = KK, dSO = dSO, dSS = dSS, dtPeak = dtpeak_fit, ecc = ecc_fit, ret = -1, dump = str(prefix))
         if isinstance(h22_wf, CEV):
             return -1
+        
+        if FIT2D:
+            thpeak = np.abs(h22_wf.t0)
+            ithpeak = int(thpeak * h22_wf.srate)
+        else:
+            ithpeak = None
+        wf_1, wf_2 = alignment(h22_wf, NR, ithpeak)
+
         fwfname = prefix / 'bestfitwaveform.dat'
         np.savetxt(fwfname, np.stack([h22_wf.time + h22_wf.t0, h22_wf.real, h22_wf.imag], axis = 1))
         NR = SNR.cut_ringdown()
-        wf_1, wf_2 = alignment(h22_wf, NR)
-        idxPeak = min(wf_1.argpeak, wf_2.argpeak)
+        wf_1, wf_2 = alignment(h22_wf, NR, ithpeak)
+        idxPeak = wf_2.argpeak
         idx_start = int(per_start*idxPeak)
         idx_end = int(per_end*idxPeak)
         t1 = wf_1.time
@@ -239,7 +278,10 @@ def main(argv = None):
 
         plt.figure(figsize = (14, 9))
         plt.subplot(411)
-        plt.title(f'ecc={ecc}')
+        if FIT2D:
+            plt.title(f'ecc={ecc_fit},dt={dtpeak_fit}')
+        else:
+            plt.title(f'ecc={ecc_fit}')
         plt.plot(t1, h1.real, label = 'EOB')
         plt.plot(t2, h2.real, label = SXSnum)
         plt.xlim([xmin, xmax])

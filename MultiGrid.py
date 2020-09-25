@@ -228,6 +228,7 @@ class MultiGrid1D(object):
             fprefix_family.mkdir(parents = True)
         GrdF = self._grid(self._func)
         GrdF.save(fsave)
+        GrdF.save_family(fprefix_family)
         GPoints = GrdF.filter(thresh=filter_thresh)
         GPointsClusterList = GPoints.DBSCAN_cluster()
         GrdFuncList = []
@@ -235,6 +236,7 @@ class MultiGrid1D(object):
             Grd = GPCobj.generate_grid()
             GrdF = Grd(self._func)
             GrdF.save(fsave)
+            GrdF.save_family(fprefix_family)
             GrdFuncList.append(GrdF)
         ind = 0
         dx_init = self._grid.dx

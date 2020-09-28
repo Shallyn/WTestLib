@@ -333,19 +333,27 @@ def getMCFlikelihood(argv):
                             srcloc_all = srcloc_all)
                 ge = NR.construct_generator(approx, exe, psd = psd)
                 pms_init = (dt_init, e0)
-                # eB = 40 * np.log(2)
-                # chiE = 0.1 + 0.4 * np.exp(-eB * np.abs(e0))
-                # e_minA = np.abs(e0) * (1-chiE)
-                # e_maxA = np.abs(e0) * (1+chiE)
-                # if e0<0:
-                #     min_ecc = -e_maxA
-                #     max_ecc = -e_minA
-                # else:
-                #     min_ecc = e_minA
-                #     max_ecc = e_maxA
-                egap = args.delta_ecc if args.delta_ecc is not None else 0.02
-                min_ecc = e0 - egap
-                max_ecc = e0 + egap
+                if args.delta_ecc is None:
+                    eB = 40 * np.log(2)
+                    chiE = 0.1 + 0.4 * np.exp(-eB * np.abs(e0))
+                    e_minA = np.abs(e0) * (1-chiE)
+                    e_maxA = np.abs(e0) * (1+chiE)
+                    if e0<0:
+                        min_ecc_x = -e_maxA
+                        max_ecc_x = -e_minA
+                    else:
+                        min_ecc_x = e_minA
+                        max_ecc_x = e_maxA
+                else:
+                    min_ecc_x = e0 - args.delta_ecc
+                    max_ecc_x = e0 + args.delta_ecc
+                max_ecc = args.max_eccentricity if args.max_eccentricity is not None else max_ecc_x
+                min_ecc = args.min_eccentricity if args.min_eccentricity is not None else min_ecc_x
+                if e0 < min_ecc or e0 > max_ecc:
+                    e0 = (max_ecc + min_ecc) / 2
+                if dtPeak_default < min_dtpeak or dtPeak_default > max_dtpeak:
+                    dtPeak_default = (min_dtpeak + max_dtpeak) / 2
+                pms_init = (KK_default, dtPeak_default, e0)
 
                 def get_lnprob(pms):
                     if pms[0] < min_dtpeak or pms[0] > max_dtpeak or pms[1] < min_ecc or pms[1] > max_ecc:

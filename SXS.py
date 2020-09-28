@@ -677,9 +677,11 @@ class SXSCompGenerator(Generator):
 
         trange = (wf_1.time[idx_end] - wf_1.time[idx_start]) * dim_t(Mtotal_init)
         dPhiCum = (wf_1.phase[idx_start:idx_end] - wf_1.phase[idx_start]) - (wf_2.phase[idx_start:idx_end] - wf_2.phase[idx_start])
+        dAmpCum = (wf_1.amp[idx_start:idx_end] - wf_2.amp[idx_start:idx_end]) / wf_1.amp[idx_start:idx_end]
         if trange == 0:
             return -np.inf, -1
-        dPhiCum = np.sum(np.power(dPhiCum,2)) / trange
+        dPhiCum = np.sum(np.power(dPhiCum / 0.1, 2))
+        dAmpCum = np.sum(np.power(dAmpCum / 0.1, 2))
         lnprob = []
         FF = []
         # eps_lst = []
@@ -706,7 +708,7 @@ class SXSCompGenerator(Generator):
             eps = 1 - max(Oxt_abs)
             FF.append(1-eps)
             tc_dephase = tc * dimt
-            lnprob.append(-( pow(eps/0.01, 2) + pow(tc_dephase/5, 2) + dPhiCum ))
+            lnprob.append(-( pow(eps/0.01, 2) + pow(tc_dephase/5, 2) + dPhiCum + dAmpCum ))
             # lnprob.append( -(pow(eps/0.01, 2) + pow(tc_dephase/5, 2) + dPhiCum/0.001)/2 )
             # lnprob.append(eps)
             # eps_lst.append(eps)

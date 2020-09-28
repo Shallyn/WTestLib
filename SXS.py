@@ -680,8 +680,8 @@ class SXSCompGenerator(Generator):
         dAmpCum = (wf_1.amp[idx_start:idx_end] - wf_2.amp[idx_start:idx_end]) / wf_1.amp[idx_start:idx_end]
         if trange == 0:
             return -np.inf, -1
-        dPhiCum = np.sum(np.power(dPhiCum / 0.1, 2))
-        dAmpCum = np.sum(np.power(dAmpCum / 0.1, 2))
+        dPhiCum = np.sum(np.power(dPhiCum, 2))
+        dAmpCum = np.sum(np.power(dAmpCum, 2))
         lnprob = []
         FF = []
         # eps_lst = []

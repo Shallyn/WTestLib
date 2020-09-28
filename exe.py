@@ -353,7 +353,7 @@ def getMCFlikelihood(argv):
                     e0 = (max_ecc + min_ecc) / 2
                 if dtPeak_default < min_dtpeak or dtPeak_default > max_dtpeak:
                     dtPeak_default = (min_dtpeak + max_dtpeak) / 2
-                pms_init = (KK_default, dtPeak_default, e0)
+                pms_init = (dtPeak_default, e0)
 
                 def get_lnprob(pms):
                     if pms[0] < min_dtpeak or pms[0] > max_dtpeak or pms[1] < min_ecc or pms[1] > max_ecc:

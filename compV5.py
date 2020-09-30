@@ -149,7 +149,8 @@ def main(argv = None):
             return -65536
         if not is_full:
             NR = SNR.cut_ringdown()
-
+        else:
+            NR = SNR.copy()
         psdfunc = psd
         # Check sample rate
         Mtotal_init = SNR.Mtotal
@@ -282,6 +283,8 @@ def main(argv = None):
         np.savetxt(fwfname, np.stack([h22_wf.time + h22_wf.t0, h22_wf.real, h22_wf.imag], axis = 1))
         if not is_full:
             NR = SNR.cut_ringdown()
+        else:
+            NR = SNR.copy()
         wf_1, wf_2 = alignment(h22_wf, NR, ithpeak)
         idxPeak = wf_2.argpeak
         idx_start = int(per_start*idxPeak)

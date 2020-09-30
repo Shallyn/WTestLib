@@ -91,6 +91,8 @@ def main(argv = None):
     parser.add_option('--max-step', type = 'int', default = 100, help = 'Max iter depth')
 
     parser.add_option('--plot', action = 'store_true', help = 'recover results')
+    parser.add_option('--full-waveform', action = 'store_true', help = 'compare full waveform')
+    parser.add_option('--compare-ff', action = 'store_true', help = 'just compare FF')
     parser.add_option('--testecc', type = 'float', help = 'used for test')
     args, _ = parser.parse_args(argv)
 
@@ -134,14 +136,19 @@ def main(argv = None):
         dtpeak_range = (min_dtpeak, max_dtpeak)
     if per_start > per_end or np.abs(per_start - 0.5) > 0.5 or np.abs(per_end - 0.5) > 0.5:
         raise Exception('Invalid per_start or per_end')
-    
+    is_full = args.full_waveform
+    if is_full:
+        ProgRet = 0
+    else:
+        ProgRet = -1
+    is_comp_FF = args.compare_ff
     def get_lnprob(ecc, dtpeak = dtpeak_default, is_test = False):
         h22_wf = ge.get_waveform(jobtag = args.jobtag, timeout = args.timeout, verbose = is_test,
-                        KK = KK, dSO = dSO, dSS = dSS, dtPeak = dtpeak, ecc = ecc, ret = -1)
+                        KK = KK, dSO = dSO, dSS = dSS, dtPeak = dtpeak, ecc = ecc, ret = ProgRet)
         if isinstance(h22_wf, CEV):
             return -65536
-
-        NR = SNR.cut_ringdown()
+        if not is_full:
+            NR = SNR.cut_ringdown()
 
         psdfunc = psd
         # Check sample rate
@@ -191,13 +198,30 @@ def main(argv = None):
             Ox = htilde_1 * htilde_2.conjugate() / power_vec
             Oxt = np.fft.ifft(Ox) * fs / np.sqrt(O11 * O22)
             Oxt_abs = np.abs(Oxt)
-            Mfac = MtotalFac_list[i]
-            FF = max(Oxt_abs)
-            eps = (1 - FF) * Mfac
-            FF_list.append(FF * Mfac)
-            lnprob += -pow(eps/0.02, 2)
+            if is_comp_FF:
+                idx = np.where(Oxt_abs == max(Oxt_abs))[0][0]
+                lth = len(Oxt_abs)
+                if idx == lth-1 or idx == 1:
+                    tc = 0
+                else:
+                    if idx > lth / 2:
+                        tc = (idx - lth) / fs
+                    else:
+                        tc = idx / fs
+                tc = tc*dim_t(Mtotal)
+                eps = (1-FF)
+                FF_list.append(-pow(eps/0.01,2) - pow(tc/5, 2))
+                lnprob += -pow(eps/0.01, 2)
+            else:
+                Mfac = MtotalFac_list[i]
+                FF = max(Oxt_abs)
+                eps = (1 - FF) * Mfac
+                FF_list.append(FF * Mfac)
+                lnprob += -pow(eps/0.02, 2)
         if is_test:
             return lnprob, FF_list, dPhiCum, dAmpCum
+        if is_comp_FF:
+            return min(FF_list)
         lnprob += -dPhiCum-dAmpCum
         return lnprob
     
@@ -245,7 +269,7 @@ def main(argv = None):
         print(f'best fit: {(ecc_fit, lnp_list[ind])}')
     if args.plot:
         h22_wf = ge.get_waveform(jobtag = args.jobtag, timeout = args.timeout, verbose = True,
-                        KK = KK, dSO = dSO, dSS = dSS, dtPeak = dtpeak_fit, ecc = ecc_fit, ret = -1, dump = str(prefix))
+                        KK = KK, dSO = dSO, dSS = dSS, dtPeak = dtpeak_fit, ecc = ecc_fit, ret = ProgRet, dump = str(prefix))
         if isinstance(h22_wf, CEV):
             return -1
         
@@ -256,7 +280,8 @@ def main(argv = None):
             ithpeak = None
         fwfname = prefix / 'bestfitwaveform.dat'
         np.savetxt(fwfname, np.stack([h22_wf.time + h22_wf.t0, h22_wf.real, h22_wf.imag], axis = 1))
-        NR = SNR.cut_ringdown()
+        if not is_full:
+            NR = SNR.cut_ringdown()
         wf_1, wf_2 = alignment(h22_wf, NR, ithpeak)
         idxPeak = wf_2.argpeak
         idx_start = int(per_start*idxPeak)

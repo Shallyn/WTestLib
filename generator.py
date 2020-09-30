@@ -151,7 +151,7 @@ def CMD_SEOBNREv5(exe,
         adjpms += f' --fileout={dump}'
     CMD = f'{exe} --mass-ratio={q} --f-min={f_ini} \
         --delta-t={deltaT} --eccentricity={ecc} \
-        --chi1={s1z} --chi2={s2z} --version={version} --return={ret}' + adjpms
+        --chi1={s1z} --chi2={s2z} --version={version} --return-mode={ret}' + adjpms
     return CMD
 
 

@@ -209,6 +209,7 @@ def main(argv = None):
                         tc = (idx - lth) / fs
                     else:
                         tc = idx / fs
+                FF = max(Oxt_abs)
                 tc = tc*dim_t(Mtotal)
                 eps = (1-FF)
                 FF_list.append(-pow(eps/0.01,2) - pow(tc/5, 2))

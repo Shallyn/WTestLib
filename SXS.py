@@ -709,7 +709,7 @@ class SXSCompGenerator(Generator):
             FF.append(1-eps)
             tc_dephase = tc * dimt
             # lnprob.append(-( pow(eps/0.01, 2) + pow(tc_dephase/5, 2)))
-            lnprob.append( -(pow(eps/0.01, 2) + pow(tc_dephase/5, 2) + dPhiCum/0.001)/2 )
+            lnprob.append( -(pow(eps/0.01, 2) )
             # lnprob.append(eps)
             # eps_lst.append(eps)
         # return max(eps_lst)

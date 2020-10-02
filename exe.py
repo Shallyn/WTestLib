@@ -349,6 +349,10 @@ def getMCFlikelihood(argv):
                     max_ecc_x = e0 + args.delta_ecc
                 max_ecc = args.max_eccentricity if args.max_eccentricity is not None else max_ecc_x
                 min_ecc = args.min_eccentricity if args.min_eccentricity is not None else min_ecc_x
+                if e0 > 0:
+                    min_ecc = max(min_ecc, 0)
+                else:
+                    max_ecc = min(max_ecc, 0)
                 if e0 < min_ecc or e0 > max_ecc:
                     e0 = (max_ecc + min_ecc) / 2
                 if dtPeak_default < min_dtpeak or dtPeak_default > max_dtpeak:

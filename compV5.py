@@ -157,12 +157,12 @@ def main(argv = None):
         Mtotal_list = np.array([10, 40, 70, 100, 130, 160, 190])
         MtotalFac_list = 1 - Mtotal_list / np.max(Mtotal_list)
 
-        if FIT2D:
-            thpeak = np.abs(h22_wf.t0)
-            ithpeak = int(thpeak * h22_wf.srate)
-        else:
-            ithpeak = None
-        wf_1, wf_2 = alignment(h22_wf, NR, ithpeak)
+        # if FIT2D:
+        #     thpeak = np.abs(h22_wf.t0)
+        #     ithpeak = int(thpeak * h22_wf.srate)
+        # else:
+        #     ithpeak = None
+        wf_1, wf_2 = alignment(h22_wf, NR, None)
 
 
         fs = wf_1.srate

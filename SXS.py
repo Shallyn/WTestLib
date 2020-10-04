@@ -1501,6 +1501,26 @@ def parse_SXSeccV1(SXSnum):
             break
     return e0
 
+def SEOBHyperCoefficients_v1(eta, a):
+    c0 = 1.4467
+    c1 = -1.7152360250654402
+    c2 = -3.246255899738242
+    KK = c0 + c1 * eta + c2 * eta * eta
+    dSO = -69.5
+    dSS = 2.75
+    dtPeak = 0
+    return KK, dSO, dSS, dtPeak
+
+def SEOBHyperCoefficients_v2(eta, a):
+    c20 = 1.712
+    c21 = -1.803949138004582
+    c22 = -39.77229225266885
+    c23 = 103.16588921239249
+    KK = c20 + c21 * eta + c22 * eta * eta + c23 * eta * eta * eta
+    dSO = -74.71 - 156. * eta + 627.5 * eta * eta
+    dSS = 8.127 - 154.2 * eta + 830.8 * eta * eta
+    dtPeak = 0
+    return KK, dSO, dSS, dtPeak
 
 def SEOBHyperCoefficients_v4(eta, a):
     coeff00K = 1.7336

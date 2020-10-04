@@ -357,3 +357,83 @@ def main(argv = None):
         plt.close()
     return 0
 
+#-----Recover EOB vs SXS-----#
+def GridSearch_KK_noecc(argv = None):
+    from .SXS import DEFAULT_TABLE
+    from .SXS import DEFAULT_SRCLOC
+    from .SXS import DEFAULT_SRCLOC_ALL
+    from .generator import self_adaptivor
+
+    parser = OptionParser(description='Waveform Comparation With SXS')
+
+    parser.add_option('--executable', type = 'str', default = 'lalsim-inspiral', help = 'Exe command')
+    parser.add_option('--approx', type = 'str', default = 'SEOBNREv5', help = 'Version of the code')
+    parser.add_option('--fini', type = 'float', default = 0, help = 'Initial orbital frequency')
+    parser.add_option('--SXS', type = 'str', default = '0071', help = 'SXS template for comparision')
+    parser.add_option('--mtotal', type = 'float', default = 40, help = 'Total mass')
+    parser.add_option('--srate', type = 'float', default = 16384, help = 'Sample rate')
+ 
+    parser.add_option('--prefix', type = 'str', default = '.', help = 'dir for results saving.')
+    parser.add_option('--jobtag', type = 'str', default = '_lnprob', help = 'jobtag.')
+
+    parser.add_option('--psd', type = 'str', help = 'Detector psd.')
+    parser.add_option('--flow', type = 'float', default = 0, help = 'Lower frequency cut off for psd.')
+    parser.add_option('--timeout', type = 'int', default = 60, help = 'Time limit for waveform generation')
+    parser.add_option('--mode', type = 'str', default = 'all', help = 'Search mode.')
+
+    parser.add_option('--table', type = 'str', default = str(DEFAULT_TABLE), help = 'Path of SXS table.')
+    parser.add_option('--srcloc', type = 'str', default = str(DEFAULT_SRCLOC), help = 'Path of SXS waveform data.')
+    parser.add_option('--srcloc-all', type = 'str', default = str(DEFAULT_SRCLOC_ALL), help = 'Path of SXS waveform data all modes')
+
+    parser.add_option('--num-k', type = 'int', default = 50, help = 'numbers for grid search')
+    parser.add_option('--max-k', type = 'float', help = 'Upper bound of parameter')
+    parser.add_option('--min-k', type = 'float', help = 'Lower bound of parameter')
+    parser.add_option('--dtpeak', type = 'float', default = 0, help = 'dtpeak')
+    parser.add_option('--ecc', type = 'float', default = 0, help = 'ecc')
+    parser.add_option('--eps', type = 'float', default = 1e-6, help = 'Thresh of div')
+    parser.add_option('--mag', type = 'float', default = 10, help = 'Thresh of dx_init / dx (>1)')
+    parser.add_option('--filter-thresh', type = 'float', default = 0.4, help = 'Thresh of grid search (<1)')
+    parser.add_option('--max-step', type = 'int', default = 100, help = 'Max iter depth')
+    args, _ = parser.parse_args(argv)
+
+    exe = args.executable
+    approx = args.approx
+    SXSnum = args.SXS
+    mtotal = args.mtotal
+    fini = args.fini
+    srate = args.srate
+    table = args.table
+    srcloc = args.srcloc
+    srcloc_all = args.srcloc_all
+    psd = DetectorPSD(args.psd, flow = args.flow)
+
+    max_k = args.max_k if args.max_k is not None else 10
+    min_k = args.min_k if args.min_k is not None else -10
+    k_range = (min_k, max_k)
+    num_k = args.num_k
+    eps = args.eps
+    mag = args.mag
+    filter_thresh = args.filter_thresh
+    max_step = args.max_step
+    NR = SXSh22(SXSnum = SXSnum,
+                f_ini = fini,
+                Mtotal = mtotal,
+                srate = srate,
+                srcloc = srcloc,
+                table = table,
+                srcloc_all = srcloc_all)
+    ge = NR.construct_generator(approx, exe, psd = psd)
+    pms0 = NR.CalculateAdjParamsV4()
+    dSO_default = pms0[1]
+    dSS_default = pms0[2]
+    def get_lnprob(k):
+        ret = ge.get_lnprob(jobtag = args.jobtag, timeout = args.timeout,
+                    KK = k, dSO = dSO_default, dSS = dSS_default, dtPeak = args.dtpeak, ecc = args.ecc)
+        return ret[0]
+    prefix = Path(args.prefix)
+    fsave = str(prefix / f'grid_{SXSnum}.txt')
+    if not prefix.exists():
+        prefix.mkdir(parents = True)
+    MG = MultiGrid1D(get_lnprob, k_range, num_k)
+    MG.run(fsave, eps = eps, magnification = mag, filter_thresh = filter_thresh, maxiter = max_step)
+    return 0

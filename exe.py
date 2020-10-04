@@ -147,8 +147,7 @@ def getMCFlikelihood(argv):
             def get_lnprob(pms):
                 if pms[0] < min_k or pms[0] > max_k or \
                     pms[1] < min_dso or pms[1] > max_dso or \
-                    pms[2] < min_dss or pms[2] > max_dss or \
-                    pms[3] < min_dtpeak or pms[3] > max_dtpeak:
+                    pms[2] < min_dss or pms[2] > max_dss:
                     return -np.inf
                 ret = ge.get_lnprob(jobtag = args.jobtag, timeout = args.timeout,
                             KK = pms[0], dSO = pms[1], dSS = pms[2], dtPeak = 0)

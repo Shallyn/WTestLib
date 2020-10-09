@@ -149,6 +149,9 @@ def CMD_SEOBNREv5(exe,
         adjpms += f' --dtPeak={dtPeak}'
     if dump is not None:
         adjpms += f' --fileout={dump}'
+    for kw in kwargs:
+        op = kw.replace('_','-')
+        adjpms += f' --{op}={kwargs[kw]}'
     CMD = f'{exe} --mass-ratio={q} --f-min={f_ini} \
         --delta-t={deltaT} --eccentricity={ecc} \
         --chi1={s1z} --chi2={s2z} --version={version} --return-mode={ret}' + adjpms

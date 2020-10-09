@@ -11,6 +11,7 @@ import time, os, sys
 import subprocess
 from enum import Enum, auto
 from scipy.interpolate import InterpolatedUnivariateSpline
+from scipy.interpolate import splev, splrep
 from collections import Iterable
 import matplotlib.pyplot as plt
 from matplotlib import gridspec
@@ -341,6 +342,29 @@ def polyfit(x, y, order):
         X[:,i] = np.power(x, i)
     return np.dot(np.dot(np.linalg.inv(np.dot(X.T, X)), X.T), Y)
 
+def splfind(x, y, val, eps):
+    ay = np.abs(y - val)
+    sply = splrep(x, ay)
+    idx = np.where( ay == np.min(ay))[0][0]
+    if idx == 0:
+        return x[0]
+    if ay[idx] == 0:
+        return x[idx]
+    dayi = splev(x[idx], sply, der = 1)
+    if dayi < 0:
+        x1 = x[idx]
+        x2 = x[idx+1]
+    else:
+        x1 = x[idx-1]
+        x2 = x[idx]
+    while(np.abs(x1 - x2) > eps):
+        xi = (x1 + x2) / 2.
+        dayi = splev(xi, sply, der = 1)
+        if dayi < 0:
+            x2 = xi
+        else:
+            x1 = xi
+    return (x1 + x2) / 2
 
     
 #-----switch method-----#

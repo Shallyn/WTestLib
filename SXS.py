@@ -237,7 +237,7 @@ class SXSObject(object):
         return
 
     def ecc_range(self):
-        return parse_ecc(self.ecc, )
+        return parse_ecc(self.ecc, 0, 0.7)
 
 class SXSAllMode(SXSObject):
     def __init__(self, SXSnum, table = DEFAULT_TABLE, srcloc = DEFAULT_SRCLOC_ALL):
@@ -720,14 +720,14 @@ class SXSCompGenerator(Generator):
     def get_overlap(self, jobtag = 'test', minecc = 0, maxecc = 0, **kwargs):
         if self._verbose:
             sys.stderr.write(f'{LOG}:Checking ecc is allowed or not.\n')
-        eccentricity = kwargs.get('eccentricity')
+        eccentricity = kwargs.get('ecc')
         preset = kwargs.get('Preset')
         if not self.allow_ecc or (minecc == 0 and maxecc == 0 and preset is not True) or eccentricity is not None:
             if self._verbose:
                 sys.stderr.write(f'{LOG}:ecc is unused in approx: {self._approx}, now calculate overlap.\n')
             fini = kwargs.get('fini')
             Mtotal = kwargs.get('Mtotal')
-            h22_wf = self.get_waveform(jobtag = jobtag, ecc = eccentricity, fini = fini, **kwargs)
+            h22_wf = self.get_waveform(jobtag = jobtag, fini = fini, **kwargs)
             if hasattr(Mtotal, '__len__'):
                 ret = self.__core_calculate_overlap_MtotalList(h22_wf, MtotalList = Mtotal, verbose = self._verbose)
                 return ret

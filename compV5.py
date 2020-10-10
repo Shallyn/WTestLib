@@ -160,7 +160,7 @@ def main(argv = None):
         ProgRet = -1
     is_comp_FF = args.compare_ff
     def get_lnprob(ecc, dtpeak = dtpeak_default, is_test = False):
-        h22_wf = ge.get_waveform(jobtag = args.jobtag, timeout = args.timeout, verbose = is_test,
+        h22_wf = ge.get_waveform(jobtag = args.jobtag, timeout = args.timeout, verbose = True,
                         KK = KK, dSO = dSO, dSS = dSS, dtPeak = dtpeak, ecc = ecc, ret = ProgRet)
         if isinstance(h22_wf, CEV):
             return -65536

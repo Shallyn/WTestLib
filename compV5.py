@@ -51,6 +51,20 @@ def alignment(wfA, wfB, ithpeak = None):
 def get_new_dtpeak_nospin_Nv1(eta):
     return 2.50373124 + 166.24461103 * eta -1097.73967883*np.power(eta,2) + 1753.20870987 * np.power(eta,3)
 
+def get_ecc_range(SXSnum, min_ecc = None, max_ecc = None):
+    if SXSnum not in DEFAULT_ECC_ORBIT_DICT:
+        return None, -0.05, 0.05
+    f0, e0 = DEFAULT_ECC_ORBIT_DICT[SXSnum]
+    min_e = e0 - 0.1
+    max_e = e0 + 0.1
+    if e0 > 0 and min_e < 0:
+        min_e = 0
+    if e0 < 0 and max_e > 0:
+        max_e = 0
+    min_e = min_ecc if min_ecc is not None else min_e
+    max_e = max_ecc if max_ecc is not None else max_e
+    return f0, min_e, max_e
+
 DEFAULT_EXEV5 = '/Users/drizl/Documents/2020/EccentricEOBProject/EOBCoreTest/EOBNR/MAIN'
 
 def main(argv = None):
@@ -574,6 +588,11 @@ def GridSearch_ecc(argv = None):
     ymode = args.ymode
     max_ecc = args.max_ecc if args.max_ecc is not None else 0.5
     min_ecc = args.min_ecc if args.min_ecc is not None else -0.5
+    f0, min_e, max_e = get_ecc_range(SXSnum, args.min_ecc, max_ecc)
+    if f0 is not None:
+        fini = f0
+        max_ecc = max_e
+        min_ecc = min_e
     ecc_range = (min_ecc, max_ecc)
     num_ecc = args.num_ecc
     eps = args.eps
@@ -603,6 +622,8 @@ def GridSearch_ecc(argv = None):
     
     if args.ecc is not None:
         ecc = args.ecc
+    elif SXSnum not in DEFAULT_ECC_ORBIT_DICT:
+        ecc = 0.0
     else:
         fsave = str(prefix / f'grid_{SXSnum}.txt')
         if not prefix.exists():

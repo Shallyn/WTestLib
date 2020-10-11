@@ -16,7 +16,7 @@ from optparse import OptionParser
 from .psd import DetectorPSD
 from .h22datatype import get_fmin, get_fini_dimless
 import sys
-from .SXSlist import DEFAULT_ECC_ORBIT_DICT
+from .SXSlist import DEFAULT_ECC_ORBIT_DICT, DEFAULT_ECC_ORBIT_DICT_V5
 from .MultiGrid import MultiGrid
 
 
@@ -135,8 +135,8 @@ def getMCFlikelihood(argv):
             break
         if case('nospin_ecc_wind'):
             # windt (0, 1000), windw (1, 100)
-            if SXSnum in DEFAULT_ECC_ORBIT_DICT:
-                f0, e0 = DEFAULT_ECC_ORBIT_DICT[SXSnum]
+            if SXSnum in DEFAULT_ECC_ORBIT_DICT_V5:
+                f0, e0 = DEFAULT_ECC_ORBIT_DICT_V5[SXSnum]
                 NR = SXSh22(SXSnum = SXSnum,
                             f_ini = f0,
                             Mtotal = mtotal,

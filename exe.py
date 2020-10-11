@@ -116,6 +116,23 @@ def getMCFlikelihood(argv):
     max_ecc = args.max_eccentricity if args.max_eccentricity is not None else 0.7
     min_ecc = args.min_eccentricity if args.min_eccentricity is not None else 0
     for case in switch(Smode):
+        if case('nospin_wind'):
+            NR = SXSh22(SXSnum = SXSnum,
+                        f_ini = fini,
+                        Mtotal = mtotal,
+                        srate = srate,
+                        srcloc = srcloc,
+                        table = table,
+                        srcloc_all = srcloc_all)
+            ge = NR.construct_generator(approx, exe, psd = psd)
+            pms_init = (100, 25)
+            def get_lnprob(pms):
+                if pms[0] < 0 or pms[0] > 1000 or pms[1] < 1 or pms[1] > 100:
+                    return -np.inf
+                ret = ge.get_lnprob(jobtag = args.jobtag, timeout = args.timeout, windt = pms[0], windw = pms[1],
+                            KK = KK_default, dSO = dSO_default, dSS = dSS_default, dtPeak = dtPeak_default, ecc = 0.0)
+                return ret[0]
+            break
         if case('nospin_ecc_wind'):
             # windt (0, 1000), windw (1, 100)
             if SXSnum in DEFAULT_ECC_ORBIT_DICT:
@@ -150,8 +167,6 @@ def getMCFlikelihood(argv):
                     max_ecc = min(max_ecc, 0)
                 if e0 < min_ecc or e0 > max_ecc:
                     e0 = (max_ecc + min_ecc) / 2
-                if dtPeak_default < min_dtpeak or dtPeak_default > max_dtpeak:
-                    dtPeak_default = (min_dtpeak + max_dtpeak) / 2
                 pms_init = (e0, 100, 25)
 
                 def get_lnprob(pms):

@@ -116,6 +116,52 @@ def getMCFlikelihood(argv):
     max_ecc = args.max_eccentricity if args.max_eccentricity is not None else 0.7
     min_ecc = args.min_eccentricity if args.min_eccentricity is not None else 0
     for case in switch(Smode):
+        if case('nospin_ecc_wind'):
+            # windt (0, 1000), windw (1, 100)
+            if SXSnum in DEFAULT_ECC_ORBIT_DICT:
+                f0, e0 = DEFAULT_ECC_ORBIT_DICT[SXSnum]
+                NR = SXSh22(SXSnum = SXSnum,
+                            f_ini = f0,
+                            Mtotal = mtotal,
+                            srate = srate,
+                            srcloc = srcloc,
+                            table = table,
+                            srcloc_all = srcloc_all)
+                ge = NR.construct_generator(approx, exe, psd = psd)
+                pms_init = (dt_init, e0)
+                if args.delta_ecc is None:
+                    eB = 40 * np.log(2)
+                    chiE = 0.1 + 0.4 * np.exp(-eB * np.abs(e0))
+                    e_minA = np.abs(e0) * (1-chiE)
+                    e_maxA = np.abs(e0) * (1+chiE)
+                    if e0<0:
+                        min_ecc_x = -e_maxA
+                        max_ecc_x = -e_minA
+                    else:
+                        min_ecc_x = e_minA
+                        max_ecc_x = e_maxA
+                else:
+                    min_ecc_x = e0 - args.delta_ecc
+                    max_ecc_x = e0 + args.delta_ecc
+                max_ecc = args.max_eccentricity if args.max_eccentricity is not None else max_ecc_x
+                min_ecc = args.min_eccentricity if args.min_eccentricity is not None else min_ecc_x
+                if e0 > 0:
+                    min_ecc = max(min_ecc, 0)
+                else:
+                    max_ecc = min(max_ecc, 0)
+                if e0 < min_ecc or e0 > max_ecc:
+                    e0 = (max_ecc + min_ecc) / 2
+                if dtPeak_default < min_dtpeak or dtPeak_default > max_dtpeak:
+                    dtPeak_default = (min_dtpeak + max_dtpeak) / 2
+                pms_init = (e0, 100, 25)
+
+                def get_lnprob(pms):
+                    if pms[0] < min_ecc or pms[0] > max_ecc or pms[1] < 0 or pms[1] > 1000 or pms[2] < 1 or pms[2] > 100:
+                        return -np.inf
+                    ret = ge.get_lnprob(jobtag = args.jobtag, timeout = args.timeout, windt = pms[1], windw = pms[2],
+                                KK = KK_default, dSO = dSO_default, dSS = dSS_default, dtPeak = dtPeak_default, ecc = pms[0])
+                    return ret[0]
+
         if case('nospin'):
             pms_init = (KK_default, dtPeak_default)
             # K, dtPeak

@@ -50,6 +50,8 @@ def alignment(wfA, wfB, ithpeak = None):
 
 def get_new_dtpeak_nospin_Nv1(eta):
     return 2.50373124 + 166.24461103 * eta -1097.73967883*np.power(eta,2) + 1753.20870987 * np.power(eta,3)
+def get_new_dtpeak_nospin_Nv3(eta):
+    return 2.45459198 + 33.91443053 * eta + 186.55163593*np.power(eta,2) -1168.50878255 * np.power(eta,3)
 
 def get_ecc_range(SXSnum, min_ecc = None, max_ecc = None):
     if SXSnum not in DEFAULT_ECC_ORBIT_DICT:
@@ -611,7 +613,7 @@ def GridSearch_ecc(argv = None):
     KK_default = pms0[0]
     dSO_default = pms0[1]
     dSS_default = pms0[2]
-    dtpeak_fit = get_new_dtpeak_nospin_Nv1(NR.eta)
+    dtpeak_fit = get_new_dtpeak_nospin_Nv3(NR.eta)
     def get_lnprob(ecc):
         ret = ge.get_lnprob(jobtag = args.jobtag, timeout = args.timeout, mode = ymode,
                     KK = KK_default, dSO = dSO_default, dSS = dSS_default, dtPeak = dtpeak_fit, ecc = ecc)

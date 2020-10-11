@@ -11,7 +11,7 @@ import matplotlib.pyplot as plt
 from .psd import DetectorPSD
 from .SXS import DEFAULT_TABLE, DEFAULT_SRCLOC, DEFAULT_SRCLOC_ALL, SXSh22, CEV
 from .h22datatype import h22_alignment, dim_t
-from .SXSlist import DEFAULT_ECC_ORBIT_DICT
+from .SXSlist import DEFAULT_ECC_ORBIT_DICT, DEFAULT_ECC_ORBIT_DICT_V5
 from optparse import OptionParser
 from .MultiGrid import MultiGrid1D, MultiGrid
 from pathlib import Path
@@ -99,7 +99,7 @@ def main(argv = None):
     parser.add_option('--num-ecc', type = 'int', default = 50, help = 'numbers for grid search')
     parser.add_option('--max-ecc', type = 'float', help = 'Upper bound of parameters 5')
     parser.add_option('--min-ecc', type = 'float', help = 'Lower bound of parameters 5')
-
+    parser.add_option('--delta-ecc', type = 'float', help = 'delta ecc around e0')
     parser.add_option('--num-dtpeak', type = 'int', help = 'numbers for grid search')
     parser.add_option('--max-dtpeak', type = 'float', help = 'Upper bound of parameters 4')
     parser.add_option('--min-dtpeak', type = 'float', help = 'Lower bound of parameters 4')
@@ -252,6 +252,9 @@ def main(argv = None):
         return 0
     max_ecc = args.max_ecc if args.max_ecc is not None else 0.5
     min_ecc = args.min_ecc if args.min_ecc is not None else 0
+    if args.delta_ecc is not None:
+        max_ecc = e0 + args.delta_ecc
+        min_ecc = e0 - args.delta_ecc
     if e0 < 0 and min_ecc >= 0:
         _tmp = max_ecc
         max_ecc = -min_ecc

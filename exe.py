@@ -160,7 +160,7 @@ def getMCFlikelihood(argv):
                     ret = ge.get_lnprob(jobtag = args.jobtag, timeout = args.timeout, windt = pms[1], windw = pms[2],
                                 KK = KK_default, dSO = dSO_default, dSS = dSS_default, dtPeak = dtPeak_default, ecc = pms[0])
                     return ret[0]
-
+            break
         if case('nospin'):
             pms_init = (KK_default, dtPeak_default)
             # K, dtPeak

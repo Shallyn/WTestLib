@@ -215,10 +215,16 @@ def main(argv = None):
         idx_end = int(per_end*idxPeak)
 
         timeH = wf_1.time[idx_start:idx_end]
-        trange = timeH[-1] - timeH[0]
-        dPhiCum = (wf_1.phaseFrom0[idx_start:idx_end] - wf_1.phaseFrom0[idx_start]) - (wf_2.phaseFrom0[idx_start:idx_end] - wf_2.phaseFrom0[idx_start])
-        dAmpCum = (wf_1.amp[idx_start:idx_end] - wf_2.amp[idx_start:idx_end]) / wf_1.amp[idx_start:idx_end] / 0.05
-        Pre = 3. * np.power(timeH - timeH[-1], 2) / np.power(trange, 3)
+        try:
+            trange = timeH[-1] - timeH[0]
+            dPhiCum = (wf_1.phaseFrom0[idx_start:idx_end] - wf_1.phaseFrom0[idx_start]) - (wf_2.phaseFrom0[idx_start:idx_end] - wf_2.phaseFrom0[idx_start])
+            dAmpCum = (wf_1.amp[idx_start:idx_end] - wf_2.amp[idx_start:idx_end]) / wf_1.amp[idx_start:idx_end] / 0.05
+            Pre = 3. * np.power(timeH - timeH[-1], 2) / np.power(trange, 3)
+        except:
+            sys.stderr.write(f'len_wf = {len(wf_1)}, idxPeak = {idxPeak}\n')
+            dPhiCum = 0.0
+            dAmpCum = 0.0
+            Pre = 0.0
 
         if trange == 0:
             return -65536

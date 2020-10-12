@@ -9,6 +9,7 @@ import sys, os
 import numpy as np
 import matplotlib.pyplot as plt
 from .psd import DetectorPSD
+from .Utils import switch
 from .SXS import DEFAULT_TABLE, DEFAULT_SRCLOC, DEFAULT_SRCLOC_ALL, SXSh22, CEV
 from .h22datatype import h22_alignment, dim_t
 from .SXSlist import DEFAULT_ECC_ORBIT_DICT, DEFAULT_ECC_ORBIT_DICT_V5
@@ -50,6 +51,8 @@ def alignment(wfA, wfB, ithpeak = None):
 
 def get_new_dtpeak_nospin_Nv1(eta):
     return 2.50373124 + 166.24461103 * eta -1097.73967883*np.power(eta,2) + 1753.20870987 * np.power(eta,3)
+def get_new_dtpeak_nospin_Nv1nhm(eta):
+    return 2.42676826  +  18.46995727 *eta +  188.80152615*np.power(eta,2) -1060.72511485 *np.power(eta,3)
 def get_new_dtpeak_nospin_Nv3(eta):
     return 2.45459198 + 33.91443053 * eta + 186.55163593*np.power(eta,2) -1168.50878255 * np.power(eta,3)
 
@@ -115,7 +118,7 @@ def main(argv = None):
     parser.add_option('--compare-ff', action = 'store_true', help = 'just compare FF')
     parser.add_option('--testecc', type = 'float', help = 'used for test')
 
-    parser.add_option('--version', type = 'str', help = 'code version')
+    parser.add_option('--version', type = 'str', default = 'default', help = 'code version')
     args, _ = parser.parse_args(argv)
 
     exe = args.executable
@@ -150,16 +153,23 @@ def main(argv = None):
     per_start = args.per_start
     per_end = args.per_end
     FIT2D = False
+    version = args.version.lower()
     if args.num_dtpeak is not None:
         FIT2D = True
         num_dtpeak = args.num_dtpeak
         max_dtpeak = args.max_dtpeak if args.max_dtpeak is not None else 100
         min_dtpeak = args.min_dtpeak if args.min_dtpeak is not None else -10
         if args.delta_dtpeak:
-            if args.version is not 'Nv1':
-                dt_v4 = SNR.CalculateAdjParamsV4()[3]
-            else:
-                dt_v4 = get_new_dtpeak_nospin_Nv1(SNR.eta)
+            for case in switch(version):
+                if case('nv1'):
+                    dt_v4 = get_new_dtpeak_nospin_Nv1(SNR.eta)
+                    break
+                if case('nv1nohm'):
+                    dt_v4 = get_new_dtpeak_nospin_Nv1nhm(SNR.eta)
+                    break
+                else:
+                    dt_v4 = SNR.CalculateAdjParamsV4()[3]
+                    break
             min_dtpeak = dt_v4 - args.delta_dtpeak
             max_dtpeak = dt_v4 + args.delta_dtpeak
         dtpeak_range = (min_dtpeak, max_dtpeak)

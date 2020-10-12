@@ -170,7 +170,7 @@ def main(argv = None):
                 else:
                     dt_v4 = SNR.CalculateAdjParamsV4()[3]
                     break
-            min_dtpeak = dt_v4 - args.delta_dtpeak
+            min_dtpeak = max(0, dt_v4 - args.delta_dtpeak)
             max_dtpeak = dt_v4 + args.delta_dtpeak
         dtpeak_range = (min_dtpeak, max_dtpeak)
     if per_start > per_end or np.abs(per_start - 0.5) > 0.5 or np.abs(per_end - 0.5) > 0.5:

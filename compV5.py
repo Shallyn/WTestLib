@@ -126,8 +126,8 @@ def main(argv = None):
     srcloc_all = args.srcloc_all
     psd = DetectorPSD(args.psd, flow = args.flow)
 
-    if SXSnum in DEFAULT_ECC_ORBIT_DICT:
-        f0, e0 = DEFAULT_ECC_ORBIT_DICT[SXSnum]
+    if SXSnum in DEFAULT_ECC_ORBIT_DICT_V5:
+        f0, e0 = DEFAULT_ECC_ORBIT_DICT_V5[SXSnum]
     else:
         f0 = fini
 

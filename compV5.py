@@ -222,6 +222,7 @@ def main(argv = None):
             Pre = 3. * np.power(timeH - timeH[-1], 2) / np.power(trange, 3)
         except:
             sys.stderr.write(f'len_wf = {len(wf_1)}, idxPeak = {idxPeak}\n')
+            trange = 0
             dPhiCum = 0.0
             dAmpCum = 0.0
             Pre = 0.0

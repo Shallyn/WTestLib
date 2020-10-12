@@ -103,6 +103,7 @@ def main(argv = None):
     parser.add_option('--num-dtpeak', type = 'int', help = 'numbers for grid search')
     parser.add_option('--max-dtpeak', type = 'float', help = 'Upper bound of parameters 4')
     parser.add_option('--min-dtpeak', type = 'float', help = 'Lower bound of parameters 4')
+    parser.add_option('--delta-dtpeak', type = 'float', help = 'delta dtpeak around dt_v4')
 
     parser.add_option('--eps', type = 'float', default = 1e-6, help = 'Thresh of div')
     parser.add_option('--mag', type = 'float', default = 10, help = 'Thresh of dx_init / dx (>1)')
@@ -113,6 +114,8 @@ def main(argv = None):
     parser.add_option('--full-waveform', action = 'store_true', help = 'compare full waveform')
     parser.add_option('--compare-ff', action = 'store_true', help = 'just compare FF')
     parser.add_option('--testecc', type = 'float', help = 'used for test')
+
+    parser.add_option('--version', type = 'str', help = 'code version')
     args, _ = parser.parse_args(argv)
 
     exe = args.executable
@@ -152,6 +155,13 @@ def main(argv = None):
         num_dtpeak = args.num_dtpeak
         max_dtpeak = args.max_dtpeak if args.max_dtpeak is not None else 100
         min_dtpeak = args.min_dtpeak if args.min_dtpeak is not None else -10
+        if args.delta_dtpeak:
+            if args.version is not 'Nv1':
+                dt_v4 = SNR.CalculateAdjParamsV4()[3]
+            else:
+                dt_v4 = get_new_dtpeak_nospin_Nv1(SNR.eta)
+            min_dtpeak = dt_v4 - args.delta_dtpeak
+            max_dtpeak = dt_v4 + args.delta_dtpeak
         dtpeak_range = (min_dtpeak, max_dtpeak)
     if per_start > per_end or np.abs(per_start - 0.5) > 0.5 or np.abs(per_end - 0.5) > 0.5:
         raise Exception('Invalid per_start or per_end')

@@ -57,9 +57,9 @@ def get_new_dtpeak_nospin_Nv3(eta):
     return 2.45459198 + 33.91443053 * eta + 186.55163593*np.power(eta,2) -1168.50878255 * np.power(eta,3)
 
 def get_ecc_range(SXSnum, min_ecc = None, max_ecc = None):
-    if SXSnum not in DEFAULT_ECC_ORBIT_DICT:
+    if SXSnum not in DEFAULT_ECC_ORBIT_DICT_V5:
         return None, -0.05, 0.05
-    f0, e0 = DEFAULT_ECC_ORBIT_DICT[SXSnum]
+    f0, e0 = DEFAULT_ECC_ORBIT_DICT_V5[SXSnum]
     min_e = e0 - 0.1
     max_e = e0 + 0.1
     if e0 > 0 and min_e < 0:
@@ -324,11 +324,7 @@ def main(argv = None):
         if isinstance(h22_wf, CEV):
             return -1
         
-        if FIT2D:
-            thpeak = np.abs(h22_wf.t0)
-            ithpeak = int(thpeak * h22_wf.srate)
-        else:
-            ithpeak = None
+        ithpeak = None
         fwfname = prefix / 'bestfitwaveform.dat'
         np.savetxt(fwfname, np.stack([h22_wf.time + h22_wf.t0, h22_wf.real, h22_wf.imag], axis = 1))
         if not is_full:

@@ -753,15 +753,17 @@ def GridSearch_KK_dtpeak(argv = None):
     parser.add_option('--srcloc', type = 'str', default = str(DEFAULT_SRCLOC), help = 'Path of SXS waveform data.')
     parser.add_option('--srcloc-all', type = 'str', default = str(DEFAULT_SRCLOC_ALL), help = 'Path of SXS waveform data all modes')
 
-    parser.add_option('--num-ecc', type = 'int', default = 50, help = 'numbers for grid search')
-    parser.add_option('--max-ecc', type = 'float', help = 'Upper bound of parameter')
-    parser.add_option('--min-ecc', type = 'float', help = 'Lower bound of parameter')
-    parser.add_option('--ecc', type = 'float', help = 'The specific ecc')
+    parser.add_option('--num-k', type = 'int', default = 50, help = 'numbers for grid search')
+    parser.add_option('--max-k', type = 'float', help = 'Upper bound of parameter')
+    parser.add_option('--min-k', type = 'float', help = 'Lower bound of parameter')
+    parser.add_option('--num-dtpeak', type = 'int', default = 50, help = 'numbers for grid search')
+    parser.add_option('--max-dtpeak', type = 'float', help = 'Upper bound of parameter')
+    parser.add_option('--min-dtpeak', type = 'float', help = 'Lower bound of parameter')
+
     parser.add_option('--eps', type = 'float', default = 1e-6, help = 'Thresh of div')
     parser.add_option('--mag', type = 'float', default = 10, help = 'Thresh of dx_init / dx (>1)')
     parser.add_option('--filter-thresh', type = 'float', default = 0.4, help = 'Thresh of grid search (<1)')
     parser.add_option('--max-step', type = 'int', default = 100, help = 'Max iter depth')
-    parser.add_option('--version', type = 'str', default = 'default', help = 'code version')
     args, _ = parser.parse_args(argv)
 
     exe = args.executable
@@ -775,15 +777,16 @@ def GridSearch_KK_dtpeak(argv = None):
     srcloc_all = args.srcloc_all
     psd = DetectorPSD(args.psd, flow = args.flow)
     ymode = args.ymode
-    max_ecc = args.max_ecc if args.max_ecc is not None else 0.5
-    min_ecc = args.min_ecc if args.min_ecc is not None else -0.5
-    f0, min_e, max_e = get_ecc_range(SXSnum, args.min_ecc, max_ecc)
-    if f0 is not None:
-        fini = f0
-        max_ecc = max_e
-        min_ecc = min_e
-    ecc_range = (min_ecc, max_ecc)
-    num_ecc = args.num_ecc
+    max_dtpeak = args.max_dtpeak if args.max_dtpeak is not None else 100
+    min_dtpeak = args.min_dtpeak if args.min_dtpeak is not None else -10
+    dtpeak_range = (min_dtpeak, max_dtpeak)
+    num_dtpeak = args.num_dtpeak
+
+    max_k = args.max_k if args.max_k is not None else 5
+    min_k = args.min_k if args.min_k is not None else 0
+    k_range = (min_k, max_k)
+    num_k = args.num_k
+
     eps = args.eps
     mag = args.mag
     filter_thresh = args.filter_thresh
@@ -797,51 +800,33 @@ def GridSearch_KK_dtpeak(argv = None):
                 srcloc_all = srcloc_all)
     ge = NR.construct_generator(approx, exe, psd = psd)
     pms0 = NR.CalculateAdjParamsV4()
-    KK_default = pms0[0]
     dSO_default = pms0[1]
     dSS_default = pms0[2]
-    version = args.version.lower()
-    for case in switch(version):
-        if case('nv1'):
-            dtpeak_fit = get_new_dtpeak_nospin_Nv1(NR.eta)
-            break
-        if case('nv1nohm'):
-            dtpeak_fit = get_new_dtpeak_nospin_Nv1nhm(NR.eta)
-            break
-        if case('nv5av2'):
-            dtpeak_fit = calc_dt_nsNv5Av2(NR.eta)
-            break
-        else:
-            dtpeak_fit = pms0[3]
-            break
 
-    def get_lnprob(ecc):
+    def get_lnprob(k, dtpeak):
         ret = ge.get_lnprob(jobtag = args.jobtag, timeout = args.timeout, mode = ymode,
-                    KK = KK_default, dSO = dSO_default, dSS = dSS_default, dtPeak = dtpeak_fit, ecc = ecc)
+                    KK = k, dSO = dSO_default, dSS = dSS_default, dtPeak = dtpeak, ecc = 0.0)
         return ret[0]
     prefix = Path(args.prefix)
     if not prefix.exists():
         prefix.mkdir(parents=True)
     
-    if args.ecc is not None:
-        ecc = args.ecc
-    elif SXSnum not in DEFAULT_ECC_ORBIT_DICT:
-        ecc = 0.0
-    else:
-        fsave = str(prefix / f'grid_{SXSnum}.txt')
-        if not prefix.exists():
-            prefix.mkdir(parents = True)
-        MG = MultiGrid1D(get_lnprob, ecc_range, num_ecc)
+    fsave = str(prefix / f'grid_{SXSnum}.txt')
+    if not prefix.exists():
+        prefix.mkdir(parents = True)
+    if not Path(fsave).exists():
+        MG = MultiGrid(get_lnprob, k_range, dtpeak_range, num_k, num_dtpeak)
         MG.run(fsave, eps = eps, magnification = mag, filter_thresh = filter_thresh, maxiter = max_step)
-        data = np.loadtxt(fsave)
-        ecc_grid, lnp_grid = data[:,0], data[:,1]
-        ecc = ecc_grid[np.argmax(lnp_grid)]
+    data = np.loadtxt(fsave)
+    k_grid, dtpeak_grid, lnp_grid = data[:,0], data[:,1], data[:,2]
+    k_fit = k_grid[np.argmax(lnp_grid)]
+    dtpeak_fit = dtpeak_grid[np.argmax(lnp_grid)]
     
     lnp, FF = ge.get_lnprob(jobtag = args.jobtag, timeout = args.timeout, mode = ymode,
-                    KK = KK_default, dSO = dSO_default, dSS = dSS_default, dtPeak = dtpeak_fit, ecc = ecc)
+                    KK = k_fit, dSO = dSO_default, dSS = dSS_default, dtPeak = dtpeak_fit, ecc = 0)
     h22_wf = ge.get_waveform(jobtag = args.jobtag, timeout = args.timeout, verbose = True,
-                    KK = KK_default, dSO = dSO_default, dSS = dSS_default, 
-                    dtPeak = dtpeak_fit, ecc = ecc, mode = ymode)
+                    KK = k_fit, dSO = dSO_default, dSS = dSS_default, 
+                    dtPeak = dtpeak_fit, ecc = 0, mode = ymode)
     wf_1, wf_2 = alignment(h22_wf, NR)
     plt.figure(figsize = (14, 7))
     plt.subplot(211)
@@ -861,11 +846,11 @@ def GridSearch_KK_dtpeak(argv = None):
     # Setting saveing prefix
     fresults = prefix / f'results_{SXSnum}_{ymode}.csv'
     # Setting Results savimg filename.
-    save_namecol(fresults, data = [['#q', '#chi1', '#chi2', '#Mtotal', '#FF', f'#ecc={ecc}']])
-    ret = ge.get_overlap(jobtag = args.jobtag, minecc = 0, maxecc = 0, eccentricity = ecc,
+    save_namecol(fresults, data = [['#q', '#chi1', '#chi2', '#Mtotal', '#FF', f'#ecc={0}']])
+    ret = ge.get_overlap(jobtag = args.jobtag, minecc = 0, maxecc = 0, eccentricity = 0,
                         timeout = args.timeout, verbose = True, Mtotal = Mtotal_list, 
-                        KK = KK_default, dSO = dSO_default, dSS = dSS_default, 
-                        dtPeak = dtpeak_fit, ecc = ecc, mode = ymode)
+                        KK = k_fit, dSO = dSO_default, dSS = dSS_default, 
+                        dtPeak = dtpeak_fit, ecc = 0, mode = ymode)
     length = len(Mtotal_list)
     q_list = NR.q*np.ones(len(Mtotal_list)).reshape(1,length)
     s1z_list = NR.s1z*np.ones(len(Mtotal_list)).reshape(1,length)

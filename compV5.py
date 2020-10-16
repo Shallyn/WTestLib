@@ -599,7 +599,7 @@ def GridSearch_ecc(argv = None):
     parser.add_option('--flow', type = 'float', default = 0, help = 'Lower frequency cut off for psd.')
     parser.add_option('--timeout', type = 'int', default = 60, help = 'Time limit for waveform generation')
     parser.add_option('--ymode', type = 'int', default = 22, help = 'The mode.')
-    parser.add_option('--oldecc', type = 'float', help = 'use old ecc or not')
+    parser.add_option('--oldecc', type = 'str', help = 'use old ecc or not')
 
     parser.add_option('--table', type = 'str', default = str(DEFAULT_TABLE), help = 'Path of SXS table.')
     parser.add_option('--srcloc', type = 'str', default = str(DEFAULT_SRCLOC), help = 'Path of SXS waveform data.')

@@ -583,7 +583,7 @@ def GridSearch_ecc(argv = None):
     parser.add_option('--executable', type = 'str', default = DEFAULT_EXEV5, help = 'Exe command')
     parser.add_option('--approx', type = 'str', default = 'SEOBNREv5', help = 'Version of the code')
     parser.add_option('--fini', type = 'float', default = 0, help = 'Initial orbital frequency')
-    parser.add_option('--SXS', type = 'str', default = '0071', help = 'SXS template for comparision')
+    parser.add_option('--SXS', type = 'str', action = 'append', default = [], help = 'SXS template for comparision')
     parser.add_option('--mtotal', type = 'float', default = 40, help = 'Total mass')
     parser.add_option('--srate', type = 'float', default = 16384, help = 'Sample rate')
  
@@ -594,6 +594,7 @@ def GridSearch_ecc(argv = None):
     parser.add_option('--flow', type = 'float', default = 0, help = 'Lower frequency cut off for psd.')
     parser.add_option('--timeout', type = 'int', default = 60, help = 'Time limit for waveform generation')
     parser.add_option('--ymode', type = 'int', default = 22, help = 'The mode.')
+    parser.add_option('--oldecc', type = 'float', help = 'use old ecc or not')
 
     parser.add_option('--table', type = 'str', default = str(DEFAULT_TABLE), help = 'Path of SXS table.')
     parser.add_option('--srcloc', type = 'str', default = str(DEFAULT_SRCLOC), help = 'Path of SXS waveform data.')
@@ -612,7 +613,9 @@ def GridSearch_ecc(argv = None):
 
     exe = args.executable
     approx = args.approx
-    SXSnum = args.SXS
+    SXSnum_list = args.SXS
+    if len(SXSnum_list) == 0:
+        SXSnum_list.append('0001')
     mtotal = args.mtotal
     fini = args.fini
     srate = args.srate
@@ -623,104 +626,121 @@ def GridSearch_ecc(argv = None):
     ymode = args.ymode
     max_ecc = args.max_ecc if args.max_ecc is not None else 0.5
     min_ecc = args.min_ecc if args.min_ecc is not None else -0.5
-    f0, min_e, max_e = get_ecc_range(SXSnum, args.min_ecc, max_ecc)
-    if f0 is not None:
-        fini = f0
-        max_ecc = max_e
-        min_ecc = min_e
-    ecc_range = (min_ecc, max_ecc)
-    num_ecc = args.num_ecc
     eps = args.eps
     mag = args.mag
     filter_thresh = args.filter_thresh
     max_step = args.max_step
-    NR = SXSh22(SXSnum = SXSnum,
-                f_ini = fini,
-                Mtotal = mtotal,
-                srate = srate,
-                srcloc = srcloc,
-                table = table,
-                srcloc_all = srcloc_all)
-    ge = NR.construct_generator(approx, exe, psd = psd)
-    pms0 = NR.CalculateAdjParamsV4()
-    KK_default = pms0[0]
-    dSO_default = pms0[1]
-    dSS_default = pms0[2]
-    version = args.version.lower()
-    for case in switch(version):
-        if case('nv1'):
-            dtpeak_fit = get_new_dtpeak_nospin_Nv1(NR.eta)
-            break
-        if case('nv1nohm'):
-            dtpeak_fit = get_new_dtpeak_nospin_Nv1nhm(NR.eta)
-            break
-        if case('nv5av2'):
-            dtpeak_fit = calc_dt_nsNv5Av2(NR.eta)
-            break
-        else:
-            dtpeak_fit = pms0[3]
-            break
 
-    def get_lnprob(ecc):
-        ret = ge.get_lnprob(jobtag = args.jobtag, timeout = args.timeout, mode = ymode,
-                    KK = KK_default, dSO = dSO_default, dSS = dSS_default, dtPeak = dtpeak_fit, ecc = ecc)
-        return ret[0]
-    prefix = Path(args.prefix)
-    if not prefix.exists():
-        prefix.mkdir(parents=True)
-    
-    if args.ecc is not None:
-        ecc = args.ecc
-    elif SXSnum not in DEFAULT_ECC_ORBIT_DICT:
-        ecc = 0.0
-    else:
-        fsave = str(prefix / f'grid_{SXSnum}.txt')
+    prefix_all = Path(args.prefix)
+    if not prefix_all.exists():
+        prefix_all.mkdir(parents=True)
+    fname_collect = prefix_all / 'collect.csv'
+    collect_title = [['SXSid', 'ecc', 'FF', 'lnp']]
+    if not fname_collect.exists():
+        save_namecol(fname_collect, collect_title)
+    for SXSnum in SXSnum_list:
+        f0, min_e, max_e = get_ecc_range(SXSnum, args.min_ecc, max_ecc)
+        if f0 is not None:
+            fini = f0
+            max_ecc = max_e
+            min_ecc = min_e
+        ecc_range = (min_ecc, max_ecc)
+        num_ecc = args.num_ecc
+        NR = SXSh22(SXSnum = SXSnum,
+                    f_ini = fini,
+                    Mtotal = mtotal,
+                    srate = srate,
+                    srcloc = srcloc,
+                    table = table,
+                    srcloc_all = srcloc_all)
+        ge = NR.construct_generator(approx, exe, psd = psd)
+        pms0 = NR.CalculateAdjParamsV4()
+        KK_default = pms0[0]
+        dSO_default = pms0[1]
+        dSS_default = pms0[2]
+        version = args.version.lower()
+        for case in switch(version):
+            if case('nv1'):
+                dtpeak_fit = get_new_dtpeak_nospin_Nv1(NR.eta)
+                break
+            if case('nv1nohm'):
+                dtpeak_fit = get_new_dtpeak_nospin_Nv1nhm(NR.eta)
+                break
+            if case('nv5av2'):
+                dtpeak_fit = calc_dt_nsNv5Av2(NR.eta)
+                break
+            else:
+                dtpeak_fit = pms0[3]
+                break
+
+        def get_lnprob(ecc):
+            ret = ge.get_lnprob(jobtag = args.jobtag, timeout = args.timeout, mode = ymode,
+                        KK = KK_default, dSO = dSO_default, dSS = dSS_default, dtPeak = dtpeak_fit, ecc = ecc)
+            return ret[0]
+        
+        oldecc = None
+        v_oldecc = args.oldecc
+        for case in switch(v_oldecc):
+            oldecc = None
+            break
+        prefix = prefix_all / SXSnum
         if not prefix.exists():
-            prefix.mkdir(parents = True)
-        MG = MultiGrid1D(get_lnprob, ecc_range, num_ecc)
-        MG.run(fsave, eps = eps, magnification = mag, filter_thresh = filter_thresh, maxiter = max_step)
-        data = np.loadtxt(fsave)
-        ecc_grid, lnp_grid = data[:,0], data[:,1]
-        ecc = ecc_grid[np.argmax(lnp_grid)]
-    
-    lnp, FF = ge.get_lnprob(jobtag = args.jobtag, timeout = args.timeout, mode = ymode,
-                    KK = KK_default, dSO = dSO_default, dSS = dSS_default, dtPeak = dtpeak_fit, ecc = ecc)
-    h22_wf = ge.get_waveform(jobtag = args.jobtag, timeout = args.timeout, verbose = True,
-                    KK = KK_default, dSO = dSO_default, dSS = dSS_default, 
-                    dtPeak = dtpeak_fit, ecc = ecc, mode = ymode)
-    wf_1, wf_2 = alignment(h22_wf, NR)
-    plt.figure(figsize = (14, 7))
-    plt.subplot(211)
-    plt.title(f'lnp={lnp},FF={FF}')
-    plt.plot(wf_1.time, wf_1.amp, label = f'EOB_{ymode}')
-    plt.plot(wf_2.time, wf_2.amp, label = f'NR_{ymode}')
-    plt.legend()
-    plt.subplot(212)
-    plt.title(f'lnp={lnp},FF={FF}')
-    plt.plot(wf_1.time, wf_1.phaseFrom0, label = f'EOB_{ymode}')
-    plt.plot(wf_2.time, wf_2.phaseFrom0, label = f'NR_{ymode}')
-    plt.legend()
-    plt.savefig(prefix / f'AmpPhase.png', dpi = 200)
-    plt.close()
+            prefix.mkdir(parents=True)
 
-    Mtotal_list = np.linspace(10, 200, 500)
-    # Setting saveing prefix
-    fresults = prefix / f'results_{SXSnum}_{ymode}.csv'
-    # Setting Results savimg filename.
-    save_namecol(fresults, data = [['#q', '#chi1', '#chi2', '#Mtotal', '#FF', f'#ecc={ecc}']])
-    ret = ge.get_overlap(jobtag = args.jobtag, minecc = 0, maxecc = 0, eccentricity = ecc,
-                        timeout = args.timeout, verbose = True, Mtotal = Mtotal_list, 
+        if args.ecc is not None:
+            ecc = args.ecc
+        elif SXSnum not in DEFAULT_ECC_ORBIT_DICT:
+            ecc = 0.0
+        elif oldecc is not None:
+            ecc = oldecc
+        else:
+            fsave = str(prefix / f'grid_{SXSnum}.txt')
+            if not prefix.exists():
+                prefix.mkdir(parents = True)
+            MG = MultiGrid1D(get_lnprob, ecc_range, num_ecc)
+            MG.run(fsave, eps = eps, magnification = mag, filter_thresh = filter_thresh, maxiter = max_step)
+            data = np.loadtxt(fsave)
+            ecc_grid, lnp_grid = data[:,0], data[:,1]
+            ecc = ecc_grid[np.argmax(lnp_grid)]
+        
+        lnp, FF = ge.get_lnprob(jobtag = args.jobtag, timeout = args.timeout, mode = ymode,
+                        KK = KK_default, dSO = dSO_default, dSS = dSS_default, dtPeak = dtpeak_fit, ecc = ecc)
+        h22_wf = ge.get_waveform(jobtag = args.jobtag, timeout = args.timeout, verbose = True,
                         KK = KK_default, dSO = dSO_default, dSS = dSS_default, 
                         dtPeak = dtpeak_fit, ecc = ecc, mode = ymode)
-    length = len(Mtotal_list)
-    q_list = NR.q*np.ones(len(Mtotal_list)).reshape(1,length)
-    s1z_list = NR.s1z*np.ones(len(Mtotal_list)).reshape(1,length)
-    s2z_list = NR.s2z*np.ones(len(Mtotal_list)).reshape(1,length)
-    FF_list = ret[2].reshape(1,length)
-    Mtotal_list_out = Mtotal_list.reshape(1, length)
-    data = np.concatenate((q_list, s1z_list, s2z_list, Mtotal_list_out, FF_list), axis = 0)
-    add_csv(fresults, data.T.tolist())
+        wf_1, wf_2 = alignment(h22_wf, NR)
+        plt.figure(figsize = (14, 7))
+        plt.subplot(211)
+        plt.title(f'lnp={lnp},FF={FF}')
+        plt.plot(wf_1.time, wf_1.amp, label = f'EOB_{ymode}')
+        plt.plot(wf_2.time, wf_2.amp, label = f'NR_{ymode}')
+        plt.legend()
+        plt.subplot(212)
+        plt.title(f'lnp={lnp},FF={FF}')
+        plt.plot(wf_1.time, wf_1.phaseFrom0, label = f'EOB_{ymode}')
+        plt.plot(wf_2.time, wf_2.phaseFrom0, label = f'NR_{ymode}')
+        plt.legend()
+        plt.savefig(prefix / f'AmpPhase.png', dpi = 200)
+        plt.close()
 
+        Mtotal_list = np.linspace(10, 200, 500)
+        # Setting saveing prefix
+        fresults = prefix / f'results_{SXSnum}_{ymode}.csv'
+        # Setting Results savimg filename.
+        save_namecol(fresults, data = [['#q', '#chi1', '#chi2', '#Mtotal', '#FF', f'#ecc={ecc}']])
+        ret = ge.get_overlap(jobtag = args.jobtag, minecc = 0, maxecc = 0, eccentricity = ecc,
+                            timeout = args.timeout, verbose = True, Mtotal = Mtotal_list, 
+                            KK = KK_default, dSO = dSO_default, dSS = dSS_default, 
+                            dtPeak = dtpeak_fit, ecc = ecc, mode = ymode)
+        length = len(Mtotal_list)
+        q_list = NR.q*np.ones(len(Mtotal_list)).reshape(1,length)
+        s1z_list = NR.s1z*np.ones(len(Mtotal_list)).reshape(1,length)
+        s2z_list = NR.s2z*np.ones(len(Mtotal_list)).reshape(1,length)
+        FF_list = ret[2].reshape(1,length)
+        Mtotal_list_out = Mtotal_list.reshape(1, length)
+        data = np.concatenate((q_list, s1z_list, s2z_list, Mtotal_list_out, FF_list), axis = 0)
+        add_csv(fresults, data.T.tolist())
+        add_csv(fname_collect, [[SXSnum, ecc, FF, lnp]])
     return 0
 
 

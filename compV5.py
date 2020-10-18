@@ -11,11 +11,55 @@ import matplotlib.pyplot as plt
 from .psd import DetectorPSD
 from .Utils import switch
 from .SXS import DEFAULT_TABLE, DEFAULT_SRCLOC, DEFAULT_SRCLOC_ALL, SXSh22, CEV
-from .h22datatype import h22_alignment, dim_t
+from .h22datatype import h22_alignment, dim_t, ModeBase
 from .SXSlist import DEFAULT_ECC_ORBIT_DICT, DEFAULT_ECC_ORBIT_DICT_V5
 from optparse import OptionParser
 from .MultiGrid import MultiGrid1D, MultiGrid
 from pathlib import Path
+
+class V5Dynamics(object):
+    def __init__(self, dydata):
+        #time #r #phi #dr #dphi #prT #pphi #dprT #dpphi #ham
+        self._time = dydata[:,0]
+        self._r = dydata[:,1]
+        self._phi = dydata[:,2]
+        self._dr = dydata[:,3]
+        self._dphi = dydata[:,4]
+        self._prT = dydata[:,5]
+        self._pphi = dydata[:,6]
+        self._dprT = dydata[:,7]
+        self._dpphi = dydata[:,8]
+        self._ham = dydata[:,9]
+    @property
+    def time(self):
+        return self._time
+    @property
+    def r(self):
+        return self._r
+    @property
+    def phi(self):
+        return self._phi
+    @property
+    def dr(self):
+        return self._dr
+    @property
+    def dphi(self):
+        return self._dphi
+    @property
+    def prT(self):
+        return self._prT
+    @property
+    def pphi(self):
+        return self._pphi
+    @property
+    def dprT(self):
+        return self._dprT
+    @property
+    def dpphi(self):
+        return self._dpphi
+    @property
+    def ham(self):
+        return self._ham
 
 def alignment(wfA, wfB, ithpeak = None):
     fs_A = wfA.srate
@@ -715,7 +759,7 @@ def GridSearch_ecc(argv = None):
                         KK = KK_default, dSO = dSO_default, dSS = dSS_default, dtPeak = dtpeak_fit, ecc = ecc)
         h22_wf = ge.get_waveform(jobtag = args.jobtag, timeout = args.timeout, verbose = True,
                         KK = KK_default, dSO = dSO_default, dSS = dSS_default, 
-                        dtPeak = dtpeak_fit, ecc = ecc, mode = ymode)
+                        dtPeak = dtpeak_fit, ecc = ecc, mode = ymode, dump = str(prefix))
         wf_1, wf_2 = alignment(h22_wf, NR)
         plt.figure(figsize = (14, 7))
         plt.subplot(211)
@@ -730,7 +774,41 @@ def GridSearch_ecc(argv = None):
         plt.legend()
         plt.savefig(prefix / f'AmpPhase.png', dpi = 200)
         plt.close()
+        # plot dynamics & nqc
+        fLowNQC = prefix / 'waveformLowNQC.dat'
+        fLowhNoNQC = prefix / 'waveformLowSRnoNQC.dat'
+        fLowDy = prefix / 'dynamics.dat'
+        if fLowNQC.exists() and fLowhNoNQC.exists() and fLowDy.exists():
+            data = np.loadtxt(fLowNQC)
+            tNQC, hrNQC, hiNQC = data[:,0], data[:,1], data[:,2]
+            hNQC = ModeBase(tNQC, hrNQC, hiNQC)
+            data = np.loadtxt(fLowhNoNQC)
+            tLow, hrL, hiL = data[:,0], data[:,1], data[:,2]
+            hLow = ModeBase(tLow, hrL, hiL)
+            data = np.loadtxt(fLowDy)
+            dy = V5Dynamics(data)
 
+            plt.figure(figsize = (16, 16))
+            plt.subplot(411)
+            plt.plot(wf_1.time, wf_1.amp, label = f'EOB_{ymode}')
+            plt.plot(wf_2.time, wf_2.amp, label = f'NR_{ymode}')
+            plt.legend()
+            
+            plt.subplot(412)
+            plt.plot(tLow, hLow.amp, label = 'ampLow')
+            plt.legend()
+
+            plt.subplot(413)
+            plt.plot(tNQC, hNQC.amp, label = 'ampNQC')
+            plt.legend()
+
+            plt.subplot(414)
+            plt.plot(dy.time, np.power(dy.prT / dy.r / dy.dphi, 2), label = 'prT/rOmega')
+            plt.legend()
+
+            plt.savefig(prefix / 'dyNQC.png', dpi = 200)
+            plt.close()
+        
         Mtotal_list = np.linspace(10, 200, 500)
         # Setting saveing prefix
         fresults = prefix / f'results_{SXSnum}_{ymode}.csv'

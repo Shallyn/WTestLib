@@ -793,9 +793,9 @@ def GridSearch_ecc(argv = None):
             plt.plot(wf_1.time, wf_1.amp, label = f'EOB_{ymode}')
             plt.plot(wf_2.time, wf_2.amp, label = f'NR_{ymode}')
             plt.legend()
-            
+
             plt.subplot(412)
-            plt.plot(tLow, hLow.amp, label = 'ampLow')
+            plt.plot(tLow, hLow.amp, label = 'ampLowNoNQC')
             plt.legend()
 
             plt.subplot(413)
@@ -806,9 +806,37 @@ def GridSearch_ecc(argv = None):
             plt.plot(dy.time, np.power(dy.prT / dy.r / dy.dphi, 2), label = 'prT/rOmega')
             plt.legend()
 
-            plt.savefig(prefix / 'dyNQC.png', dpi = 200)
+            plt.savefig(prefix / 'dyNQCLow.png', dpi = 200)
             plt.close()
-        
+        fHigh = prefix / 'waveformHiNoNQC.dat'
+        fHiDy = prefix / 'dynamicsHi.dat'
+        if fHigh.exists() and fHiDy.exists():
+            data = np.loadtxt(fHigh)
+            tHi, hrHi, hiHi = data[:,0], data[:,1], data[:,2]
+            hHi = ModeBase(tHi, hrHi, hiHi)
+            data = np.loadtxt(fHiDy)
+            dyHi = V5Dynamics(data)
+            
+            plt.figure(figsize = (16, 12))
+            plt.subplot(311)
+            plt.plot(wf_1.time, wf_1.amp, label = f'EOB_{ymode}', linestyle = '--')
+            plt.plot(tHi, hHi.amp, label = 'ampNoNQC')
+            plt.xlim([tHi[0]*0.95, tHi[-1]*1.05])
+            plt.legend()
+
+            plt.subplot(312)
+            plt.plot(wf_2.time, wf_2.amp, label = f'NR_{ymode}')
+            plt.plot(tHi, hHi.amp, label = 'ampNoNQC')
+            plt.xlim([tHi[0]*0.95, tHi[-1]*1.05])
+            plt.legend()
+
+            plt.subplot(313)
+            plt.plot(dy.time, np.power(dyHi.prT / dyHi.r / dyHi.dphi, 2), label = 'prT/rOmega')
+            plt.xlim([tHi[0]*0.95, tHi[-1]*1.05])
+            plt.legend()
+            plt.savefig(prefix / 'dyNQCHigh.png', label = 200)
+            plt.close()
+
         Mtotal_list = np.linspace(10, 200, 500)
         # Setting saveing prefix
         fresults = prefix / f'results_{SXSnum}_{ymode}.csv'

@@ -831,7 +831,7 @@ def GridSearch_ecc(argv = None):
             plt.legend()
 
             plt.subplot(313)
-            plt.plot(dy.time, np.power(dyHi.prT / dyHi.r / dyHi.dphi, 2), label = 'prT/rOmega')
+            plt.plot(dyHi.time, np.power(dyHi.prT / dyHi.r / dyHi.dphi, 2), label = 'prT/rOmega')
             plt.xlim([tHi[0]*0.95, tHi[-1]*1.05])
             plt.legend()
             plt.savefig(prefix / 'dyNQCHigh.png', label = 200)

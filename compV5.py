@@ -61,7 +61,8 @@ class V5Dynamics(object):
     def ham(self):
         return self._ham
 
-def alignment(wfA, wfB, ithpeak = None):
+def alignment(wfA, wfB, ithpeak = None, ret_tmove = False):
+    #if cut wfA, tmove > 0, else tmove < 0
     fs_A = wfA.srate
     fs_B = wfB.srate
     if fs_A != fs_B:
@@ -77,6 +78,7 @@ def alignment(wfA, wfB, ithpeak = None):
     else:
         idx_A = 0
         idx_B = ipeak_B - ipeak_A
+    tmove = (ipeak_A - ipeak_B) / fs_A
     wfA = wfA[idx_A:]
     wfB = wfB[idx_B:]
     lenA = len(wfA)
@@ -91,6 +93,8 @@ def alignment(wfA, wfB, ithpeak = None):
     else:
         lpad = tail_B - tail_A
         wfA.pad((0,lpad), 'constant')
+    if ret_tmove:
+        return wfA, wfB, tmove
     return wfA, wfB
 
 def get_new_dtpeak_nospin_Nv1(eta):
@@ -760,7 +764,9 @@ def GridSearch_ecc(argv = None):
         h22_wf = ge.get_waveform(jobtag = args.jobtag, timeout = args.timeout, verbose = True,
                         KK = KK_default, dSO = dSO_default, dSS = dSS_default, 
                         dtPeak = dtpeak_fit, ecc = ecc, mode = ymode, dump = str(prefix))
-        wf_1, wf_2 = alignment(h22_wf, NR)
+        wf_1, wf_2, tmove = alignment(h22_wf, NR, ret_tmove = True)
+        if tmove < 0:
+            tmove = 0.0
         plt.figure(figsize = (14, 7))
         plt.subplot(211)
         plt.title(f'lnp={lnp},FF={FF}')
@@ -778,6 +784,7 @@ def GridSearch_ecc(argv = None):
         fLowNQC = prefix / 'waveformLowNQC.dat'
         fLowhNoNQC = prefix / 'waveformLowSRnoNQC.dat'
         fLowDy = prefix / 'dynamics.dat'
+        dimt = dim_t(NR.Mtotal)
         if fLowNQC.exists() and fLowhNoNQC.exists() and fLowDy.exists():
             data = np.loadtxt(fLowNQC)
             tNQC, hrNQC, hiNQC = data[:,0], data[:,1], data[:,2]
@@ -790,12 +797,13 @@ def GridSearch_ecc(argv = None):
 
             plt.figure(figsize = (16, 16))
             plt.subplot(411)
-            plt.plot(wf_1.time, wf_1.amp, label = f'EOB_{ymode}')
-            plt.plot(wf_2.time, wf_2.amp, label = f'NR_{ymode}')
+            plt.plot((wf_1.time + tmove)*dimt, wf_1.amp, label = f'EOB_{ymode}')
+            plt.plot((wf_2.time + tmove)*dimt, wf_2.amp, label = f'NR_{ymode}')
             plt.legend()
 
             plt.subplot(412)
             plt.plot(tLow, hLow.amp, label = 'ampLowNoNQC')
+            plt.plot((wf_2.time+tmove) * dimt, wf_2.amp, label = f'NR_{ymode}')
             plt.legend()
 
             plt.subplot(413)
@@ -808,6 +816,7 @@ def GridSearch_ecc(argv = None):
 
             plt.savefig(prefix / 'dyNQCLow.png', dpi = 200)
             plt.close()
+            os.system(f'rm {fLowDy}')
         fHigh = prefix / 'waveformHiNoNQC.dat'
         fHiDy = prefix / 'dynamicsHi.dat'
         if fHigh.exists() and fHiDy.exists():
@@ -819,13 +828,13 @@ def GridSearch_ecc(argv = None):
             
             plt.figure(figsize = (16, 12))
             plt.subplot(311)
-            plt.plot(wf_1.time, wf_1.amp, label = f'EOB_{ymode}', linestyle = '--')
+            plt.plot((wf_1.time+tmove)*dimt, wf_1.amp, label = f'EOB_{ymode}', linestyle = '--')
             plt.plot(tHi, hHi.amp, label = 'ampNoNQC')
             plt.xlim([tHi[0]*0.95, tHi[-1]*1.05])
             plt.legend()
 
             plt.subplot(312)
-            plt.plot(wf_2.time, wf_2.amp, label = f'NR_{ymode}')
+            plt.plot((wf_2.time+tmove)*dimt, wf_2.amp, label = f'NR_{ymode}')
             plt.plot(tHi, hHi.amp, label = 'ampNoNQC')
             plt.xlim([tHi[0]*0.95, tHi[-1]*1.05])
             plt.legend()

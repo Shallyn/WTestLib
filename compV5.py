@@ -844,7 +844,7 @@ def GridSearch_ecc(argv = None):
             ax1_ln1 = ax1.plot((wf_1.time+tmove)*dimt, wf_1.amp, label = f'EOB_{ymode}', linestyle = '--', alpha = 0.7)
             ax1_ln2 = ax1.plot((wf_2.time+tmove)*dimt, wf_2.amp, label = f'NR_{ymode}', color = 'black', alpha = 0.6)
             ax1_ln3 = ax1.plot(tHi, hHi.amp, label = 'ampNoNQC')
-            ax2 = ax1.twix()
+            ax2 = ax1.twinx()
             ax2_ln1 = ax2.plot(dyHi.time, np.power(dyHi.prT / dyHi.r / dyHi.dphi, 2), label = r'$(prT/rOmega)^2$')
             ax2.set_yscale('log')
             ax1.set_xlim([tHi[0]*0.95, tHi[-1]*1.05])

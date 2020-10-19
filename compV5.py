@@ -784,16 +784,19 @@ def GridSearch_ecc(argv = None):
         fLowNQC = prefix / 'waveformLowNQC.dat'
         fLowhNoNQC = prefix / 'waveformLowSRnoNQC.dat'
         fLowDy = prefix / 'dynamics.dat'
+        fHigh = prefix / 'waveformHiNoNQC.dat'
+        fHiDy = prefix / 'dynamicsHi.dat'
         dimt = dim_t(NR.Mtotal)
-        if fLowNQC.exists() and fLowhNoNQC.exists() and fLowDy.exists():
+        if fLowNQC.exists() and fLowhNoNQC.exists() and fLowDy.exists() and fHigh.exists() and fHiDy.exists():
             data = np.loadtxt(fLowNQC)
             tNQC, hrNQC, hiNQC, nWind, nqcPreO = data[:,0], data[:,1], data[:,2], data[:,3], data[:,4]
             hNQC = ModeBase(tNQC, hrNQC, hiNQC)
             data = np.loadtxt(fLowhNoNQC)
             tLow, hrL, hiL = data[:,0], data[:,1], data[:,2]
             hLow = ModeBase(tLow, hrL, hiL)
-            data = np.loadtxt(fLowDy)
-            dy = V5Dynamics(data)
+            data = np.loadtxt(fHigh)
+            tHi, hrHi, hiHi = data[:,0], data[:,1], data[:,2]
+            hHi = ModeBase(tHi, hrHi, hiHi)
 
             fig = plt.figure(figsize = (16, 8))
             ax1 = fig.add_subplot(211)
@@ -801,7 +804,7 @@ def GridSearch_ecc(argv = None):
             ax1_ln2 = ax1.plot((wf_2.time + tmove)*dimt, wf_2.amp, label = f'NR_{ymode}', alpha = 0.6, color ='black')
             ax1_ln3 = ax1.plot(tLow, hLow.amp, label = 'ampLowNoNQC')
             ax2 = ax1.twinx()
-            ax2_ln1 = ax2.plot(tNQC, nWind, label = 'nWind')
+            ax2_ln1 = ax2.plot(tNQC, nWind, label = 'nWind', color = 'purple', linestyle = '--', alpha = 0.5)
             ax12_lns = ax1_ln1 + ax1_ln2 + ax1_ln3 + ax2_ln1
             ax12_labs = [l.get_label() for l in ax12_lns]
             ax1.legend(ax12_lns, ax12_labs)
@@ -809,7 +812,8 @@ def GridSearch_ecc(argv = None):
             ax1.set_xlabel('t[M]')
             ax1.set_ylabel('h')
             ax2.set_ylabel('nqcWindow')
-            
+            ax1.set_xlim([tHi[0]*0.99, tHi[-1]*1.01])
+
             ax3 = fig.add_subplot(212)
             ax3_ln1 = ax3.plot(tNQC, hNQC.amp, label = 'ampNQC')
             ax4 = ax3.twinx()
@@ -822,6 +826,7 @@ def GridSearch_ecc(argv = None):
             ax3.set_xlabel('time[M]')
             ax3.set_ylabel('hNQC')
             ax4.set_ylabel(r'$(prT/rOmega)^2$')
+            ax3.set_xlim([tHi[0]*0.99, tHi[-1]*1.005])
 
             plt.savefig(prefix / 'dyNQCLow.png', dpi = 200)
             plt.close()
@@ -829,12 +834,6 @@ def GridSearch_ecc(argv = None):
             os.system(f'rm {fLowhNoNQC}')
             os.system(f'rm {fLowNQC}')
 
-        fHigh = prefix / 'waveformHiNoNQC.dat'
-        fHiDy = prefix / 'dynamicsHi.dat'
-        if fHigh.exists() and fHiDy.exists():
-            data = np.loadtxt(fHigh)
-            tHi, hrHi, hiHi = data[:,0], data[:,1], data[:,2]
-            hHi = ModeBase(tHi, hrHi, hiHi)
             data = np.loadtxt(fHiDy)
             dyHi = V5Dynamics(data)
             
@@ -846,8 +845,8 @@ def GridSearch_ecc(argv = None):
             ax2 = ax1.twinx()
             ax2_ln1 = ax2.plot(dyHi.time, np.power(dyHi.prT / dyHi.r / dyHi.dphi, 2), label = r'$(prT/rOmega)^2$', color = 'red')
             ax2.set_yscale('log')
-            ax1.set_xlim([tHi[0]*0.99, tHi[-1]*1.01])
-            ax12_lns = ax1_ln1 + ax1_ln2 + ax2_ln1
+            ax1.set_xlim([tHi[0]*0.999, tHi[-1]*1.001])
+            ax12_lns = ax1_ln1 + ax1_ln2 + ax1_ln3 + ax2_ln1
             ax12_labs = [l.get_label() for l in ax12_lns]
             ax1.legend(ax12_lns, ax12_labs)
             ax2.grid()

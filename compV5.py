@@ -800,7 +800,6 @@ def GridSearch_ecc(argv = None):
             ax1_ln1 = ax1.plot((wf_1.time + tmove)*dimt, wf_1.amp, label = f'EOB_{ymode}', linestyle = '--', alpha = 0.7)
             ax1_ln2 = ax1.plot((wf_2.time + tmove)*dimt, wf_2.amp, label = f'NR_{ymode}', alpha = 0.6, color ='black')
             ax1_ln3 = ax1.plot(tLow, hLow.amp, label = 'ampLowNoNQC')
-            ax1.set_yscale('log')
             ax2 = ax1.twinx()
             ax2_ln1 = ax2.plot(tNQC, nWind, label = 'nWind')
             ax12_lns = ax1_ln1 + ax1_ln2 + ax1_ln3 + ax2_ln1
@@ -845,14 +844,14 @@ def GridSearch_ecc(argv = None):
             ax1_ln2 = ax1.plot((wf_2.time+tmove)*dimt, wf_2.amp, label = f'NR_{ymode}', color = 'black', alpha = 0.6)
             ax1_ln3 = ax1.plot(tHi, hHi.amp, label = 'ampNoNQC')
             ax2 = ax1.twinx()
-            ax2_ln1 = ax2.plot(dyHi.time, np.power(dyHi.prT / dyHi.r / dyHi.dphi, 2), label = r'$(prT/rOmega)^2$')
+            ax2_ln1 = ax2.plot(dyHi.time, np.power(dyHi.prT / dyHi.r / dyHi.dphi, 2), label = r'$(prT/rOmega)^2$', color = 'red')
             ax2.set_yscale('log')
-            ax1.set_xlim([tHi[0]*0.95, tHi[-1]*1.05])
+            ax1.set_xlim([tHi[0]*0.99, tHi[-1]*1.01])
             ax12_lns = ax1_ln1 + ax1_ln2 + ax2_ln1
             ax12_labs = [l.get_label() for l in ax12_lns]
             ax1.legend(ax12_lns, ax12_labs)
             ax2.grid()
-            plt.savefig(prefix / 'dyNQCHigh.png', label = 200)
+            plt.savefig(prefix / 'dyNQCHigh.png', dpi = 200)
             plt.close()
 
         Mtotal_list = np.linspace(10, 200, 500)

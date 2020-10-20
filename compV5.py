@@ -710,7 +710,6 @@ def GridSearch_ecc(argv = None):
         if not prefixSXS.exists():
             prefixSXS.mkdir(parents=True)
         for ymode in ymodeDict:
-            SKIP = False
             srcloc, fname_collect, prefixM = ymodeDict[ymode]
             f0, min_e, max_e = get_ecc_range(SXSnum, args.min_ecc, max_ecc)
             if f0 is not None:
@@ -726,7 +725,7 @@ def GridSearch_ecc(argv = None):
                         srcloc = srcloc,
                         table = table,
                         srcloc_all = srcloc_all)
-            if (ymode % 10) % 2 and NR.q == 1 and NR.s1z == 0 and NR.s2z == 0:
+            if (ymode % 10) % 2 and NR.q == 1 and NR.s1z ==  NR.s2z:
                 continue
             ge = NR.construct_generator(approx, exe, psd = psd)
             pms0 = NR.CalculateAdjParamsV4()

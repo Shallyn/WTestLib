@@ -646,11 +646,13 @@ def GridSearch_ecc(argv = None):
     parser.add_option('--psd', type = 'str', help = 'Detector psd.')
     parser.add_option('--flow', type = 'float', default = 0, help = 'Lower frequency cut off for psd.')
     parser.add_option('--timeout', type = 'int', default = 60, help = 'Time limit for waveform generation')
-    parser.add_option('--ymode', type = 'int', default = 22, help = 'The mode.')
     parser.add_option('--oldecc', type = 'str', help = 'use old ecc or not')
 
     parser.add_option('--table', type = 'str', default = str(DEFAULT_TABLE), help = 'Path of SXS table.')
-    parser.add_option('--srcloc', type = 'str', default = str(DEFAULT_SRCLOC), help = 'Path of SXS waveform data.')
+    parser.add_option('--srcloc22', type = 'str', default = str(DEFAULT_SRCLOC), help = 'Path of SXS waveform data.')
+    parser.add_option('--srcloc21', type = 'str', default = str(DEFAULT_SRCLOC), help = 'Path of SXS waveform data.')
+    parser.add_option('--srcloc33', type = 'str', default = str(DEFAULT_SRCLOC), help = 'Path of SXS waveform data.')
+    parser.add_option('--srcloc44', type = 'str', default = str(DEFAULT_SRCLOC), help = 'Path of SXS waveform data.')
     parser.add_option('--srcloc-all', type = 'str', default = str(DEFAULT_SRCLOC_ALL), help = 'Path of SXS waveform data all modes')
 
     parser.add_option('--num-ecc', type = 'int', default = 50, help = 'numbers for grid search')
@@ -673,10 +675,13 @@ def GridSearch_ecc(argv = None):
     fini = args.fini
     srate = args.srate
     table = args.table
-    srcloc = args.srcloc
+    srcloc22 = args.srcloc22
+    srcloc21 = args.srcloc21
+    srcloc33 = args.srcloc33
+    srcloc44 = args.srcloc44
+
     srcloc_all = args.srcloc_all
     psd = DetectorPSD(args.psd, flow = args.flow)
-    ymode = args.ymode
     max_ecc = args.max_ecc if args.max_ecc is not None else 0.5
     min_ecc = args.min_ecc if args.min_ecc is not None else -0.5
     eps = args.eps
@@ -684,193 +689,199 @@ def GridSearch_ecc(argv = None):
     filter_thresh = args.filter_thresh
     max_step = args.max_step
 
+
     prefix_all = Path(args.prefix)
     if not prefix_all.exists():
         prefix_all.mkdir(parents=True)
-    fname_collect = prefix_all / 'collect.csv'
-    collect_title = [['SXSid', 'ecc', 'FF', 'lnp']]
-    if not fname_collect.exists():
-        save_namecol(fname_collect, collect_title)
+    ymodeDict = {22: (srcloc22, prefix_all / 'collect_22.csv', prefix_all / 'MtotalFF_22'),
+                 21: (srcloc21, prefix_all / 'collect_21.csv', prefix_all / 'MtotalFF_21'),
+                 33: (srcloc33, prefix_all / 'collect_21.csv', prefix_all / 'MtotalFF_33'),
+                 44: (srcloc44, prefix_all / 'collect_21.csv', prefix_all / 'MtotalFF_44')}
+    collect_title = [['#SXSid', '#q', '#chi1', '#chi2', '#ecc', '#FF', '#lnp']]
+    for ymode in ymodeDict:
+        _, fname_collect, prefixM = ymodeDict[ymode]
+        if not fname_collect.exists():
+            save_namecol(fname_collect, collect_title)
+        if not prefixM.exists():
+            prefixM.mkdir(parents = True)
     for SXSnum in SXSnum_list:
-        f0, min_e, max_e = get_ecc_range(SXSnum, args.min_ecc, max_ecc)
-        if f0 is not None:
-            fini = f0
-            max_ecc = max_e
-            min_ecc = min_e
-        ecc_range = (min_ecc, max_ecc)
-        num_ecc = args.num_ecc
-        NR = SXSh22(SXSnum = SXSnum,
-                    f_ini = fini,
-                    Mtotal = mtotal,
-                    srate = srate,
-                    srcloc = srcloc,
-                    table = table,
-                    srcloc_all = srcloc_all)
-        ge = NR.construct_generator(approx, exe, psd = psd)
-        pms0 = NR.CalculateAdjParamsV4()
-        KK_default = pms0[0]
-        dSO_default = pms0[1]
-        dSS_default = pms0[2]
-        version = args.version.lower()
-        for case in switch(version):
-            if case('nv1'):
-                dtpeak_fit = get_new_dtpeak_nospin_Nv1(NR.eta)
-                break
-            if case('nv1nohm'):
-                dtpeak_fit = get_new_dtpeak_nospin_Nv1nhm(NR.eta)
-                break
-            if case('nv5av2'):
-                dtpeak_fit = calc_dt_nsNv5Av2(NR.eta)
-                break
-            else:
-                dtpeak_fit = pms0[3]
-                break
-
-        def get_lnprob(ecc):
-            ret = ge.get_lnprob(jobtag = args.jobtag, timeout = args.timeout, mode = ymode,
-                        KK = KK_default, dSO = dSO_default, dSS = dSS_default, dtPeak = dtpeak_fit, ecc = ecc)
-            return ret[0]
-        
         oldecc = None
-        v_oldecc = args.oldecc
-        for case in switch(v_oldecc):
-            if case('nv1a2tv4'):
-                oldecc = get_ecc_from_SXSid_Nv1A2_dtV4(SXSnum)
-                break
-            oldecc = None
-            break
-        prefix = prefix_all / SXSnum
-        if not prefix.exists():
-            prefix.mkdir(parents=True)
+        prefixSXS = prefix_all / SXSnum
+        if not prefixSXS.exists():
+            prefixSXS.mkdir(parents=True)
+        for ymode in ymodeDict:
+            srcloc, fname_collect, prefixM = ymodeDict[ymode]
+            f0, min_e, max_e = get_ecc_range(SXSnum, args.min_ecc, max_ecc)
+            if f0 is not None:
+                fini = f0
+                max_ecc = max_e
+                min_ecc = min_e
+            ecc_range = (min_ecc, max_ecc)
+            num_ecc = args.num_ecc
+            NR = SXSh22(SXSnum = SXSnum,
+                        f_ini = fini,
+                        Mtotal = mtotal,
+                        srate = srate,
+                        srcloc = srcloc,
+                        table = table,
+                        srcloc_all = srcloc_all)
+            ge = NR.construct_generator(approx, exe, psd = psd)
+            pms0 = NR.CalculateAdjParamsV4()
+            KK_default = pms0[0]
+            dSO_default = pms0[1]
+            dSS_default = pms0[2]
+            version = args.version.lower()
+            for case in switch(version):
+                if case('nv1'):
+                    dtpeak_fit = get_new_dtpeak_nospin_Nv1(NR.eta)
+                    break
+                if case('nv1nohm'):
+                    dtpeak_fit = get_new_dtpeak_nospin_Nv1nhm(NR.eta)
+                    break
+                if case('nv5av2'):
+                    dtpeak_fit = calc_dt_nsNv5Av2(NR.eta)
+                    break
+                else:
+                    dtpeak_fit = pms0[3]
+                    break
 
-        if args.ecc is not None:
-            ecc = args.ecc
-        elif SXSnum not in DEFAULT_ECC_ORBIT_DICT:
-            ecc = 0.0
-        elif oldecc is not None:
-            ecc = oldecc
-        else:
-            fsave = str(prefix / f'grid_{SXSnum}.txt')
-            if not prefix.exists():
-                prefix.mkdir(parents = True)
-            MG = MultiGrid1D(get_lnprob, ecc_range, num_ecc)
-            MG.run(fsave, eps = eps, magnification = mag, filter_thresh = filter_thresh, maxiter = max_step)
-            data = np.loadtxt(fsave)
-            ecc_grid, lnp_grid = data[:,0], data[:,1]
-            ecc = ecc_grid[np.argmax(lnp_grid)]
-        
-        lnp, FF = ge.get_lnprob(jobtag = args.jobtag, timeout = args.timeout, mode = ymode,
-                        KK = KK_default, dSO = dSO_default, dSS = dSS_default, dtPeak = dtpeak_fit, ecc = ecc)
-        h22_wf = ge.get_waveform(jobtag = args.jobtag, timeout = args.timeout, verbose = True,
-                        KK = KK_default, dSO = dSO_default, dSS = dSS_default, 
-                        dtPeak = dtpeak_fit, ecc = ecc, mode = ymode, dump = str(prefix))
-        wf_1, wf_2, tmove = alignment(h22_wf, NR, ret_tmove = True)
-        if tmove < 0:
-            tmove = 0.0
-        plt.figure(figsize = (14, 7))
-        plt.subplot(211)
-        plt.title(f'lnp={lnp},FF={FF}')
-        plt.plot(wf_1.time, wf_1.amp, label = f'EOB_{ymode}')
-        plt.plot(wf_2.time, wf_2.amp, label = f'NR_{ymode}')
-        plt.legend()
-        plt.subplot(212)
-        plt.title(f'lnp={lnp},FF={FF}')
-        plt.plot(wf_1.time, wf_1.phaseFrom0, label = f'EOB_{ymode}')
-        plt.plot(wf_2.time, wf_2.phaseFrom0, label = f'NR_{ymode}')
-        plt.legend()
-        plt.savefig(prefix / f'AmpPhase.png', dpi = 200)
-        plt.close()
-        # plot dynamics & nqc
-        fLowNQC = prefix / 'waveformLowNQC.dat'
-        fLowhNoNQC = prefix / 'waveformLowSRnoNQC.dat'
-        fLowDy = prefix / 'dynamics.dat'
-        fHigh = prefix / 'waveformHiNoNQC.dat'
-        fHiDy = prefix / 'dynamicsHi.dat'
-        dimt = dim_t(NR.Mtotal)
-        if fLowNQC.exists() and fLowhNoNQC.exists() and fLowDy.exists() and fHigh.exists() and fHiDy.exists():
-            data = np.loadtxt(fLowNQC)
-            tNQC, hrNQC, hiNQC, nWind, nqcPreO = data[:,0], data[:,1], data[:,2], data[:,3], data[:,4]
-            hNQC = ModeBase(tNQC, hrNQC, hiNQC)
-            data = np.loadtxt(fLowhNoNQC)
-            tLow, hrL, hiL = data[:,0], data[:,1], data[:,2]
-            hLow = ModeBase(tLow, hrL, hiL)
-            data = np.loadtxt(fHigh)
-            tHi, hrHi, hiHi = data[:,0], data[:,1], data[:,2]
-            hHi = ModeBase(tHi, hrHi, hiHi)
-
-            fig = plt.figure(figsize = (16, 8))
-            ax1 = fig.add_subplot(211)
-            ax1_ln1 = ax1.plot((wf_1.time + tmove)*dimt, wf_1.amp, label = f'EOB_{ymode}', linestyle = '--', alpha = 0.7)
-            ax1_ln2 = ax1.plot((wf_2.time + tmove)*dimt, wf_2.amp, label = f'NR_{ymode}', alpha = 0.6, color ='black')
-            ax1_ln3 = ax1.plot(tLow, hLow.amp, label = 'ampLowNoNQC')
-            ax2 = ax1.twinx()
-            ax2_ln1 = ax2.plot(tNQC, nWind, label = 'nWind', color = 'purple', linestyle = '--', alpha = 0.5)
-            ax12_lns = ax1_ln1 + ax1_ln2 + ax1_ln3 + ax2_ln1
-            ax12_labs = [l.get_label() for l in ax12_lns]
-            ax1.legend(ax12_lns, ax12_labs)
-            ax1.grid()
-            ax1.set_xlabel('t[M]')
-            ax1.set_ylabel('h')
-            ax2.set_ylabel('nqcWindow')
-            ax1.set_xlim([tHi[0]*0.99, tHi[-1]*1.005])
-
-            ax3 = fig.add_subplot(212)
-            ax3_ln1 = ax3.plot(tNQC, hNQC.amp, label = 'ampNQC')
-            ax4 = ax3.twinx()
-            ax4_ln1 = ax4.plot(tNQC, np.power(nqcPreO, 2), label = r'$(prT/rOmega)^2$', color = 'red')
-            ax4.set_yscale('log')
-            ax34_lns = ax3_ln1 + ax4_ln1
-            ax34_labs = [l.get_label() for l in ax34_lns]
-            ax3.legend(ax34_lns, ax34_labs)
-            ax4.grid()
-            ax3.set_xlabel('time[M]')
-            ax3.set_ylabel('hNQC')
-            ax4.set_ylabel(r'$(prT/rOmega)^2$')
-            ax3.set_xlim([tHi[0]*0.99, tHi[-1]*1.005])
-
-            plt.savefig(prefix / 'dyNQCLow.png', dpi = 200)
-            plt.close()
-            os.system(f'rm {fLowDy}')
-            os.system(f'rm {fLowhNoNQC}')
-            os.system(f'rm {fLowNQC}')
-
-            data = np.loadtxt(fHiDy)
-            dyHi = V5Dynamics(data)
+            def get_lnprob(ecc):
+                ret = ge.get_lnprob(jobtag = args.jobtag, timeout = args.timeout, mode = ymode,
+                            KK = KK_default, dSO = dSO_default, dSS = dSS_default, dtPeak = dtpeak_fit, ecc = ecc)
+                return ret[0]
             
-            fig = plt.figure(figsize = (10, 5))
-            ax1 = fig.add_subplot(111)
-            ax1_ln1 = ax1.plot((wf_1.time+tmove)*dimt, wf_1.amp, label = f'EOB_{ymode}', linestyle = '--', alpha = 0.7)
-            ax1_ln2 = ax1.plot((wf_2.time+tmove)*dimt, wf_2.amp, label = f'NR_{ymode}', color = 'black', alpha = 0.6)
-            ax1_ln3 = ax1.plot(tHi, hHi.amp, label = 'ampNoNQC')
-            ax2 = ax1.twinx()
-            ax2_ln1 = ax2.plot(dyHi.time, np.power(dyHi.prT / dyHi.r / dyHi.dphi, 2), label = r'$(prT/rOmega)^2$', color = 'red')
-            ax2.set_yscale('log')
-            ax1.set_xlim([tHi[0]*0.999, tHi[-1]*1.001])
-            ax12_lns = ax1_ln1 + ax1_ln2 + ax1_ln3 + ax2_ln1
-            ax12_labs = [l.get_label() for l in ax12_lns]
-            ax1.legend(ax12_lns, ax12_labs)
-            ax2.grid()
-            plt.savefig(prefix / 'dyNQCHigh.png', dpi = 200)
-            plt.close()
-
-        Mtotal_list = np.linspace(10, 200, 500)
-        # Setting saveing prefix
-        fresults = prefix / f'results_{SXSnum}_{ymode}.csv'
-        # Setting Results savimg filename.
-        save_namecol(fresults, data = [['#q', '#chi1', '#chi2', '#Mtotal', '#FF', f'#ecc={ecc}']])
-        ret = ge.get_overlap(jobtag = args.jobtag, minecc = 0, maxecc = 0, eccentricity = ecc,
-                            timeout = args.timeout, verbose = True, Mtotal = Mtotal_list, 
+            prefix = prefixSXS / f'mode_{ymode}'
+            if not prefix.exists():
+                prefix.mkdir(parents=True)
+            if args.ecc is not None:
+                ecc = args.ecc
+            elif SXSnum not in DEFAULT_ECC_ORBIT_DICT:
+                ecc = 0.0
+            elif oldecc is not None:
+                ecc = oldecc
+            else:
+                fsave = str(prefix / f'grid_{SXSnum}.txt')
+                if not prefix.exists():
+                    prefix.mkdir(parents = True)
+                MG = MultiGrid1D(get_lnprob, ecc_range, num_ecc)
+                MG.run(fsave, eps = eps, magnification = mag, filter_thresh = filter_thresh, maxiter = max_step)
+                data = np.loadtxt(fsave)
+                ecc_grid, lnp_grid = data[:,0], data[:,1]
+                ecc = ecc_grid[np.argmax(lnp_grid)]
+                oldecc = ecc
+            
+            lnp, FF = ge.get_lnprob(jobtag = args.jobtag, timeout = args.timeout, mode = ymode,
+                            KK = KK_default, dSO = dSO_default, dSS = dSS_default, dtPeak = dtpeak_fit, ecc = ecc)
+            h22_wf = ge.get_waveform(jobtag = args.jobtag, timeout = args.timeout, verbose = True,
                             KK = KK_default, dSO = dSO_default, dSS = dSS_default, 
-                            dtPeak = dtpeak_fit, ecc = ecc, mode = ymode)
-        length = len(Mtotal_list)
-        q_list = NR.q*np.ones(len(Mtotal_list)).reshape(1,length)
-        s1z_list = NR.s1z*np.ones(len(Mtotal_list)).reshape(1,length)
-        s2z_list = NR.s2z*np.ones(len(Mtotal_list)).reshape(1,length)
-        FF_list = ret[2].reshape(1,length)
-        Mtotal_list_out = Mtotal_list.reshape(1, length)
-        data = np.concatenate((q_list, s1z_list, s2z_list, Mtotal_list_out, FF_list), axis = 0)
-        add_csv(fresults, data.T.tolist())
-        add_csv(fname_collect, [[SXSnum, ecc, FF, lnp]])
+                            dtPeak = dtpeak_fit, ecc = ecc, mode = ymode, dump = str(prefixSXS))
+            wf_1, wf_2, tmove = alignment(h22_wf, NR, ret_tmove = True)
+            if tmove < 0:
+                tmove = 0.0
+            plt.figure(figsize = (14, 7))
+            plt.subplot(211)
+            plt.title(f'lnp={lnp},FF={FF}')
+            plt.plot(wf_1.time, wf_1.amp, label = f'EOB_{ymode}')
+            plt.plot(wf_2.time, wf_2.amp, label = f'NR_{ymode}')
+            plt.legend()
+            plt.subplot(212)
+            plt.title(f'lnp={lnp},FF={FF}')
+            plt.plot(wf_1.time, wf_1.phaseFrom0, label = f'EOB_{ymode}')
+            plt.plot(wf_2.time, wf_2.phaseFrom0, label = f'NR_{ymode}')
+            plt.legend()
+            plt.savefig(prefix / f'AmpPhase.png', dpi = 200)
+            plt.close()
+            # plot dynamics & nqc
+            fLowNQC = prefixSXS / 'waveformLowNQC.dat'
+            fLowhNoNQC = prefixSXS / 'waveformLowSRnoNQC.dat'
+            fLowDy = prefixSXS / 'dynamics.dat'
+            fHigh = prefixSXS / 'waveformHiNoNQC.dat'
+            fHiDy = prefixSXS / 'dynamicsHi.dat'
+            dimt = dim_t(NR.Mtotal)
+            if fLowNQC.exists() and fLowhNoNQC.exists() and fLowDy.exists() and fHigh.exists() and fHiDy.exists():
+                data = np.loadtxt(fLowNQC)
+                tNQC, hrNQC, hiNQC, nWind, nqcPreO = data[:,0], data[:,1], data[:,2], data[:,3], data[:,4]
+                hNQC = ModeBase(tNQC, hrNQC, hiNQC)
+                data = np.loadtxt(fLowhNoNQC)
+                tLow, hrL, hiL = data[:,0], data[:,1], data[:,2]
+                hLow = ModeBase(tLow, hrL, hiL)
+                data = np.loadtxt(fHigh)
+                tHi, hrHi, hiHi = data[:,0], data[:,1], data[:,2]
+                hHi = ModeBase(tHi, hrHi, hiHi)
+
+                fig = plt.figure(figsize = (16, 8))
+                ax1 = fig.add_subplot(211)
+                ax1_ln1 = ax1.plot((wf_1.time + tmove)*dimt, wf_1.amp, label = f'EOB_{ymode}', linestyle = '--', alpha = 0.7)
+                ax1_ln2 = ax1.plot((wf_2.time + tmove)*dimt, wf_2.amp, label = f'NR_{ymode}', alpha = 0.6, color ='black')
+                ax1_ln3 = ax1.plot(tLow, hLow.amp, label = 'ampLowNoNQC')
+                ax2 = ax1.twinx()
+                ax2_ln1 = ax2.plot(tNQC, nWind, label = 'nWind', color = 'purple', linestyle = '--', alpha = 0.5)
+                ax12_lns = ax1_ln1 + ax1_ln2 + ax1_ln3 + ax2_ln1
+                ax12_labs = [l.get_label() for l in ax12_lns]
+                ax1.legend(ax12_lns, ax12_labs)
+                ax1.grid()
+                ax1.set_xlabel('t[M]')
+                ax1.set_ylabel('h')
+                ax2.set_ylabel('nqcWindow')
+                ax1.set_xlim([tHi[0]*0.99, tHi[-1]*1.005])
+
+                ax3 = fig.add_subplot(212)
+                ax3_ln1 = ax3.plot(tNQC, hNQC.amp, label = 'ampNQC')
+                ax4 = ax3.twinx()
+                ax4_ln1 = ax4.plot(tNQC, np.power(nqcPreO, 2), label = r'$(prT/rOmega)^2$', color = 'red')
+                ax4.set_yscale('log')
+                ax34_lns = ax3_ln1 + ax4_ln1
+                ax34_labs = [l.get_label() for l in ax34_lns]
+                ax3.legend(ax34_lns, ax34_labs)
+                ax4.grid()
+                ax3.set_xlabel('time[M]')
+                ax3.set_ylabel('hNQC')
+                ax4.set_ylabel(r'$(prT/rOmega)^2$')
+                ax3.set_xlim([tHi[0]*0.99, tHi[-1]*1.005])
+
+                plt.savefig(prefix / 'dyNQCLow.png', dpi = 200)
+                plt.close()
+                os.system(f'rm {fLowDy}')
+                os.system(f'rm {fLowhNoNQC}')
+                os.system(f'rm {fLowNQC}')
+
+                data = np.loadtxt(fHiDy)
+                dyHi = V5Dynamics(data)
+                
+                fig = plt.figure(figsize = (10, 5))
+                ax1 = fig.add_subplot(111)
+                ax1_ln1 = ax1.plot((wf_1.time+tmove)*dimt, wf_1.amp, label = f'EOB_{ymode}', linestyle = '--', alpha = 0.7)
+                ax1_ln2 = ax1.plot((wf_2.time+tmove)*dimt, wf_2.amp, label = f'NR_{ymode}', color = 'black', alpha = 0.6)
+                ax1_ln3 = ax1.plot(tHi, hHi.amp, label = 'ampNoNQC')
+                ax2 = ax1.twinx()
+                ax2_ln1 = ax2.plot(dyHi.time, np.power(dyHi.prT / dyHi.r / dyHi.dphi, 2), label = r'$(prT/rOmega)^2$', color = 'red')
+                ax2.set_yscale('log')
+                ax1.set_xlim([tHi[0]*0.999, tHi[-1]*1.001])
+                ax12_lns = ax1_ln1 + ax1_ln2 + ax1_ln3 + ax2_ln1
+                ax12_labs = [l.get_label() for l in ax12_lns]
+                ax1.legend(ax12_lns, ax12_labs)
+                ax2.grid()
+                plt.savefig(prefix / 'dyNQCHigh.png', dpi = 200)
+                plt.close()
+
+            Mtotal_list = np.linspace(10, 200, 500)
+            # Setting saveing prefix
+            fresults = prefixM / f'results_{SXSnum}.csv'
+            # Setting Results savimg filename.
+            save_namecol(fresults, data = [['#q', '#chi1', '#chi2', '#Mtotal', '#FF', f'#ecc={ecc}']])
+            ret = ge.get_overlap(jobtag = args.jobtag, minecc = 0, maxecc = 0, eccentricity = ecc,
+                                timeout = args.timeout, verbose = True, Mtotal = Mtotal_list, 
+                                KK = KK_default, dSO = dSO_default, dSS = dSS_default, 
+                                dtPeak = dtpeak_fit, ecc = ecc, mode = ymode)
+            length = len(Mtotal_list)
+            q_list = NR.q*np.ones(len(Mtotal_list)).reshape(1,length)
+            s1z_list = NR.s1z*np.ones(len(Mtotal_list)).reshape(1,length)
+            s2z_list = NR.s2z*np.ones(len(Mtotal_list)).reshape(1,length)
+            FF_list = ret[2].reshape(1,length)
+            Mtotal_list_out = Mtotal_list.reshape(1, length)
+            data = np.concatenate((q_list, s1z_list, s2z_list, Mtotal_list_out, FF_list), axis = 0)
+            add_csv(fresults, data.T.tolist())
+            add_csv(fname_collect, [[SXSnum, NR.q, NR.s1z, NR.s2z, ecc, FF, lnp]])
     return 0
 
 

@@ -817,7 +817,7 @@ def GridSearch_ecc(argv = None):
             ax3 = fig.add_subplot(212)
             ax3_ln1 = ax3.plot(tNQC, hNQC.amp, label = 'ampNQC')
             ax4 = ax3.twinx()
-            ax4_ln1 = ax4.plot(tNQC, np.power(nqcPreO, 2), label = r'$(prT/rOmega)^2$')
+            ax4_ln1 = ax4.plot(tNQC, np.power(nqcPreO, 2), label = r'$(prT/rOmega)^2$', color = 'red')
             ax4.set_yscale('log')
             ax34_lns = ax3_ln1 + ax4_ln1
             ax34_labs = [l.get_label() for l in ax34_lns]

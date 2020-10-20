@@ -812,7 +812,7 @@ def GridSearch_ecc(argv = None):
             ax1.set_xlabel('t[M]')
             ax1.set_ylabel('h')
             ax2.set_ylabel('nqcWindow')
-            ax3.set_xlim([tHi[0]*0.99, tHi[-1]*1.005])
+            ax1.set_xlim([tHi[0]*0.99, tHi[-1]*1.005])
 
             ax3 = fig.add_subplot(212)
             ax3_ln1 = ax3.plot(tNQC, hNQC.amp, label = 'ampNQC')

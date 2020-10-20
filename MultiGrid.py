@@ -199,10 +199,12 @@ class Grid1DFuncPointsCollector(object):
 
     def generate_grid(self, N_x = None):
         xp, _ = self.get_points()
-        x_min = np.min(xp) - self._gridfunc.grid.dx
-        x_max = np.max(xp) + self._gridfunc.grid.dx
+        dx = self._gridfunc.grid.dx
+        x_min = np.min(xp) - dx
+        x_max = np.max(xp) + dx
         if N_x is None:
-            N_x = self._gridfunc.grid.N_x
+            dx_new = dx / 5
+            N_x = int( (x_max - x_min) / dx_new )
         GrdNew = Grid1D(x_min, x_max, N_x, family = self._family)
         return GrdNew
     
@@ -555,14 +557,18 @@ class GridFuncPointsCollector(object):
 
     def generate_grid(self, N_x = None, N_y = None):
         xp, yp, _ = self.get_points()
-        x_min = np.min(xp) - self._gridfunc.grid.dx
-        x_max = np.max(xp) + self._gridfunc.grid.dx
-        y_min = np.min(yp) - self._gridfunc.grid.dy
-        y_max = np.max(yp) + self._gridfunc.grid.dy
+        dx = self._gridfunc.grid.dx
+        dy = self._gridfunc.grid.dy
+        x_min = np.min(xp) - dx
+        x_max = np.max(xp) + dx
+        y_min = np.min(yp) - dy
+        y_max = np.max(yp) + dy
         if N_x is None:
-            N_x = self._gridfunc.grid.N_x
+            dx_new = dx / 5.
+            N_x = int( (x_max - x_min) / dx_new )
         if N_y is None:
-            N_y = self._gridfunc.grid.N_y
+            dy_new = dy / 5.
+            N_y = int( (y_max - y_min) / dy_new )
         GrdNew = Grid2D(x_min, x_max, y_min, y_max, N_x, N_y, family = self._family)
         return GrdNew
 

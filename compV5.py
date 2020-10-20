@@ -812,7 +812,7 @@ def GridSearch_ecc(argv = None):
             ax1.set_xlabel('t[M]')
             ax1.set_ylabel('h')
             ax2.set_ylabel('nqcWindow')
-            ax1.set_xlim([tHi[0]*0.99, tHi[-1]*1.01])
+            ax3.set_xlim([tHi[0]*0.99, tHi[-1]*1.005])
 
             ax3 = fig.add_subplot(212)
             ax3_ln1 = ax3.plot(tNQC, hNQC.amp, label = 'ampNQC')
@@ -1005,6 +1005,191 @@ def GridSearch_KK_dtpeak(argv = None):
     q_list = NR.q*np.ones(len(Mtotal_list)).reshape(1,length)
     s1z_list = NR.s1z*np.ones(len(Mtotal_list)).reshape(1,length)
     s2z_list = NR.s2z*np.ones(len(Mtotal_list)).reshape(1,length)
+    FF_list = ret[2].reshape(1,length)
+    Mtotal_list_out = Mtotal_list.reshape(1, length)
+    data = np.concatenate((q_list, s1z_list, s2z_list, Mtotal_list_out, FF_list), axis = 0)
+    add_csv(fresults, data.T.tolist())
+
+    return 0
+
+#-----Recover EOB vs SXS-----#
+def GridSearch_KK_dtpeak_allmode(argv = None):
+    from .SXS import DEFAULT_TABLE
+    from .SXS import DEFAULT_SRCLOC
+    from .SXS import DEFAULT_SRCLOC_ALL
+    from .SXS import save_namecol, add_csv
+    from .generator import self_adaptivor
+
+    parser = OptionParser(description='Waveform Comparation With SXS')
+
+    parser.add_option('--executable', type = 'str', default = DEFAULT_EXEV5, help = 'Exe command')
+    parser.add_option('--approx', type = 'str', default = 'SEOBNREv5', help = 'Version of the code')
+    parser.add_option('--fini', type = 'float', default = 0, help = 'Initial orbital frequency')
+    parser.add_option('--SXS', type = 'str', default = '0071', help = 'SXS template for comparision')
+    parser.add_option('--mtotal', type = 'float', default = 40, help = 'Total mass')
+    parser.add_option('--srate', type = 'float', default = 16384, help = 'Sample rate')
+ 
+    parser.add_option('--prefix', type = 'str', default = '.', help = 'dir for results saving.')
+    parser.add_option('--jobtag', type = 'str', default = '_lnprob', help = 'jobtag.')
+
+    parser.add_option('--psd', type = 'str', help = 'Detector psd.')
+    parser.add_option('--flow', type = 'float', default = 0, help = 'Lower frequency cut off for psd.')
+    parser.add_option('--timeout', type = 'int', default = 60, help = 'Time limit for waveform generation')
+
+    parser.add_option('--table', type = 'str', default = str(DEFAULT_TABLE), help = 'Path of SXS table.')
+    parser.add_option('--srcloc22', type = 'str', default = str(DEFAULT_SRCLOC), help = 'Path of SXS waveform data.')
+    parser.add_option('--srcloc21', type = 'str', default = str(DEFAULT_SRCLOC), help = 'Path of SXS waveform data.')
+    parser.add_option('--srcloc33', type = 'str', default = str(DEFAULT_SRCLOC), help = 'Path of SXS waveform data.')
+    parser.add_option('--srcloc44', type = 'str', default = str(DEFAULT_SRCLOC), help = 'Path of SXS waveform data.')
+    parser.add_option('--srcloc-all', type = 'str', default = str(DEFAULT_SRCLOC_ALL), help = 'Path of SXS waveform data all modes')
+
+    parser.add_option('--num-k', type = 'int', default = 50, help = 'numbers for grid search')
+    parser.add_option('--max-k', type = 'float', help = 'Upper bound of parameter')
+    parser.add_option('--min-k', type = 'float', help = 'Lower bound of parameter')
+    parser.add_option('--num-dtpeak', type = 'int', default = 50, help = 'numbers for grid search')
+    parser.add_option('--max-dtpeak', type = 'float', help = 'Upper bound of parameter')
+    parser.add_option('--min-dtpeak', type = 'float', help = 'Lower bound of parameter')
+
+    parser.add_option('--eps', type = 'float', default = 1e-6, help = 'Thresh of div')
+    parser.add_option('--mag', type = 'float', default = 10, help = 'Thresh of dx_init / dx (>1)')
+    parser.add_option('--filter-thresh', type = 'float', default = 0.4, help = 'Thresh of grid search (<1)')
+    parser.add_option('--max-step', type = 'int', default = 100, help = 'Max iter depth')
+    args, _ = parser.parse_args(argv)
+
+    exe = args.executable
+    approx = args.approx
+    SXSnum = args.SXS
+    mtotal = args.mtotal
+    fini = args.fini
+    srate = args.srate
+    table = args.table
+    srcloc22 = args.srcloc22
+    srcloc21 = args.srcloc21
+    srcloc33 = args.srcloc33
+    srcloc44 = args.srcloc44
+    srcloc_all = args.srcloc_all
+    psd = DetectorPSD(args.psd, flow = args.flow)
+    ymodelist = (22, 21, 33, 44)
+    max_dtpeak = args.max_dtpeak if args.max_dtpeak is not None else 100
+    min_dtpeak = args.min_dtpeak if args.min_dtpeak is not None else -10
+    dtpeak_range = (min_dtpeak, max_dtpeak)
+    num_dtpeak = args.num_dtpeak
+
+    max_k = args.max_k if args.max_k is not None else 5
+    min_k = args.min_k if args.min_k is not None else 0
+    k_range = (min_k, max_k)
+    num_k = args.num_k
+
+    eps = args.eps
+    mag = args.mag
+    filter_thresh = args.filter_thresh
+    max_step = args.max_step
+
+    NR22 = SXSh22(SXSnum = SXSnum,
+                f_ini = fini,
+                Mtotal = mtotal,
+                srate = srate,
+                srcloc = srcloc22,
+                table = table,
+                srcloc_all = srcloc_all)
+    ge22 = NR22.construct_generator(approx, exe, psd = psd)
+    Amp22 = np.max(NR22.amp)
+
+    NR21 = SXSh22(SXSnum = SXSnum,
+                f_ini = fini,
+                Mtotal = mtotal,
+                srate = srate,
+                srcloc = srcloc21,
+                table = table,
+                srcloc_all = srcloc_all)
+    ge21 = NR21.construct_generator(approx, exe, psd = psd)
+    Amp21 = np.max(NR21.amp)
+
+    NR33 = SXSh22(SXSnum = SXSnum,
+                f_ini = fini,
+                Mtotal = mtotal,
+                srate = srate,
+                srcloc = srcloc33,
+                table = table,
+                srcloc_all = srcloc_all)
+    ge33 = NR33.construct_generator(approx, exe, psd = psd)
+    Amp33 = np.max(NR33.amp)
+
+    NR44 = SXSh22(SXSnum = SXSnum,
+                f_ini = fini,
+                Mtotal = mtotal,
+                srate = srate,
+                srcloc = srcloc44,
+                table = table,
+                srcloc_all = srcloc_all)
+    ge44 = NR44.construct_generator(approx, exe, psd = psd)
+    Amp44 = np.max(NR44.amp)
+
+    AmpTotal = Amp22 + Amp21 + Amp33 + Amp44
+    pms0 = NR22.CalculateAdjParamsV4()
+    dSO_default = pms0[1]
+    dSS_default = pms0[2]
+
+    def get_lnprob(k, dtpeak):
+        ret22, _ = ge22.get_lnprob(jobtag = args.jobtag, timeout = args.timeout, mode = 22,
+                    KK = k, dSO = dSO_default, dSS = dSS_default, dtPeak = dtpeak, ecc = 0.0)
+        ret21, _ = ge21.get_lnprob(jobtag = args.jobtag, timeout = args.timeout, mode = 21,
+                    KK = k, dSO = dSO_default, dSS = dSS_default, dtPeak = dtpeak, ecc = 0.0)
+        ret33, _ = ge33.get_lnprob(jobtag = args.jobtag, timeout = args.timeout, mode = 33,
+                    KK = k, dSO = dSO_default, dSS = dSS_default, dtPeak = dtpeak, ecc = 0.0)
+        ret44, _ = ge44.get_lnprob(jobtag = args.jobtag, timeout = args.timeout, mode = 44,
+                    KK = k, dSO = dSO_default, dSS = dSS_default, dtPeak = dtpeak, ecc = 0.0)
+
+        return (ret22 * Amp22 + ret21 * Amp21 + ret33 * Amp33 + ret44 * Amp44) / AmpTotal
+    prefix = Path(args.prefix)
+    if not prefix.exists():
+        prefix.mkdir(parents=True)
+    
+    fsave = str(prefix / f'grid_{SXSnum}.txt')
+    if not prefix.exists():
+        prefix.mkdir(parents = True)
+    if not Path(fsave).exists():
+        MG = MultiGrid(get_lnprob, k_range, dtpeak_range, num_k, num_dtpeak)
+        MG.run(fsave, eps = eps, magnification = mag, filter_thresh = filter_thresh, maxiter = max_step)
+    data = np.loadtxt(fsave)
+    k_grid, dtpeak_grid, lnp_grid = data[:,0], data[:,1], data[:,2]
+    k_fit = k_grid[np.argmax(lnp_grid)]
+    dtpeak_fit = dtpeak_grid[np.argmax(lnp_grid)]
+    
+    ymode = 22
+    lnp, FF = ge22.get_lnprob(jobtag = args.jobtag, timeout = args.timeout, mode = ymode,
+                    KK = k_fit, dSO = dSO_default, dSS = dSS_default, dtPeak = dtpeak_fit, ecc = 0)
+    h22_wf = ge22.get_waveform(jobtag = args.jobtag, timeout = args.timeout, verbose = True,
+                    KK = k_fit, dSO = dSO_default, dSS = dSS_default, 
+                    dtPeak = dtpeak_fit, ecc = 0, mode = ymode)
+    wf_1, wf_2 = alignment(h22_wf, NR22)
+    plt.figure(figsize = (14, 7))
+    plt.subplot(211)
+    plt.title(f'lnp={lnp},FF={FF}')
+    plt.plot(wf_1.time, wf_1.amp, label = f'EOB_{ymode}')
+    plt.plot(wf_2.time, wf_2.amp, label = f'NR_{ymode}')
+    plt.legend()
+    plt.subplot(212)
+    plt.title(f'lnp={lnp},FF={FF}')
+    plt.plot(wf_1.time, wf_1.phaseFrom0, label = f'EOB_{ymode}')
+    plt.plot(wf_2.time, wf_2.phaseFrom0, label = f'NR_{ymode}')
+    plt.legend()
+    plt.savefig(prefix / f'AmpPhase.png', dpi = 200)
+    plt.close()
+
+    Mtotal_list = np.linspace(10, 200, 500)
+    # Setting saveing prefix
+    fresults = prefix / f'results_{SXSnum}_{ymode}.csv'
+    # Setting Results savimg filename.
+    save_namecol(fresults, data = [['#q', '#chi1', '#chi2', '#Mtotal', '#FF', f'#ecc={0}']])
+    ret = ge22.get_overlap(jobtag = args.jobtag, minecc = 0, maxecc = 0, eccentricity = 0,
+                        timeout = args.timeout, verbose = True, Mtotal = Mtotal_list, 
+                        KK = k_fit, dSO = dSO_default, dSS = dSS_default, 
+                        dtPeak = dtpeak_fit, ecc = 0, mode = ymode)
+    length = len(Mtotal_list)
+    q_list = NR22.q*np.ones(len(Mtotal_list)).reshape(1,length)
+    s1z_list = NR22.s1z*np.ones(len(Mtotal_list)).reshape(1,length)
+    s2z_list = NR22.s2z*np.ones(len(Mtotal_list)).reshape(1,length)
     FF_list = ret[2].reshape(1,length)
     Mtotal_list_out = Mtotal_list.reshape(1, length)
     data = np.concatenate((q_list, s1z_list, s2z_list, Mtotal_list_out, FF_list), axis = 0)

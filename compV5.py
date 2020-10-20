@@ -695,8 +695,8 @@ def GridSearch_ecc(argv = None):
         prefix_all.mkdir(parents=True)
     ymodeDict = {22: (srcloc22, prefix_all / 'collect_22.csv', prefix_all / 'MtotalFF_22'),
                  21: (srcloc21, prefix_all / 'collect_21.csv', prefix_all / 'MtotalFF_21'),
-                 33: (srcloc33, prefix_all / 'collect_21.csv', prefix_all / 'MtotalFF_33'),
-                 44: (srcloc44, prefix_all / 'collect_21.csv', prefix_all / 'MtotalFF_44')}
+                 33: (srcloc33, prefix_all / 'collect_33.csv', prefix_all / 'MtotalFF_33'),
+                 44: (srcloc44, prefix_all / 'collect_44.csv', prefix_all / 'MtotalFF_44')}
     collect_title = [['#SXSid', '#q', '#chi1', '#chi2', '#ecc', '#FF', '#lnp']]
     for ymode in ymodeDict:
         _, fname_collect, prefixM = ymodeDict[ymode]

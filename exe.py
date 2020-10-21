@@ -916,7 +916,7 @@ def modcomp(argv = None):
     parser.add_option('--ncompare', type = 'int', default = 10, help = 'Used in random mode [10]')
 
 
-    args, empty = parser.parse_args(argv)
+    args, _empty = parser.parse_args(argv)
     approx1 = args.approx1
     approx2 = args.approx2
     exe1 = args.executable1

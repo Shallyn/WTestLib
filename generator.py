@@ -494,11 +494,14 @@ class CompGenerator(object):
                        max_ecc, 
                        Num = 10,
                        Mtotal = 16,
+                       min_Mtotal = None,
+                       max_Mtotal = None,
                        D = 100,
                        f_ini = 40,
                        srate = 16384,
                        timeout = 60,
-                       jobtag = '_CompareRandom'):
+                       jobtag = '_CompareRandom',
+                       **kwargs):
         if self._verbose:
             sys.stderr.write(f'{LOG}:Initialize parameter...\n')
         Num = int(Num)
@@ -519,27 +522,31 @@ class CompGenerator(object):
         else:
             ecc = np.random.uniform(min_ecc, max_ecc, Num)
         
+        if min_Mtotal is None or max_Mtotal is None:
+            mtotal = np.ones(Num) * Mtotal
+        else:
+            mtotal = np.random.uniform(min_Mtotal, max_Mtotal, Num)
+        
+        
         data = []
         for i in range(Num):
-            m1 = Mtotal * q[i] / (1 + q[i])
-            m2 = Mtotal / (1 + q[i])
+            m1 = mtotal[i] * q[i] / (1 + q[i])
+            m2 = mtotal[i] / (1 + q[i])
             ans = self._core_calcFF(m1, m2, 
                                     s1z[i], s2z[i], ecc[i],
                                     D, f_ini, 
-                                    srate, timeout, jobtag)
-            data.append([q[i], s1z[i], s2z[i], ecc[i], ans])
+                                    srate, timeout, jobtag, **kwargs)
+            data.append([mtotal[i], q[i], s1z[i], s2z[i], ecc[i], ans])
             sys.stderr.write(f'PMS: m1 = {m1}, m2 = {m2}, s1z = {s1z[i]}, s2z = {s2z[i]} ecc = {ecc[i]}\n\t FF = {ans}\n\n')
-
         return data
         
     
     def _core_calcFF(self, m1, m2, s1z, s2z, ecc,
-                     D, f_ini, srate, timeout, jobtag):
+                     D, f_ini, srate, timeout, jobtag, **kwargs):
         Mtotal = m1 + m2
         data = self._get_wf1(m1 = m1, m2 = m2, s1z = s1z, s2z = s2z, 
                              D = D, ecc = ecc, srate = srate, f_ini = f_ini, 
-                             L = 2, M = 2,
-                             timeout = timeout, jobtag = jobtag)
+                             timeout = timeout, jobtag = jobtag, **kwargs)
         if isinstance(data, CEV):
             return 0
         t, hr, hi = data[:,0], data[:,1], data[:,2]
@@ -549,8 +556,7 @@ class CompGenerator(object):
 
         data = self._get_wf2(m1 = m1, m2 = m2, s1z = s1z, s2z = s2z, 
                              D = D, ecc = ecc, srate = srate, f_ini = f_ini, 
-                             L = 2, M = 2,
-                             timeout = timeout, jobtag = jobtag)
+                             timeout = timeout, jobtag = jobtag, **kwargs)
         if isinstance(data, CEV):
             return 0
         t, hr, hi = data[:,0], data[:,1], data[:,2]

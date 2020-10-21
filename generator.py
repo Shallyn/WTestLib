@@ -403,6 +403,7 @@ class Generator(object):
                         L = L,
                         M = M,
                         **kwargs)
+        print(EXE)
         if self._verbose:
             sys.stderr.write(f'{LOG}:{jobtag}-> \n{EXE}\n')
         cev, ret =  cmd_stdout_cev(EXE, 

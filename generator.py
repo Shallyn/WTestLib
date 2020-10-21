@@ -567,30 +567,21 @@ class CompGenerator(object):
         t, hr, hi = data[:,0], data[:,1], data[:,2]
         t, hr, hi = self._pretreat2(t, hr, hi, D, Mtotal)
         wf2 = h22base(t, hr, hi, srate)
-        print(np.allclose(wf1.value.real, wf2.value.real))
-        print(np.allclose(wf1.value.imag, wf2.value.imag))
         wf1, wf2, tmove = h22_alignment(wf1, wf2)
         fs = wf1.srate
-        print(fs)
         NFFT = len(wf1)
         freqs = np.abs(np.fft.fftfreq(NFFT, 1./fs))
         power_vec = self._psd(freqs)
         df = fs/NFFT
         Stilde = wf1.h22f
         htilde = wf2.h22f
-        print(np.allclose(wf1.value.real, wf2.value.real))
-        print(np.allclose(wf1.value.imag, wf2.value.imag))
-        print(np.allclose(Stilde.real, htilde.real))
-        print(np.allclose(Stilde.imag, htilde.imag))
-        print(power_vec)
         O11 = np.sum(Stilde * Stilde.conjugate() / power_vec).real * df
         O22 = np.sum(htilde * htilde.conjugate() / power_vec).real * df
-        Ox = Stilde * htilde.conjugate()
+        Ox = Stilde * htilde.conjugate() / power_vec
         Oxt = np.fft.ifft(Ox) * fs
         Oxt_abs = np.abs(Oxt) / np.sqrt(O11 * O22)
         idx = np.where(Oxt_abs == max(Oxt_abs))[0][0]
         FF = Oxt_abs[idx]
-        print(FF)
         return FF
 
 

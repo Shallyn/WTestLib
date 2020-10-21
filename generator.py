@@ -567,7 +567,9 @@ class CompGenerator(object):
         t, hr, hi = data[:,0], data[:,1], data[:,2]
         t, hr, hi = self._pretreat2(t, hr, hi, D, Mtotal)
         wf2 = h22base(t, hr, hi, srate)
-        print((np.allclose(wf1.value.real, wf2.value.real)))
+        print(np.allclose(wf1.value.real, wf2.value.real))
+        print(np.allclose(wf1.value.imag, wf2.value.imag))
+        print(fs)
         wf1, wf2, tmove = h22_alignment(wf1, wf2)
         fs = wf1.srate
         NFFT = len(wf1)
@@ -576,6 +578,10 @@ class CompGenerator(object):
         df = fs/NFFT
         Stilde = wf1.h22f
         htilde = wf2.h22f
+        print(np.allclose(wf1.value.real, wf2.value.real))
+        print(np.allclose(wf1.value.imag, wf2.value.imag))
+        print(np.allclose(Stilde.real, htilde.imag))
+        print(np.allclose(Stilde.imag, htilde.imag))
         O11 = np.sum(Stilde * Stilde.conjugate() / power_vec).real * df
         O22 = np.sum(htilde * htilde.conjugate() / power_vec).real * df
         Ox = Stilde * htilde.conjugate()

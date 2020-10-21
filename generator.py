@@ -569,9 +569,9 @@ class CompGenerator(object):
         wf2 = h22base(t, hr, hi, srate)
         print(np.allclose(wf1.value.real, wf2.value.real))
         print(np.allclose(wf1.value.imag, wf2.value.imag))
-        print(fs)
         wf1, wf2, tmove = h22_alignment(wf1, wf2)
         fs = wf1.srate
+        print(fs)
         NFFT = len(wf1)
         freqs = np.abs(np.fft.fftfreq(NFFT, 1./fs))
         power_vec = self._psd(freqs)

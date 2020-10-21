@@ -567,7 +567,7 @@ class CompGenerator(object):
         t, hr, hi = data[:,0], data[:,1], data[:,2]
         t, hr, hi = self._pretreat2(t, hr, hi, D, Mtotal)
         wf2 = h22base(t, hr, hi, srate)
-
+        print((np.allclose(wf1.value.real, wf2.value.real)))
         wf1, wf2, tmove = h22_alignment(wf1, wf2)
         fs = wf1.srate
         NFFT = len(wf1)

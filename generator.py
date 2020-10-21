@@ -501,7 +501,7 @@ class CompGenerator(object):
                        srate = 16384,
                        timeout = 60,
                        jobtag = '_CompareRandom',
-                       ymode = 22):
+                       mode = 22):
         if self._verbose:
             sys.stderr.write(f'{LOG}:Initialize parameter...\n')
         Num = int(Num)
@@ -532,13 +532,13 @@ class CompGenerator(object):
         for i in range(Num):
             m1 = mtotal[i] * q[i] / (1 + q[i])
             m2 = mtotal[i] / (1 + q[i])
-            if (ymode % 10) % 2 and q[i] == 1 and s1z[i] ==  s2z[i]:
+            if (mode % 10) % 2 and q[i] == 1 and s1z[i] ==  s2z[i]:
                 ans = 1.
             else:
                 ans = self._core_calcFF(m1, m2, 
                                         s1z[i], s2z[i], ecc[i],
                                         D, f_ini, 
-                                        srate, timeout, jobtag, ymode = ymode)
+                                        srate, timeout, jobtag, mode = mode)
             data.append([mtotal[i], q[i], s1z[i], s2z[i], ecc[i], ans])
             sys.stderr.write(f'PMS: m1 = {m1}, m2 = {m2}, s1z = {s1z[i]}, s2z = {s2z[i]} ecc = {ecc[i]}\n\t FF = {ans}\n\n')
         return data

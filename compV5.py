@@ -1302,7 +1302,7 @@ def mode_compare(argv = None):
                                 min_Mtotal = args.min_mtotal, max_Mtotal = args.max_mtotal,
                                 D = D, f_ini = f_ini, 
                                 srate = srate, jobtag = jobtag, timeout = timeout,
-                                ymode = args.ymode)
+                                mode = args.ymode)
     add_csv(fsave, ret)        
     return 0
 

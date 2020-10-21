@@ -589,7 +589,9 @@ class CompGenerator(object):
         Oxt = np.fft.ifft(Ox) * fs
         Oxt_abs = np.abs(Oxt) / np.sqrt(O11 * O22)
         idx = np.where(Oxt_abs == max(Oxt_abs))[0][0]
-        return Oxt_abs[idx]
+        FF = Oxt_abs[idx]
+        print(FF)
+        return FF
 
 
         

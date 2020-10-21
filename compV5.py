@@ -1299,7 +1299,7 @@ def mode_compare(argv = None):
                                 args.min_ecc, args.max_ecc, 
                                 Num = args.ncompare, 
                                 Mtotal = Mtotal, 
-                                Mtotal_min = args.min_mtotal, Mtotal_max = args.max_mtotal,
+                                min_Mtotal = args.min_mtotal, max_Mtotal = args.max_mtotal,
                                 D = D, f_ini = f_ini, 
                                 srate = srate, jobtag = jobtag, timeout = timeout,
                                 ymode = args.ymode)

@@ -580,8 +580,9 @@ class CompGenerator(object):
         htilde = wf2.h22f
         print(np.allclose(wf1.value.real, wf2.value.real))
         print(np.allclose(wf1.value.imag, wf2.value.imag))
-        print(np.allclose(Stilde.real, htilde.imag))
+        print(np.allclose(Stilde.real, htilde.real))
         print(np.allclose(Stilde.imag, htilde.imag))
+        print(power_vec)
         O11 = np.sum(Stilde * Stilde.conjugate() / power_vec).real * df
         O22 = np.sum(htilde * htilde.conjugate() / power_vec).real * df
         Ox = Stilde * htilde.conjugate()

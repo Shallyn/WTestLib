@@ -10,6 +10,13 @@ from .Utils import switch, cmd_stdout_cev, CEV, LOG, WARNING
 from .h22datatype import h22base, dim_h, dim_t, h22_alignment
 import sys
 from pathlib import Path
+import csv,codecs,h5py
+
+def add_csv(filename, data):
+    file = codecs.open(filename, 'a+', "gbk")
+    writer = csv.writer(file)
+    writer.writerows(data)
+    file.close()
 
 DEFAULT_lalsim_inspiral = 'lalsim-inspiral'
 DEFAULT_SEOBNREv1 = Path('/Users/drizl/Documents/2018/SEOBNRE/SEOBNRE_good/SEOBNRE')
@@ -492,6 +499,7 @@ class CompGenerator(object):
                        max_s2z, 
                        min_ecc,
                        max_ecc, 
+                       fsave,
                        Num = 10,
                        Mtotal = 16,
                        min_Mtotal = None,
@@ -528,7 +536,6 @@ class CompGenerator(object):
             mtotal = np.random.uniform(min_Mtotal, max_Mtotal, Num)
         
         
-        data = []
         for i in range(Num):
             m1 = mtotal[i] * q[i] / (1 + q[i])
             m2 = mtotal[i] / (1 + q[i])
@@ -539,9 +546,10 @@ class CompGenerator(object):
                                         s1z[i], s2z[i], ecc[i],
                                         D, f_ini, 
                                         srate, timeout, jobtag, mode = mode)
-            data.append([mtotal[i], q[i], s1z[i], s2z[i], ecc[i], ans])
+            data = [[mtotal[i], q[i], s1z[i], s2z[i], ecc[i], ans]]
+            add_csv(fsave, data)   
             sys.stderr.write(f'PMS: m1 = {m1}, m2 = {m2}, s1z = {s1z[i]}, s2z = {s2z[i]} ecc = {ecc[i]}\n\t FF = {ans}\n\n')
-        return data
+        return
         
     
     def _core_calcFF(self, m1, m2, s1z, s2z, ecc,

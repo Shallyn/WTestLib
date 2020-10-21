@@ -1293,16 +1293,15 @@ def mode_compare(argv = None):
         seed = int(pyt.time()%10000)
     np.random.seed(seed)
     Comp = CompGenerator(approx1, exe1, approx2, exe2, psd = psd, verbose = verbose)
-    ret = Comp.compare_random(args.min_mratio, args.max_mratio, 
-                                args.min_spin1z, args.max_spin1z, 
-                                args.min_spin2z, args.max_spin2z, 
-                                args.min_ecc, args.max_ecc, 
-                                Num = args.ncompare, 
-                                Mtotal = Mtotal, 
-                                min_Mtotal = args.min_mtotal, max_Mtotal = args.max_mtotal,
-                                D = D, f_ini = f_ini, 
-                                srate = srate, jobtag = jobtag, timeout = timeout,
-                                mode = args.ymode)
-    add_csv(fsave, ret)        
+    Comp.compare_random(args.min_mratio, args.max_mratio, 
+                        args.min_spin1z, args.max_spin1z, 
+                        args.min_spin2z, args.max_spin2z, 
+                        args.min_ecc, args.max_ecc, fsave,
+                        Num = args.ncompare, 
+                        Mtotal = Mtotal, 
+                        min_Mtotal = args.min_mtotal, max_Mtotal = args.max_mtotal,
+                        D = D, f_ini = f_ini, 
+                        srate = srate, jobtag = jobtag, timeout = timeout,
+                        mode = args.ymode)     
     return 0
 

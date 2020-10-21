@@ -549,6 +549,7 @@ class CompGenerator(object):
         Mtotal = m1 + m2
         data = self._get_wf1(m1 = m1, m2 = m2, s1z = s1z, s2z = s2z, 
                              D = D, ecc = ecc, srate = srate, f_ini = f_ini, 
+                             L = 2, M = 2,
                              timeout = timeout, jobtag = jobtag, **kwargs)
         if isinstance(data, CEV):
             return 0
@@ -559,6 +560,7 @@ class CompGenerator(object):
 
         data = self._get_wf2(m1 = m1, m2 = m2, s1z = s1z, s2z = s2z, 
                              D = D, ecc = ecc, srate = srate, f_ini = f_ini, 
+                             L = 2, M = 2,
                              timeout = timeout, jobtag = jobtag, **kwargs)
         if isinstance(data, CEV):
             return 0

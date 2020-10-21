@@ -1290,7 +1290,7 @@ def mode_compare(argv = None):
     if args.seed is not None:
         seed = args.seed
     else:
-        seed = int(pyt.time()%10000) + int(pyt.time()/10000)
+        seed = int(pyt.time()%10000) + int(pyt.time()/10000) + np.random.uniform(-100, 100)
     np.random.seed(seed)
     Comp = CompGenerator(approx1, exe1, approx2, exe2, psd = psd, verbose = verbose)
     ret = Comp.compare_random(args.min_mratio, args.max_mratio, 

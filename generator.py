@@ -535,10 +535,9 @@ class CompGenerator(object):
             if (mode % 10) % 2 and q[i] == 1 and s1z[i] ==  s2z[i]:
                 ans = 1.
             else:
-                f_min = get_fmin(f_ini, mtotal[i])
                 ans = self._core_calcFF(m1, m2, 
                                         s1z[i], s2z[i], ecc[i],
-                                        D, f_min, 
+                                        D, f_ini, 
                                         srate, timeout, jobtag, mode = mode)
             data.append([mtotal[i], q[i], s1z[i], s2z[i], ecc[i], ans])
             sys.stderr.write(f'PMS: m1 = {m1}, m2 = {m2}, s1z = {s1z[i]}, s2z = {s2z[i]} ecc = {ecc[i]}\n\t FF = {ans}\n\n')

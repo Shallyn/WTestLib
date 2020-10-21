@@ -1217,7 +1217,7 @@ def GridSearch_KK_dtpeak_allmode(argv = None):
 from .generator import CompGenerator
 def mode_compare(argv = None):
     from .SXS import save_namecol, add_csv
-    from itertools import product
+    import time as pyt
     parser = OptionParser(description='General model compare.')
     parser.add_option('--approx1', type = 'str', default = 'SEOBNRv1', help = 'approx1 for compare')
     parser.add_option('--approx2', type = 'str', default = 'SEOBNRv4', help = 'approx2 for compare')
@@ -1287,6 +1287,11 @@ def mode_compare(argv = None):
                '#FF']]
     fsave = savedir / fname
     save_namecol(fsave, data = namecol)
+    if args.seed is not None:
+        seed = args.seed
+    else:
+        seed = int(pyt.time()%10000) + int(pyt.time()/10000)
+    np.random.seed(seed)
     Comp = CompGenerator(approx1, exe1, approx2, exe2, psd = psd, verbose = verbose)
     ret = Comp.compare_random(args.min_mratio, args.max_mratio, 
                                 args.min_spin1z, args.max_spin1z, 

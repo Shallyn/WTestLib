@@ -208,6 +208,10 @@ class SXSObject(object):
     def SXSnum(self):
         return self._SXSnum
 
+    @property
+    def chiX(self):
+        return self.chiSVec[-1] + self.chiAVec[-1] * self.dm / (1-self.eta*2)
+
     def get_NRPeakParams(self):
         eta = self.eta
         chiS = self.chiSVec[-1]

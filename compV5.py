@@ -816,6 +816,7 @@ def GridSearch_ecc(argv = None):
 
                 fig = plt.figure(figsize = (16, 8))
                 ax1 = fig.add_subplot(211)
+                ax1.set_title(f'eta={NR.eta}, chi={NR.chiX}')
                 ax1_ln1 = ax1.plot((wf_1.time + tmove)*dimt, wf_1.amp, label = f'EOB_{ymode}', linestyle = '--', alpha = 0.7)
                 ax1_ln2 = ax1.plot((wf_2.time + tmove)*dimt, wf_2.amp, label = f'NR_{ymode}', alpha = 0.6, color ='black')
                 ax1_ln3 = ax1.plot(tLow, hLow.amp, label = 'ampLowNoNQC')

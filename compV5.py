@@ -831,7 +831,7 @@ def GridSearch_ecc(argv = None):
                 ax1.set_xlim([tHi[0]*0.99, tHi[-1]*1.005])
 
                 ax3 = fig.add_subplot(212)
-                ax3_ln1 = ax3.plot(dyLow, dyLow.prT, label = r'$p_{r}$')
+                ax3_ln1 = ax3.plot(dyLow.time, dyLow.prT, label = r'$p_{r}$')
                 ax4 = ax3.twinx()
                 ax4_ln1 = ax4.plot(dyLow.time, dyLow.r, label = r'$r$', color = 'red')
                 ax34_lns = ax3_ln1 + ax4_ln1

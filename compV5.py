@@ -835,7 +835,7 @@ def GridSearch_ecc(argv = None):
                 ax1.set_xlim([tHi[0]*0.99, tHi[-1]*1.005])
 
                 ax3 = fig.add_subplot(212)
-                ax3_ln1 = ax3.plot(dyLow.time, dyLow.prT, label = r'$p_{r}$')
+                ax3_ln1 = ax3.plot(dyLow.time, dyLow.xx, label = r'$x$')
                 ax4 = ax3.twinx()
                 ax4_ln1 = ax4.plot(dyLow.time, dyLow.r, label = r'$r$', color = 'red')
                 ax34_lns = ax3_ln1 + ax4_ln1
@@ -874,7 +874,7 @@ def GridSearch_ecc(argv = None):
                 ax3_ln2 = ax3.plot((wf_2.time+tmove)*dimt, wf_2.amp, label = f'NR_{ymode}', color = 'black', alpha = 0.6)
                 ax3_ln3 = ax3.plot(tHi, hHi.amp, label = 'ampNoNQC')
                 ax4 = ax3.twinx()
-                ax4_ln1 = ax4.plot(dyHi.time, dyHi.xx, label = r'$p_{rT}$', color = 'red')
+                ax4_ln1 = ax4.plot(dyHi.time, dyHi.xx, label = r'$x$', color = 'red')
                 ax3.set_xlim([tHi[0]*0.999, tHi[-1]*1.001])
                 ax34_lns = ax3_ln1 + ax3_ln2 + ax3_ln3 + ax4_ln1
                 ax34_labs = [l.get_label() for l in ax34_lns]

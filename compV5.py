@@ -46,6 +46,9 @@ class V5Dynamics(object):
     def dphi(self):
         return self._dphi
     @property
+    def xx(self):
+        return np.power(self._dphi, 2./3.)
+    @property
     def prT(self):
         return self._prT
     @property
@@ -871,7 +874,7 @@ def GridSearch_ecc(argv = None):
                 ax3_ln2 = ax3.plot((wf_2.time+tmove)*dimt, wf_2.amp, label = f'NR_{ymode}', color = 'black', alpha = 0.6)
                 ax3_ln3 = ax3.plot(tHi, hHi.amp, label = 'ampNoNQC')
                 ax4 = ax3.twinx()
-                ax4_ln1 = ax4.plot(dyHi.time, dyHi.prT, label = r'$p_{rT}$', color = 'red')
+                ax4_ln1 = ax4.plot(dyHi.time, dyHi.xx, label = r'$p_{rT}$', color = 'red')
                 ax3.set_xlim([tHi[0]*0.999, tHi[-1]*1.001])
                 ax34_lns = ax3_ln1 + ax3_ln2 + ax3_ln3 + ax4_ln1
                 ax34_labs = [l.get_label() for l in ax34_lns]

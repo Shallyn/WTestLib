@@ -791,6 +791,7 @@ def GridSearch_ecc(argv = None):
             plt.plot(wf_1.time, wf_1.phaseFrom0, label = f'EOB_{ymode}')
             plt.plot(wf_2.time, wf_2.phaseFrom0, label = f'NR_{ymode}')
             plt.legend()
+            plt.grid()
             plt.savefig(prefix / f'AmpPhase.png', dpi = 200)
             plt.close()
             # plot dynamics & nqc
@@ -807,6 +808,8 @@ def GridSearch_ecc(argv = None):
                 data = np.loadtxt(fLowhNoNQC)
                 tLow, hrL, hiL = data[:,0], data[:,1], data[:,2]
                 hLow = ModeBase(tLow, hrL, hiL)
+                dataLDY = np.loadtxt(fLowDy)
+                dyLow = V5Dynamics(dataLDY)
                 data = np.loadtxt(fHigh)
                 tHi, hrHi, hiHi = data[:,0], data[:,1], data[:,2]
                 hHi = ModeBase(tHi, hrHi, hiHi)
@@ -828,17 +831,16 @@ def GridSearch_ecc(argv = None):
                 ax1.set_xlim([tHi[0]*0.99, tHi[-1]*1.005])
 
                 ax3 = fig.add_subplot(212)
-                ax3_ln1 = ax3.plot(tNQC, hNQC.amp, label = 'ampNQC')
+                ax3_ln1 = ax3.plot(dyLow, dyLow.prT, label = r'$p_{r}$')
                 ax4 = ax3.twinx()
-                ax4_ln1 = ax4.plot(tNQC, np.power(nqcPreO, 2), label = r'$(prT/rOmega)^2$', color = 'red')
-                ax4.set_yscale('log')
+                ax4_ln1 = ax4.plot(dyLow.time, dyLow.r, label = r'$r$', color = 'red')
                 ax34_lns = ax3_ln1 + ax4_ln1
                 ax34_labs = [l.get_label() for l in ax34_lns]
                 ax3.legend(ax34_lns, ax34_labs)
                 ax4.grid()
                 ax3.set_xlabel('time[M]')
-                ax3.set_ylabel('hNQC')
-                ax4.set_ylabel(r'$(prT/rOmega)^2$')
+                ax3.set_ylabel('prT')
+                ax4.set_ylabel('r')
                 ax3.set_xlim([tHi[0]*0.99, tHi[-1]*1.005])
 
                 plt.savefig(prefix / 'dyNQCLow.png', dpi = 200)
@@ -850,19 +852,31 @@ def GridSearch_ecc(argv = None):
                 data = np.loadtxt(fHiDy)
                 dyHi = V5Dynamics(data)
                 
-                fig = plt.figure(figsize = (10, 5))
-                ax1 = fig.add_subplot(111)
+                fig = plt.figure(figsize = (10, 10))
+                ax1 = fig.add_subplot(211)
                 ax1_ln1 = ax1.plot((wf_1.time+tmove)*dimt, wf_1.amp, label = f'EOB_{ymode}', linestyle = '--', alpha = 0.7)
                 ax1_ln2 = ax1.plot((wf_2.time+tmove)*dimt, wf_2.amp, label = f'NR_{ymode}', color = 'black', alpha = 0.6)
                 ax1_ln3 = ax1.plot(tHi, hHi.amp, label = 'ampNoNQC')
                 ax2 = ax1.twinx()
-                ax2_ln1 = ax2.plot(dyHi.time, np.power(dyHi.prT / dyHi.r / dyHi.dphi, 2), label = r'$(prT/rOmega)^2$', color = 'red')
-                ax2.set_yscale('log')
+                ax2_ln1 = ax2.plot(dyHi.time, dyHi.r, label = r'$r$', color = 'red')
                 ax1.set_xlim([tHi[0]*0.999, tHi[-1]*1.001])
                 ax12_lns = ax1_ln1 + ax1_ln2 + ax1_ln3 + ax2_ln1
                 ax12_labs = [l.get_label() for l in ax12_lns]
                 ax1.legend(ax12_lns, ax12_labs)
                 ax2.grid()
+
+                ax3 = fig.add_subplot(212)
+                ax3_ln1 = ax1.plot((wf_1.time+tmove)*dimt, wf_1.amp, label = f'EOB_{ymode}', linestyle = '--', alpha = 0.7)
+                ax3_ln2 = ax1.plot((wf_2.time+tmove)*dimt, wf_2.amp, label = f'NR_{ymode}', color = 'black', alpha = 0.6)
+                ax3_ln3 = ax1.plot(tHi, hHi.amp, label = 'ampNoNQC')
+                ax4 = ax3.twinx()
+                ax4_ln1 = ax2.plot(dyHi.time, dyHi.prT, label = r'$p_{rT}$', color = 'red')
+                ax3.set_xlim([tHi[0]*0.999, tHi[-1]*1.001])
+                ax34_lns = ax3_ln1 + ax3_ln2 + ax3_ln3 + ax4_ln1
+                ax34_labs = [l.get_label() for l in ax34_lns]
+                ax3.legend(ax34_lns, ax34_labs)
+                ax4.grid()
+
                 plt.savefig(prefix / 'dyNQCHigh.png', dpi = 200)
                 plt.close()
                 os.system(f'rm {fHigh}')

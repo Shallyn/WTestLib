@@ -799,7 +799,7 @@ def GridSearch_ecc(argv = None):
             plt.savefig(prefix / f'AmpPhase.png', dpi = 200)
             plt.close()
 
-            ipeak = wf_1.argpeak
+            ipeak = wf_2.argpeak
             h1 = wf_1.amp * np.exp(-1.j*(wf_1.phase - wf_1.phase[ipeak]))
             h2 = wf_2.amp * np.exp(-1.j*(wf_2.phase - wf_2.phase[ipeak]))
             plt.figure(figsize = (14, 7))

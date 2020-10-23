@@ -789,6 +789,7 @@ def GridSearch_ecc(argv = None):
             plt.plot(wf_1.time, wf_1.amp, label = f'EOB_{ymode}')
             plt.plot(wf_2.time, wf_2.amp, label = f'NR_{ymode}')
             plt.legend()
+            plt.grid()
             plt.subplot(212)
             plt.title(f'lnp={lnp},FF={FF}')
             plt.plot(wf_1.time, wf_1.phaseFrom0, label = f'EOB_{ymode}')

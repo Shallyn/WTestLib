@@ -118,7 +118,7 @@ def get_ecc_from_SXSid_Nv1A2_dtV4(SXSid):
 def get_ecc_range(SXSnum, min_ecc = None, max_ecc = None):
     if SXSnum not in DEFAULT_ECC_ORBIT_DICT:
         return None, -0.05, 0.05
-    f0, e0 = DEFAULT_ECC_ORBIT_DICT_V5[SXSnum]
+    f0, e0 = DEFAULT_ECC_ORBIT_DICT[SXSnum]
     min_e = e0 - 0.08
     max_e = e0 + 0.12
     if e0 > 0 and min_e < 0:
@@ -804,6 +804,10 @@ def GridSearch_ecc(argv = None):
             fLowDy = prefixSXS / 'dynamics.dat'
             fHigh = prefixSXS / 'waveformHiNoNQC.dat'
             fHiDy = prefixSXS / 'dynamicsHi.dat'
+            fRD = prefixSXS / 'RingDown.dat'
+            fHighN = prefixSXS / 'waveformHiWithNQC.dat'
+            os.system(f'rm {fRD}')
+            os.system(f'rm {rHighN}')
             dimt = dim_t(NR.Mtotal)
             if fLowNQC.exists() and fLowhNoNQC.exists() and fLowDy.exists() and fHigh.exists() and fHiDy.exists():
                 data = np.loadtxt(fLowNQC)
@@ -886,6 +890,8 @@ def GridSearch_ecc(argv = None):
                 plt.close()
                 os.system(f'rm {fHigh}')
                 os.system(f'rm {fHiDy}')
+                os.system(f'rm {fRD}')
+                os.system(f'rm {rHighN}')
 
 
             Mtotal_list = np.linspace(10, 200, 500)

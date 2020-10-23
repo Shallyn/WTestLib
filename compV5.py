@@ -891,7 +891,7 @@ def GridSearch_ecc(argv = None):
                 os.system(f'rm {fHigh}')
                 os.system(f'rm {fHiDy}')
                 os.system(f'rm {fRD}')
-                os.system(f'rm {rHighN}')
+                os.system(f'rm {fHighN}')
 
 
             Mtotal_list = np.linspace(10, 200, 500)

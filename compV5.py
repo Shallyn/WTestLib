@@ -116,11 +116,11 @@ def get_ecc_from_SXSid_Nv1A2_dtV4(SXSid):
         return 0.0
 
 def get_ecc_range(SXSnum, min_ecc = None, max_ecc = None):
-    if SXSnum not in DEFAULT_ECC_ORBIT_DICT_V5:
+    if SXSnum not in DEFAULT_ECC_ORBIT_DICT:
         return None, -0.05, 0.05
     f0, e0 = DEFAULT_ECC_ORBIT_DICT_V5[SXSnum]
-    min_e = e0 - 0.1
-    max_e = e0 + 0.1
+    min_e = e0 - 0.08
+    max_e = e0 + 0.12
     if e0 > 0 and min_e < 0:
         min_e = 0
     if e0 < 0 and max_e > 0:

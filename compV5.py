@@ -798,6 +798,26 @@ def GridSearch_ecc(argv = None):
             plt.grid()
             plt.savefig(prefix / f'AmpPhase.png', dpi = 200)
             plt.close()
+
+            ipeak = wf_1.argpeak
+            h1 = wf_1.amp * np.exp(-1.j*(wf_1.phase - wf_1.phase[ipeak]))
+            h2 = wf_2.amp * np.exp(-1.j*(wf_2.phase - wf_2.phase[ipeak]))
+            plt.figure(figsize = (14, 7))
+            plt.subplot(211)
+            plt.title(f'eta={NR.eta}, chi={NR.chiX}')
+            plt.plot(wf_1.time, h1.real, label = f'EOB_{ymode}')
+            plt.plot(wf_2.time, h2.real, label = f'NR_{ymode}')
+            plt.legend()
+            plt.grid()
+            plt.subplot(212)
+            plt.title(f'chi1={NR.s1z}, chi2={NR.s2z}')
+            plt.plot(wf_1.time, h1.imag, label = f'EOB_{ymode}')
+            plt.plot(wf_2.time, h2.imag, label = f'NR_{ymode}')
+            plt.legend()
+            plt.grid()
+            plt.savefig(prefix / f'RealImag.png', dpi = 200)
+            plt.close()
+
             # plot dynamics & nqc
             fLowNQC = prefixSXS / 'waveformLowNQC.dat'
             fLowhNoNQC = prefixSXS / 'waveformLowSRnoNQC.dat'

@@ -783,19 +783,25 @@ def GridSearch_ecc(argv = None):
             wf_1, wf_2, tmove = alignment(h22_wf, NR, ret_tmove = True)
             if tmove < 0:
                 tmove = 0.0
-            plt.figure(figsize = (14, 7))
-            plt.subplot(211)
-            plt.title(f'lnp={lnp},FF={FF}')
-            plt.plot(wf_1.time, wf_1.amp, label = f'EOB_{ymode}')
-            plt.plot(wf_2.time, wf_2.amp, label = f'NR_{ymode}')
-            plt.legend()
-            plt.grid()
-            plt.subplot(212)
-            plt.title(f'lnp={lnp},FF={FF}')
-            plt.plot(wf_1.time, wf_1.phaseFrom0, label = f'EOB_{ymode}')
-            plt.plot(wf_2.time, wf_2.phaseFrom0, label = f'NR_{ymode}')
-            plt.legend()
-            plt.grid()
+            dAmp = wf_1.amp - wf_2.amp
+            dPhase = wf_1.phaseFrom0 - wf_2.phaseFrom0
+            fig = plt.figure(figsize = (14, 7))
+            ax1 = fig.add_subplot(211)
+            ax1.set_title(f'lnp={lnp},FF={FF}')
+            ax1.plot(wf_1.time, wf_1.amp, label = f'EOB_{ymode}')
+            ax1.plot(wf_2.time, wf_2.amp, label = f'NR_{ymode}')
+            ax2 = ax1.twinx()
+            ax2.plot(wf_1.time, dAmp, color = 'black', linestyle = '--', alpha = 0.7)
+            ax1.legend()
+            ax1.grid()
+
+            ax3 = fig.add_subplot(212)
+            ax3.plot(wf_1.time, wf_1.phaseFrom0, label = f'EOB_{ymode}')
+            ax3.plot(wf_2.time, wf_2.phaseFrom0, label = f'NR_{ymode}')
+            ax4 = ax3.twinx()
+            ax4.plot(wf_1.time, dPhase, color = 'black', linestyle = '--', alpha = 0.7)
+            ax3.legend()
+            ax3.grid()
             plt.savefig(prefix / f'AmpPhase.png', dpi = 200)
             plt.close()
 

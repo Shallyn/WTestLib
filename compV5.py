@@ -1192,7 +1192,7 @@ def GridSearch_calibrator_allmode(argv = None):
                         srcloc33 = srcloc33,
                         srcloc44 = srcloc44,
                         srcloc_all = srcloc_all)
-    V5ge = V5NR.construct_generator(approx, exe, psd = psd)
+    V5ge = V5NR.construct_generator(exe, approx, psd = psd)
     # Amp22 = np.power(np.max(V5NR.NR22.amp), 2)
     # Amp21 = np.power(np.max(V5NR.NR21.amp), 2)
     # Amp33 = np.power(np.max(V5NR.NR33.amp), 2)

@@ -806,8 +806,6 @@ def GridSearch_ecc(argv = None):
             fHiDy = prefixSXS / 'dynamicsHi.dat'
             fRD = prefixSXS / 'RingDown.dat'
             fHighN = prefixSXS / 'waveformHiWithNQC.dat'
-            os.system(f'rm {fRD}')
-            os.system(f'rm {rHighN}')
             dimt = dim_t(NR.Mtotal)
             if fLowNQC.exists() and fLowhNoNQC.exists() and fLowDy.exists() and fHigh.exists() and fHiDy.exists():
                 data = np.loadtxt(fLowNQC)

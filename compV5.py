@@ -845,9 +845,23 @@ def GridSearch_ecc(argv = None):
                 data = np.loadtxt(fHigh)
                 tHi, hrHi, hiHi = data[:,0], data[:,1], data[:,2]
                 hHi = ModeBase(tHi, hrHi, hiHi)
+                fig = plt.figure(figsize = (16, 12))
+                ax5 = fig.add_subplot(311)
+                ax5.set_title(f'lnp={lnp}, FF={FF}')
+                ax5_ln1 = ax5.plot((wf_1.time + tmove)*dimt, wf_1.amp, label = f'EOB_{ymode}', linestyle = '--', alpha = 0.7)
+                ax5_ln2 = ax5.plot((wf_2.time + tmove)*dimt, wf_2.amp, label = f'NR_{ymode}', alpha = 0.6, color ='black')
+                ax5_ln3 = ax5.plot(tLow, hLow.amp, label = 'ampLowNoNQC')
+                ax6 = ax5.twinx()
+                ax6_ln1 = ax6.plot(tNQC, nWind, label = 'nWind', color = 'purple', linestyle = '--', alpha = 0.5)
+                ax56_lns = ax5_ln1 + ax5_ln2 + ax5_ln3 + ax6_ln1
+                ax56_labs = [l.get_label() for l in ax56_lns]
+                ax5.legend(ax56_lns, ax56_labs)
+                ax5.grid()
+                ax5.set_xlabel('t[M]')
+                ax5.set_ylabel('h')
+                ax5.set_ylabel('nqcWindow')
 
-                fig = plt.figure(figsize = (16, 8))
-                ax1 = fig.add_subplot(211)
+                ax1 = fig.add_subplot(312)
                 ax1.set_title(f'eta={NR.eta}, chi={NR.chiX}')
                 ax1_ln1 = ax1.plot((wf_1.time + tmove)*dimt, wf_1.amp, label = f'EOB_{ymode}', linestyle = '--', alpha = 0.7)
                 ax1_ln2 = ax1.plot((wf_2.time + tmove)*dimt, wf_2.amp, label = f'NR_{ymode}', alpha = 0.6, color ='black')
@@ -863,7 +877,7 @@ def GridSearch_ecc(argv = None):
                 ax2.set_ylabel('nqcWindow')
                 ax1.set_xlim([tHi[0]*0.99, tHi[-1]*1.005])
 
-                ax3 = fig.add_subplot(212)
+                ax3 = fig.add_subplot(313)
                 ax3.set_title(f'chi1={NR.s1z}, chi2={NR.s2z}')
                 ax3_ln1 = ax3.plot(dyLow.time, dyLow.xx, label = r'$x$')
                 ax4 = ax3.twinx()

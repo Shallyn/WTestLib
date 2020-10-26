@@ -119,7 +119,7 @@ def get_ecc_range(SXSnum, min_ecc = None, max_ecc = None):
     if SXSnum not in DEFAULT_ECC_ORBIT_DICT:
         return None, -0.05, 0.05
     f0, e0 = DEFAULT_ECC_ORBIT_DICT[SXSnum]
-    min_e = e0 - 0.08
+    min_e = e0 - 0.12
     max_e = e0 + 0.12
     if e0 > 0 and min_e < 0:
         min_e = 0
@@ -713,8 +713,10 @@ def GridSearch_ecc(argv = None):
         if not prefixSXS.exists():
             prefixSXS.mkdir(parents=True)
         for ymode in ymodeDict:
+            mDebug = f'{SXSnum}_mode{ymode}:\n'
             srcloc, fname_collect, prefixM = ymodeDict[ymode]
             f0, min_e, max_e = get_ecc_range(SXSnum, args.min_ecc, max_ecc)
+            mDebug += f'f0 = {f0}\nmin_e={min_e}\nmax_e={max_e}\n'
             if f0 is not None:
                 fini = f0
                 max_ecc = max_e
@@ -951,6 +953,8 @@ def GridSearch_ecc(argv = None):
             data = np.concatenate((q_list, s1z_list, s2z_list, Mtotal_list_out, FF_list), axis = 0)
             add_csv(fresults, data.T.tolist())
             add_csv(fname_collect, [[SXSnum, NR.q, NR.s1z, NR.s2z, NR.chiX, ecc, FF, lnp]])
+            with open(prefix / 'mdebug.txt', 'w') as f:
+                f.write(mDebug)
     return 0
 
 

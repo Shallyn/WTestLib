@@ -685,8 +685,6 @@ def GridSearch_ecc(argv = None):
 
     srcloc_all = args.srcloc_all
     psd = DetectorPSD(args.psd, flow = args.flow)
-    max_ecc = args.max_ecc if args.max_ecc is not None else 0.5
-    min_ecc = args.min_ecc if args.min_ecc is not None else -0.5
     eps = args.eps
     mag = args.mag
     filter_thresh = args.filter_thresh
@@ -715,7 +713,7 @@ def GridSearch_ecc(argv = None):
         for ymode in ymodeDict:
             mDebug = f'{SXSnum}_mode{ymode}:\n'
             srcloc, fname_collect, prefixM = ymodeDict[ymode]
-            f0, min_e, max_e = get_ecc_range(SXSnum, args.min_ecc, max_ecc)
+            f0, min_e, max_e = get_ecc_range(SXSnum, args.min_ecc, args.max_ecc)
             mDebug += f'f0 = {f0}\nmin_e={min_e}\nmax_e={max_e}\n'
             if f0 is not None:
                 fini = f0

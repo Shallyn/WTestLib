@@ -781,6 +781,7 @@ def GridSearch_ecc(argv = None):
                             KK = KK_default, dSO = dSO_default, dSS = dSS_default, 
                             dtPeak = dtpeak_fit, ecc = ecc, mode = ymode, dump = str(prefixSXS))
             wf_1, wf_2, tmove = alignment(h22_wf, NR, ret_tmove = True)
+            np.savetxt(prefix / 'waveform.dat', np.stack([wf_1.time, wf_1.real, wf_1.imag, wf_2.real, wf_2.imag], axis = 1))
             if tmove < 0:
                 tmove = 0.0
             dAmp = wf_1.amp - wf_2.amp
@@ -857,7 +858,6 @@ def GridSearch_ecc(argv = None):
                 ax56_labs = [l.get_label() for l in ax56_lns]
                 ax5.legend(ax56_lns, ax56_labs)
                 ax5.grid()
-                ax5.set_xlabel('t[M]')
                 ax5.set_ylabel('h')
                 ax5.set_ylabel('nqcWindow')
 
@@ -872,7 +872,6 @@ def GridSearch_ecc(argv = None):
                 ax12_labs = [l.get_label() for l in ax12_lns]
                 ax1.legend(ax12_lns, ax12_labs)
                 ax1.grid()
-                ax1.set_xlabel('t[M]')
                 ax1.set_ylabel('h')
                 ax2.set_ylabel('nqcWindow')
                 ax1.set_xlim([tHi[0]*0.99, tHi[-1]*1.005])
@@ -902,6 +901,7 @@ def GridSearch_ecc(argv = None):
                 
                 fig = plt.figure(figsize = (10, 10))
                 ax1 = fig.add_subplot(211)
+                ax1.set_title(f'ecc={ecc}')
                 ax1_ln1 = ax1.plot((wf_1.time+tmove)*dimt, wf_1.amp, label = f'EOB_{ymode}', linestyle = '--', alpha = 0.7)
                 ax1_ln2 = ax1.plot((wf_2.time+tmove)*dimt, wf_2.amp, label = f'NR_{ymode}', color = 'black', alpha = 0.6)
                 ax1_ln3 = ax1.plot(tHi, hHi.amp, label = 'ampNoNQC')

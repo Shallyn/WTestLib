@@ -867,18 +867,17 @@ def GridSearch_ecc(argv = None):
                 ax1_ln2 = ax1.plot((wf_2.time + tmove)*dimt, wf_2.amp, label = f'NR_{ymode}', alpha = 0.6, color ='black')
                 ax1_ln3 = ax1.plot(tLow, hLow.amp, label = 'ampLowNoNQC')
                 ax2 = ax1.twinx()
-                ax2_ln1 = ax2.plot(tNQC, nWind, label = 'nWind', color = 'purple', linestyle = '--', alpha = 0.5)
+                ax2_ln1 = ax2.plot(tNQC, hNQC.amp, label = 'ampNQC')
                 ax12_lns = ax1_ln1 + ax1_ln2 + ax1_ln3 + ax2_ln1
                 ax12_labs = [l.get_label() for l in ax12_lns]
                 ax1.legend(ax12_lns, ax12_labs)
                 ax1.grid()
                 ax1.set_ylabel('h')
-                ax2.set_ylabel('nqcWindow')
-                ax1.set_xlim([tHi[0]*0.99, tHi[-1]*1.005])
+                ax2.set_ylabel('hNQC')
 
                 ax3 = fig.add_subplot(313)
                 ax3.set_title(f'chi1={NR.s1z}, chi2={NR.s2z}')
-                ax3_ln1 = ax3.plot(dyLow.time, dyLow.xx, label = r'$x$')
+                ax3_ln1 = ax3.plot(tNQC, nqcPreO, label = 'nqcPreO')
                 ax4 = ax3.twinx()
                 ax4_ln1 = ax4.plot(dyLow.time, dyLow.r, label = r'$r$', color = 'red')
                 ax34_lns = ax3_ln1 + ax4_ln1
@@ -886,7 +885,7 @@ def GridSearch_ecc(argv = None):
                 ax3.legend(ax34_lns, ax34_labs)
                 ax4.grid()
                 ax3.set_xlabel('time[M]')
-                ax3.set_ylabel('prT')
+                ax3.set_ylabel('nqcP')
                 ax4.set_ylabel('r')
                 ax3.set_xlim([tHi[0]*0.99, tHi[-1]*1.005])
 

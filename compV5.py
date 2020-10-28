@@ -719,7 +719,7 @@ def GridSearch_ecc(argv = None):
                 fini = f0
                 max_ecc = max_e
                 min_ecc = min_e
-            ecc_range = (min_ecc, max_ecc)
+                ecc_range = (min_ecc, max_ecc)
             num_ecc = args.num_ecc
             NR = SXSh22(SXSnum = SXSnum,
                         f_ini = fini,

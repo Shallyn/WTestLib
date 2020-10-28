@@ -546,9 +546,11 @@ class CompGenerator(object):
                                         s1z[i], s2z[i], ecc[i],
                                         D, f_ini, 
                                         srate, timeout, jobtag, mode = mode)
+            sys.stderr.write(f'PMS: m1 = {m1}, m2 = {m2}, s1z = {s1z[i]}, s2z = {s2z[i]} ecc = {ecc[i]}\n\t FF = {ans}\n\n')
+            if ans < 0:
+                continue
             data = [[mtotal[i], q[i], s1z[i], s2z[i], ecc[i], ans]]
             add_csv(fsave, data)   
-            sys.stderr.write(f'PMS: m1 = {m1}, m2 = {m2}, s1z = {s1z[i]}, s2z = {s2z[i]} ecc = {ecc[i]}\n\t FF = {ans}\n\n')
         return
         
     
@@ -560,7 +562,7 @@ class CompGenerator(object):
                              L = 2, M = 2,
                              timeout = timeout, jobtag = jobtag, **kwargs)
         if isinstance(data, CEV):
-            return 0
+            return -1
         t, hr, hi = data[:,0], data[:,1], data[:,2]
         t, hr, hi = self._pretreat1(t, hr, hi, D, Mtotal)
 

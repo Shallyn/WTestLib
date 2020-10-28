@@ -1517,7 +1517,7 @@ def mode_compare(argv = None):
     parser.add_option('--max-ecc', type = 'float',  help = 'Used in random mode')
     parser.add_option('--min-mtotal', type = 'float', help = 'Min total mass of the binary system')
     parser.add_option('--max-mtotal', type = 'float', help = 'Max total mass of the binary system')
-    parser.add_option('--seed', type = 'float', help = 'random seed')
+    parser.add_option('--seed', type = 'int', help = 'random seed')
     parser.add_option('--ncompare', type = 'int', default = 10, help = 'Used in random mode [10]')
 
 
@@ -1556,7 +1556,7 @@ def mode_compare(argv = None):
     fsave = savedir / fname
     save_namecol(fsave, data = namecol)
     if args.seed is not None:
-        seed = args.seed
+        seed = int(pyt.time()%10000) + int(pyt.time()%args.seed)
     else:
         seed = int(pyt.time()%10000)
     np.random.seed(seed)

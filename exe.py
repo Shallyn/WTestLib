@@ -721,7 +721,7 @@ def compWithFreqCut(argv = None):
             fresults = savedir / f'results_{SXSnum}_{jobtag}.csv'
             # Setting Results savimg filename.
             save_namecol(fresults, data = [['#q', '#chi1', '#chi2', '#Mtotal', '#FF', f'#ecc={ecc_pre}']])
-            ret = ge.get_overlap(jobtag = jobtag, minecc = 0, maxecc = 0, eccentricity = ecc_pre,
+            ret = ge.get_overlap(jobtag = jobtag, minecc = 0, maxecc = 0, ecc = ecc_pre,
                                 timeout = timeout, verbose = verbose, Mtotal = Mtotal_list)
             length = len(Mtotal_list)
             q_list = s.q*np.ones(len(Mtotal_list)).reshape(1,length)
@@ -849,7 +849,7 @@ def compWithFreqCut(argv = None):
             fresults = savedir / f'results_{SXSnum}_{jobtag}.csv'
             # Setting Results savimg filename.
             save_namecol(fresults, data = [['#q', '#chi1', '#chi2', '#Mtotal', '#FF', f'#ecc={e0}']])
-            ret = ge.get_overlap(jobtag = jobtag, minecc = 0, maxecc = 0, eccentricity = e0,
+            ret = ge.get_overlap(jobtag = jobtag, minecc = 0, maxecc = 0, ecc = e0,
                                 timeout = timeout, verbose = verbose, Mtotal = Mtotal_list)
             length = len(Mtotal_list)
             q_list = s.q*np.ones(len(Mtotal_list)).reshape(1,length)

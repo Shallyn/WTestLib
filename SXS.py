@@ -9,6 +9,7 @@ Created on Fri Jun 21 10:41:46 2019
 import numpy as np
 import sys, os, json
 from .Utils import switch, CEV, LOG, WARNING, CEV_parse_value, MESSAGE, plot_compare_attach_any, plot_marker, interp1d_complex
+from .Utils import SpinWeightedM2SphericalHarmonic
 from .h22datatype import dim_h, dim_t, h22base, h22_alignment, ModeBase
 from pathlib import Path
 from .generator import Generator, self_adaptivor
@@ -244,10 +245,10 @@ class SXSObject(object):
         return parse_ecc(self.ecc, 0, 0.7)
 
 class SXSAllMode(SXSObject):
-    def __init__(self, SXSnum, table = DEFAULT_TABLE, srcloc = DEFAULT_SRCLOC_ALL):
+    def __init__(self, SXSnum, table = DEFAULT_TABLE, srcloc = DEFAULT_SRCLOC_ALL, cutpct = 0):
         super(SXSAllMode, self).__init__(SXSnum, table, verbose = False)
-        self._file = srcloc / f'BBH_{SXSnum}.h5'
-        self._core = waveform_mode_collector(0)
+        self._file = Path(srcloc) / f'BBH_{SXSnum}.h5'
+        self._core = waveform_mode_collector(cutpct)
         f = h5py.File(self._file,'r')
         for key in f.keys():
             if (key != 'OutermostExtraction.dir'):
@@ -333,8 +334,11 @@ class SXSAllMode(SXSObject):
             fname = Prt / f'{fP}{l}_{m}.dat'
             mode.dump(fname)
 
+    def mode_resample(self, time):
+        return self._core.resample(time)
+
 class waveform_mode_collector(object):
-    def __init__(self, cutpct = 20):
+    def __init__(self, cutpct = 1):
         self._modes = {}
         self._time = None
         self._icut = cutpct
@@ -364,6 +368,10 @@ class waveform_mode_collector(object):
             return self.time
     
     def append_mode(self, time, real, imag, l, m):
+        iscut = int(0.01*self._icut * len(time))
+        time = time[iscut:]
+        real = real[iscut:]
+        imag = imag[iscut:]
         if self._time is None:
             self._time = np.asarray(time.copy())
         mode = np.asarray(real) + 1.j*np.asarray(imag)
@@ -392,10 +400,13 @@ class waveform_mode_collector(object):
         m = int(splt[2])
         return (l,m)
     
+    def get_mode_list(self):
+        return [self._get_mode_lm(key) for key in self._modes]
+
     def get_mode(self, l, m):
         key = self._get_key(l,m)
         if key not in self._modes:
-            sys.stderr.write(f'{WARNING}:You have not appended such mode ({l},{m})\n')
+            # sys.stderr.write(f'{WARNING}:You shave not appended such mode ({l},{m})\n')
             return None
         return self._modes[key]
     
@@ -410,6 +421,26 @@ class waveform_mode_collector(object):
         else:
             return self.time[np.argmax(np.abs(mode))]
 
+    def resample(self, time):
+        out = waveform_mode_collector(0)
+        time_new = time - time[0]
+        for (l, m), mode in self:
+            mode_new = mode.interpolate(time)
+            out.append_mode(time_new, mode_new.real, mode_new.imag, l, m)
+        return out
+
+    def construct_hpc(self, iota, phic, modelist = None):
+        out = np.zeros(len(self._time)) + 1.j*np.zeros(len(self._time))
+        if modelist is None:
+            modelist = self.get_mode_list()
+        for (l, m) in modelist:
+            mode = self.get_mode(l, m)
+            if mode is None:
+                continue
+            Y = SpinWeightedM2SphericalHarmonic(iota, phic, l, m)
+            out += np.conjugate(Y * mode.value)
+        return ModeBase(self.time, out.real, out.imag)
+        
 
 class SXSparameters(SXSObject):
     def __init__(self, SXSnum, table = DEFAULT_TABLE, f_ini = 0, Mtotal = 40, D = 100, verbose = False, ishertz = False):

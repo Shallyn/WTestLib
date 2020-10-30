@@ -9,13 +9,14 @@ import sys, os
 import numpy as np
 import matplotlib.pyplot as plt
 from .psd import DetectorPSD
-from .Utils import switch
-from .SXS import DEFAULT_TABLE, DEFAULT_SRCLOC, DEFAULT_SRCLOC_ALL, SXSh22, CEV
-from .h22datatype import h22_alignment, dim_t, ModeBase
+from .Utils import switch, SpinWeightedM2SphericalHarmonic
+from .SXS import DEFAULT_TABLE, DEFAULT_SRCLOC, DEFAULT_SRCLOC_ALL, SXSh22, CEV, SXSAllMode, Generator, waveform_mode_collector, LOG
+from .h22datatype import h22_alignment, dim_t, ModeBase, Mode_alignment, calculate_ModeFF
 from .SXSlist import DEFAULT_ECC_ORBIT_DICT, DEFAULT_ECC_ORBIT_DICT_V5
 from optparse import OptionParser
 from .MultiGrid import MultiGrid1D, MultiGrid
 from pathlib import Path
+from itertools import product
 
 class V5Dynamics(object):
     def __init__(self, dydata):
@@ -953,6 +954,155 @@ def GridSearch_ecc(argv = None):
                 f.write(mDebug)
     return 0
 
+def Compare_ecc_HM(argv = None):
+    from .SXS import DEFAULT_TABLE
+    from .SXS import DEFAULT_SRCLOC
+    from .SXS import DEFAULT_SRCLOC_ALL
+    from .SXS import save_namecol, add_csv
+    from .generator import self_adaptivor
+
+    parser = OptionParser(description='Waveform Comparation With SXS')
+
+    parser.add_option('--executable', type = 'str', default = DEFAULT_EXEV5, help = 'Exe command')
+    parser.add_option('--approx', type = 'str', default = 'SEOBNREv5', help = 'Version of the code')
+    parser.add_option('--fini', type = 'float', default = 0, help = 'Initial orbital frequency')
+    parser.add_option('--SXS', type = 'str',  default = '1368', help = 'SXS template for comparision')
+ 
+    parser.add_option('--prefix', type = 'str', default = '.', help = 'dir for results saving.')
+    parser.add_option('--jobtag', type = 'str', default = '_lnprob', help = 'jobtag.')
+
+    parser.add_option('--psd', type = 'str', default = 'advLIGO_zerodethp', help = 'Detector psd.')
+    parser.add_option('--flow', type = 'float', default = 0, help = 'Lower frequency cut off for psd.')
+    parser.add_option('--timeout', type = 'int', default = 60, help = 'Time limit for waveform generation')
+
+    parser.add_option('--table', type = 'str', default = str(DEFAULT_TABLE), help = 'Path of SXS table.')
+    parser.add_option('--srcloc-all', type = 'str', default = str(DEFAULT_SRCLOC_ALL), help = 'Path of SXS waveform data all modes')
+
+    parser.add_option('--num-ecc', type = 'int', default = 50, help = 'numbers for grid search')
+    parser.add_option('--max-ecc', type = 'float', help = 'Upper bound of parameter')
+    parser.add_option('--min-ecc', type = 'float', help = 'Lower bound of parameter')
+
+    parser.add_option('--num-mtotal', type = 'int', default = 10, help = 'numbers for grid search')
+    parser.add_option('--max-mtotal', type = 'float', default = 200, help = 'Upper bound of parameter')
+    parser.add_option('--min-mtotal', type = 'float', default = 20, help = 'Lower bound of parameter')
+
+    parser.add_option('--eps', type = 'float', default = 1e-6, help = 'Thresh of div')
+    parser.add_option('--mag', type = 'float', default = 10, help = 'Thresh of dx_init / dx (>1)')
+    parser.add_option('--filter-thresh', type = 'float', default = 0.4, help = 'Thresh of grid search (<1)')
+    parser.add_option('--max-step', type = 'int', default = 100, help = 'Max iter depth')
+    args, _ = parser.parse_args(argv)
+
+    exe = args.executable
+    approx = args.approx
+    SXSnum = args.SXS
+    fini = args.fini
+    table = args.table
+    jobtag = args.jobtag
+
+    srcloc_all = args.srcloc_all
+    psd = DetectorPSD(args.psd, flow = args.flow)
+    eps = args.eps
+    mag = args.mag
+    filter_thresh = args.filter_thresh
+    max_step = args.max_step
+    prefix = Path(args.prefix) / SXSnum
+    if not prefix.exists():
+        prefix.mkdir(parents = True)
+
+    NR = SXSAllMode(SXSnum, table = table, srcloc = srcloc_all, cutpct = 1.5)
+    h22 = NR.get_mode(2,2)
+    h21 = NR.get_mode(2,1)
+    h33 = NR.get_mode(3,3)
+    h44 = NR.get_mode(4,4)
+
+    max_freq = max(h22.frequency.max(), h21.frequency.max(), h33.frequency.max(), h44.frequency.max())
+    deltaT = np.pi / max_freq / 4
+    NRModetime = np.arange(h22.time[0], h22.time[-1], deltaT)
+    NRModes = NR.mode_resample(NRModetime)
+
+    m1 = NR.mQ1
+    m2 = NR.mQ2
+    s1z = NR.s1z
+    s2z = NR.s2z
+    srate = dim_t(m1 + m2) / deltaT
+    ge = Generator(approx = approx, executable = exe, verbose = True)
+    if SXSnum not in DEFAULT_ECC_ORBIT_DICT:
+        return 0
+    f0, min_e, max_e = get_ecc_range(SXSnum, args.min_ecc, args.max_ecc)
+    fini = f0 * dim_t(m1 + m2)
+    max_ecc = max_e
+    min_ecc = min_e
+    ecc_range = (min_ecc, max_ecc)
+    num_ecc = args.num_ecc
+
+    def estimate_ecc(ecc):
+        ret = ge(m1 = m1, m2 = m2, s1z = s1z, s2z = s2z, D = 100, 
+                ecc = ecc, srate = srate, f_ini = fini, L = 2, M = 2,
+                timeout = 3600, jobtag = jobtag, mode = 22)
+        if isinstance(ret, CEV):
+            return 0
+        t, h22r, h22i = ret[:,0], ret[:,1], ret[:,2]
+        h22EOB = ModeBase(t, h22r, h22i)
+        h22NR = NRModes.get_mode(2, 2)
+        MtotalList_ecc = (20, 40, 70, 100, 130, 160, 190)
+        FFL, _, tcL = calculate_ModeFF(h22EOB, h22NR, Mtotal = MtotalList_ecc, psd = psd)
+        lnp = -np.power((1-FFL)/0.01, 2) - np.power(tcL/5, 2)
+        return np.max(lnp)
+    MG = MultiGrid1D(estimate_ecc, ecc_range, num_ecc)
+    data = MG.run(fsave = None, eps = eps, magnification = mag, filter_thresh = filter_thresh, maxiter = max_step)
+    ecc_grid, lnp_grid = data[:,0], data[:,1]
+    ecc_fit = ecc_grid[np.argmax(lnp_grid)]
+
+    sys.stderr.write(f'{LOG}: Estimate ecc_fit = {ecc_fit}')
+    ecc_range_new = (ecc_fit - 0.015, ecc_fit + 0.015)
+    max_mtotal = args.max_mtotal
+    min_mtotal = args.min_mtotal
+    num_mtotal = args.num_mtotal
+    MtotalList = np.linspace(min_mtotal, max_mtotal, num_mtotal)
+
+    NRModeList = []
+    for l in range(2, 5):
+        for m in range(-l, l+1):
+            if m!=0:
+                NRModeList.append((l,m))
+    if args.only22:
+        EOBModeList = [(2,2), (2,-2)]
+    else:
+        EOBModeList = [(2,2), (2,-2), (2,1), (2,-1), (3,3), (3,-3), (4,4), (4,-4)]
+    iotaList = np.linspace(0, np.pi, 15)
+    def calculate_Max_FF_HM(ecc, phic, Mtotal_input, iota_input):
+        ret = ge(m1 = m1, m2 = m2, s1z = s1z, s2z = s2z, D = 100, 
+                ecc = ecc_fit, srate = srate, f_ini = fini, L = 2, M = 2,
+                timeout = 3600, jobtag = jobtag, mode = 0)
+        if isinstance(ret, CEV):
+            return 0
+        EOBModes = waveform_mode_collector(0)
+        t, h22r, h22i, h21r, h21i, h33r, h33i, h44r, h44i = \
+            ret[:,0], ret[:,1], ret[:,2], ret[:,3], ret[:,4], ret[:,5], ret[:,6], ret[:,7], ret[:,8]
+        EOBModes.append_mode(t, h22r, h22i, 2, 2)
+        EOBModes.append_mode(t, h22r, -h22i, 2, -2)
+        EOBModes.append_mode(t, h21r, h21i, 2, 1)
+        EOBModes.append_mode(t, h21r, -h21i, 2, -1)
+        EOBModes.append_mode(t, h33r, h33i, 3, 3)
+        EOBModes.append_mode(t, h33r, -h33i, 3, -3)
+        EOBModes.append_mode(t, h44r, h44i, 4, 4)
+        EOBModes.append_mode(t, h44r, -h44i, 4, -4)
+        hpcNR = NRModes.construct_hpc(iota, 0, modelist = NRModeList)
+        hpcEOB = EOBModes.construct_hpc(iota, phic, modelist = EOBModeList)
+        FF, _1, _2 = calculate_ModeFF(hpcEOB, hpcNR, Mtotal = Mtotal_input, psd = psd)
+        return FF
+    fresults = prefix / f'results_{jobtag}.csv'
+    # Setting Results savimg filename.
+    save_namecol(fresults, data = [['#Mtotal', '#iota', '#ecc', '#FF']])
+    dphic_range = (0, 2.*np.pi)
+    for Mtotal, iota in product(MtotalList, iotaList):
+        MG = MultiGrid(calculate_Max_FF_HM, ecc_range_new, dphic_range, 30, 18,  Mtotal_input = Mtotal, iota_input = iota)
+        data = MG.run(fsave = None, eps = eps, magnification = mag, filter_thresh = filter_thresh, maxiter = max_step)
+        indmax = np.argmax(data[:,1])
+        final_FF = data[indmax,2]
+        final_ecc = data[indmax, 0]
+        add_csv(fresults, [[Mtotal, iota, final_ecc, final_FF]])
+    return 0
 
 #-----Recover EOB vs SXS-----#
 def GridSearch_KK_dtpeak(argv = None):

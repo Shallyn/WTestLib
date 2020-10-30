@@ -387,3 +387,134 @@ class switch(object):
             return True
         else:
             return False
+
+
+# Spin weighted -2 Spherical Harmonics
+def SpinWeightedM2SphericalHarmonic(theta, phi, l, m):
+    modetag = l*100 + m
+    GET_SQRT = np.sqrt
+    CST_PI = np.pi
+    GET_COS = np.cos
+    GET_SIN = np.sin
+    GET_POW = np.power
+    for case in switch(modetag):
+        if case(198):
+            # mode 2, -2
+            fac = GET_SQRT( 5.0 / ( 64.0 * CST_PI ) ) * ( 1.0 - GET_COS( theta ))*( 1.0 - GET_COS( theta ))
+            break
+        if case(199):
+            # mode 2, -1
+            fac = GET_SQRT( 5.0 / ( 16.0 * CST_PI ) ) * GET_SIN( theta )*( 1.0 - GET_COS( theta ))
+            break
+        if case(200):
+            # mode 2, 0
+            fac = GET_SQRT( 15.0 / ( 32.0 * CST_PI ) ) * GET_SIN( theta )*GET_SIN( theta )
+            break
+        if case(201):
+            # mode 2, 1
+            fac = GET_SQRT( 5.0 / ( 16.0 * CST_PI ) ) * GET_SIN( theta )*( 1.0 + GET_COS( theta ))
+            break
+        if case(202):
+            # mode 2, 2
+            fac = GET_SQRT( 5.0 / ( 64.0 * CST_PI ) ) * ( 1.0 + GET_COS( theta ))*( 1.0 + GET_COS( theta ))
+            break
+        if case(297):
+            # mode 3, -3
+            fac = GET_SQRT(21.0/(2.0*CST_PI))*GET_COS(theta/2.0)*GET_POW(GET_SIN(theta/2.0),5.0)
+            break
+        if case(298):
+            # mode 3, -2
+            fac = GET_SQRT(7.0/(4.0*CST_PI))*(2.0 + 3.0*GET_COS(theta))*GET_POW(GET_SIN(theta/2.0),4.0)
+            break
+        if case(299):
+            # mode 3, -1
+            fac = GET_SQRT(35.0/(2.0*CST_PI))*(GET_SIN(theta) + 4.0*GET_SIN(2.0*theta) - 3.0*GET_SIN(3.0*theta))/32.0
+            break
+        if case(300):
+            # mode 3, 0
+            fac = (GET_SQRT(105.0/(2.0*CST_PI))*GET_COS(theta)*GET_POW(GET_SIN(theta),2.0))/4.0
+            break
+        if case(301):
+            # mode 3, 1
+            fac = -GET_SQRT(35.0/(2.0*CST_PI))*(GET_SIN(theta) - 4.0*GET_SIN(2.0*theta) - 3.0*GET_SIN(3.0*theta))/32.0
+            break
+        if case(302):
+            # mode 3, 2
+            fac = GET_SQRT(7.0/CST_PI)*GET_POW(GET_COS(theta/2.0),4.0)*(-2.0 + 3.0*GET_COS(theta))/2.0
+            break
+        if case(303):
+            # mode 3, 3
+            fac = -GET_SQRT(21.0/(2.0*CST_PI))*GET_POW(GET_COS(theta/2.0),5.0)*GET_SIN(theta/2.0)
+            break
+        if case(396):
+            # mode 4, -4
+            fac = 3.0*GET_SQRT(7.0/CST_PI)*GET_POW(GET_COS(theta/2.0),2.0)*GET_POW(GET_SIN(theta/2.0),6.0)
+            break
+        if case(397):
+            # mode 4, -3
+            fac = 3.0*GET_SQRT(7.0/(2.0*CST_PI))*GET_COS(theta/2.0)*(1.0 + 2.0*GET_COS(theta))*GET_POW(GET_SIN(theta/2.0),5.0)
+            break
+        if case(398):
+            # mode 4, -2
+            fac = (3.0*(9.0 + 14.0*GET_COS(theta) + 7.0*GET_COS(2.0*theta))*GET_POW(GET_SIN(theta/2.0),4.0))/(4.0*GET_SQRT(CST_PI))
+            break
+        if case(399):
+            # mode 4, -1
+            fac = (3.0*(3.0*GET_SIN(theta) + 2.0*GET_SIN(2.0*theta) + 7.0*GET_SIN(3.0*theta) - 7.0*GET_SIN(4.0*theta)))/(32.0*GET_SQRT(2.0*CST_PI))
+            break
+        if case(400):
+            # mode 4, 0
+            fac = (3.0*GET_SQRT(5.0/(2.0*CST_PI))*(5.0 + 7.0*GET_COS(2.0*theta))*GET_POW(GET_SIN(theta),2.0))/16.0
+            break
+        if case(401):
+            # mode 4, 1
+            fac = (3.0*(3.0*GET_SIN(theta) - 2.0*GET_SIN(2.0*theta) + 7.0*GET_SIN(3.0*theta) + 7.0*GET_SIN(4.0*theta)))/(32.0*GET_SQRT(2.0*CST_PI))
+            break
+        if case(402):
+            # mode 4, 2
+            fac = (3.0*GET_POW(GET_COS(theta/2.0),4.0)*(9.0 - 14.0*GET_COS(theta) + 7.0*GET_COS(2.0*theta)))/(4.0*GET_SQRT(CST_PI))
+            break
+        if case(403):
+            # mode 4, 3
+            fac = -3.0*GET_SQRT(7.0/(2.0*CST_PI))*GET_POW(GET_COS(theta/2.0),5.0)*(-1.0 + 2.0*GET_COS(theta))*GET_SIN(theta/2.0)
+            break
+        if case(404):
+            # mode 4, 4
+            fac = 3.0*GET_SQRT(7.0/CST_PI)*GET_POW(GET_COS(theta/2.0),6.0)*GET_POW(GET_SIN(theta/2.0),2.0)
+            break
+        if case(495):
+            fac = GET_SQRT(330.0/CST_PI)*GET_POW(GET_COS(theta/2.0),3.0)*GET_POW(GET_SIN(theta/2.0),7.0)
+            break
+        if case(496):
+            fac = GET_SQRT(33.0/CST_PI)*GET_POW(GET_COS(theta/2.0),2.0)*(2.0 + 5.0*GET_COS(theta))*GET_POW(GET_SIN(theta/2.0),6.0)
+            break
+        if case(497):
+            fac = (GET_SQRT(33.0/(2.0*CST_PI))*GET_COS(theta/2.0)*(17.0 + 24.0*GET_COS(theta) + 15.0*GET_COS(2.0*theta))*GET_POW(GET_SIN(theta/2.0),5.0))/4.0
+            break
+        if case(498):
+            fac = (GET_SQRT(11.0/CST_PI)*(32.0 + 57.0*GET_COS(theta) + 36.0*GET_COS(2.0*theta) + 15.0*GET_COS(3.0*theta))*GET_POW(GET_SIN(theta/2.0),4.0))/8.0
+            break
+        if case(499):
+            fac = (GET_SQRT(77.0/CST_PI)*(2.0*GET_SIN(theta) + 8.0*GET_SIN(2.0*theta) + 3.0*GET_SIN(3.0*theta) + 12.0*GET_SIN(4.0*theta) - 15.0*GET_SIN(5.0*theta)))/256.0
+            break
+        if case(500):
+            fac = (GET_SQRT(1155.0/(2.0*CST_PI))*(5.0*GET_COS(theta) + 3.0*GET_COS(3.0*theta))*GET_POW(GET_SIN(theta),2.0))/32.0
+            break
+        if case(501):
+            fac = GET_SQRT(77.0/CST_PI)*(-2.0*GET_SIN(theta) + 8.0*GET_SIN(2.0*theta) - 3.0*GET_SIN(3.0*theta) + 12.0*GET_SIN(4.0*theta) + 15.0*GET_SIN(5.0*theta))/256.0
+            break
+        if case(502):
+            fac = GET_SQRT(11.0/CST_PI)*GET_POW(GET_COS(theta/2.0),4.0)*(-32.0 + 57.0*GET_COS(theta) - 36.0*GET_COS(2.0*theta) + 15.0*GET_COS(3.0*theta))/8.0
+            break
+        if case(503):
+            fac = -GET_SQRT(33.0/(2.0*CST_PI))*GET_POW(GET_COS(theta/2.0),5.0)*(17.0 - 24.0*GET_COS(theta) + 15.0*GET_COS(2.0*theta))*GET_SIN(theta/2.0)/4.0
+            break
+        if case(504):
+            fac = GET_SQRT(33.0/CST_PI)*GET_POW(GET_COS(theta/2.0),6.0)*(-2.0 + 5.0*GET_COS(theta))*GET_POW(GET_SIN(theta/2.0),2.0)
+            break
+        if case(505):
+            fac = -GET_SQRT(330.0/CST_PI)*GET_POW(GET_COS(theta/2.0),7.0)*GET_POW(GET_SIN(theta/2.0),3.0)
+            break
+        else:
+            raise Exception(f'Unsupported mode {(l, m)}')
+    return fac * np.exp(1.j* m * phi)

@@ -164,12 +164,12 @@ class ModeBase(object):
         return self._getslice(key)
 
     def __setitem__(self, key, value):
-        self.s[key] = value
+        self._mode[key] = value
     
     def _getslice(self, index):
         if index.start is not None and index.start < 0:
             raise ValueError(('Negative start index ({}) is not supported').format(index.start))        
-        return h22base(self._time[index], self.real[index], self.imag[index], self._srate, self._verbose)
+        return ModeBase(self._time[index], self.real[index], self.imag[index])
     
     def __del__(self):
         del self._time
@@ -179,6 +179,11 @@ class ModeBase(object):
         data = np.stack([self.time, self.real, self.imag], axis = 1)
         np.savetxt(fname, data, **kwargs)
         return
+
+    def pad(self, pad_width, mode, deltaT, **kwargs):
+        self._mode = np.pad(self._mode, pad_width, mode, **kwargs)
+        self._time = np.arange(self._time[0], self._mode.size * deltaT, deltaT)
+
 
 class h22base(ModeBase):
     def __init__(self, time, hreal, himag, srate, verbose = False):
@@ -226,6 +231,110 @@ class h22base(ModeBase):
         plt.plot(self.time, self.real)
         plt.savefig(fname, dpi = 200)
         plt.close()
+
+def Mode_alignment(modeA, modeB, deltaT = None):
+    tA = modeA.time
+    tB = modeB.time
+    dtA = tA[1] - tA[0]
+    dtB = tB[1] - tB[0]
+    if dtA != dtB:
+        if deltaT is not None:
+            dt_final = deltaT
+        elif dtA < dtB:
+            dt_final = dtB
+        else:
+            dt_final = dtA
+        tA_new = np.arange(tA[0], tA[-1], dt_final)
+        tB_new = np.arange(tB[0], tB[-1], dt_final)
+        valA = modeA.interpolate(tA_new)
+        valB = modeB.interpolate(tB_new)
+    else:
+        tA_new = tA
+        tB_new = tB
+        valA = modeA.value
+        valB = modeB.value
+        dt_final = dtA
+    wfA = ModeBase(tA_new, valA.real, valA.imag)
+    wfB = ModeBase(tB_new, valB.real, valB.imag)
+    ipeak_A = wfA.argpeak
+    ipeak_B = wfB.argpeak
+    if ipeak_A > ipeak_B:
+        idx_A = ipeak_A - ipeak_B
+        idx_B = 0
+    else:
+        idx_A = 0
+        idx_B = ipeak_B - ipeak_A
+    # tmove = (ipeak_A - ipeak_B) * dt_final
+    wfA = wfA[idx_A:]
+    wfB = wfB[idx_B:]
+    lenA = len(wfA)
+    lenB = len(wfB)
+    ipeak_A = ipeak_A - idx_A
+    ipeak_B = ipeak_B - idx_B
+    tail_A = lenA - ipeak_A
+    tail_B = lenB - ipeak_B
+    if tail_A > tail_B:
+        lpad = tail_A - tail_B
+        wfB.pad((0,lpad), 'constant', dt_final)
+    else:
+        lpad = tail_B - tail_A
+        wfA.pad((0,lpad), 'constant', dt_final)
+    return wfA, wfB        
+
+def calculate_ModeFF(modeA, modeB, psd, Mtotal = 20, deltaT = None):
+    modeA, modeB = Mode_alignment(modeA, modeB, deltaT = deltaT)
+    Atilde = np.fft.fft(modeA.value)
+    Btilde = np.fft.fft(modeB.value)
+    dtM = (modeA.time[1] - modeA.time[0])
+    NFFT = len(modeA)
+    if not hasattr(Mtotal, '__len__'):
+        dt = dtM / dim_t(Mtotal)
+        df = 1./NFFT/dt
+        freqs = np.abs(np.fft.fftfreq(NFFT, dt))
+        power_vec = psd(freqs)
+        O11 = np.sum(Atilde * Atilde.conjugate() / power_vec).real * df
+        O22 = np.sum(Btilde * Btilde.conjugate() / power_vec).real * df
+        Ox = Atilde * Btilde.conjugate() / power_vec
+        Oxt = np.fft.ifft(Ox) * NFFT * df
+        Oxt_abs = np.abs(Oxt) / np.sqrt(O11 * O22)
+        idx = np.argmax(Oxt_abs)
+        # should apply to ModeA by ModeA * np.exp(1.j*delta_phase)
+        delta_phase = -np.angle(Oxt[idx])
+        lth = len(Oxt_abs)
+        if idx > lth / 2:
+            tc = (idx - lth) * dtM
+        else:
+            tc = idx * dtM
+        return Oxt_abs[idx], delta_phase, tc
+    FF_list = []
+    d_phase_list = []
+    tc_list = []
+    for mtotal in Mtotal:
+        dt = dtM / dim_t(mtotal)
+        df = 1./NFFT/dt
+        freqs = np.abs(np.fft.fftfreq(NFFT, dt))
+        power_vec = psd(freqs)
+        O11 = np.sum(Atilde * Atilde.conjugate() / power_vec).real * df
+        O22 = np.sum(Btilde * Btilde.conjugate() / power_vec).real * df
+        Ox = Atilde * Btilde.conjugate() / power_vec
+        Oxt = np.fft.ifft(Ox) * NFFT * df
+        Oxt_abs = np.abs(Oxt) / np.sqrt(O11 * O22)
+        idx = np.argmax(Oxt_abs)
+        # should apply to ModeA by ModeA * np.exp(1.j*delta_phase)
+        delta_phase = -np.angle(Oxt[idx])
+        FF_list.append(Oxt_abs[idx])
+        d_phase_list.append(delta_phase)
+        lth = len(Oxt_abs)
+        if idx > lth / 2:
+            tc = (idx - lth) * dtM
+        else:
+            tc = idx * dtM
+        tc_list.append(tc)
+
+    return np.asarray(FF_list), np.asarray(d_phase_list), np.asarray(tc_list)
+
+
+
 
 def h22_alignment(wfA, wfB, peak_A = None, peak_B = None):
     fs_A = wfA.srate

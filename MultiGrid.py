@@ -64,11 +64,12 @@ class Grid1D(Grid1DAtom):
     def __getitem__(self, key):
         return self.x[key]
     
-    def __call__(self, func):
+    def __call__(self, func, **kwargs):
+        print(kwargs)
         x_list = self.x
         fx_list = np.zeros(self.length)
         for i in range(self.length):
-            fx_list[i] = func(x_list[i])
+            fx_list[i] = func(x_list[i], **kwargs)
         return Grid1DFunc(fx_list, self)
 
 
@@ -210,35 +211,43 @@ class Grid1DFuncPointsCollector(object):
     
 # Used when searching for (x,y) that can maximize func(x,y)
 class MultiGrid1D(object):
-    def __init__(self, func, x_range, N_x):
+    def __init__(self, func, x_range, N_x, **kwargs):
         x_min = x_range[0]
         x_max = x_range[1]
         self._grid = Grid1D(x_min, x_max, N_x)
         self._func = func
+        self._kwargs = kwargs
 
     @property
     def grid(self):
         return self._grid
     
-    def run(self, fsave, eps = 1e-6, magnification = 10, filter_thresh = 0.4, maxiter = 100):
-        fpath = Path(fsave)
-        if fpath.exists():
-            f = open(fpath, 'w')
-            f.close()
-        fprefix_family = fpath.parent / 'grid_family'
-        if not fprefix_family.exists():
-            fprefix_family.mkdir(parents = True)
-        GrdF = self._grid(self._func)
-        GrdF.save(fsave)
-        GrdF.save_family(fprefix_family)
+    def run(self, fsave = None, eps = 1e-6, magnification = 10, filter_thresh = 0.4, maxiter = 100):
+        print_family = True
+        if fsave is None:
+            print_family = False
+        GrdF = self._grid(self._func, **self._kwargs)
+        if print_family:
+            fpath = Path(fsave)
+            if fpath.exists():
+                f = open(fpath, 'w')
+                f.close()
+            fprefix_family = fpath.parent / 'grid_family'
+            if not fprefix_family.exists():
+                fprefix_family.mkdir(parents = True)
+            GrdF.save(fsave)
+            GrdF.save_family(fprefix_family)
         GPoints = GrdF.filter(thresh=filter_thresh)
         GPointsClusterList = GPoints.DBSCAN_cluster()
         GrdFuncList = []
+        ret = np.stack([GrdF.grid.x, GrdF.values], axis = 1)
         for GPCobj in GPointsClusterList:
             Grd = GPCobj.generate_grid()
-            GrdF = Grd(self._func)
-            GrdF.save(fsave)
-            GrdF.save_family(fprefix_family)
+            GrdF = Grd(self._func, **self._kwargs)
+            if print_family:
+                GrdF.save(fsave)
+                GrdF.save_family(fprefix_family)
+            ret = np.append(ret, np.stack([GrdF.grid.x, GrdF.values], axis = 1), axis = 0)
             GrdFuncList.append(GrdF)
         ind = 0
         dx_init = self._grid.dx
@@ -256,13 +265,15 @@ class MultiGrid1D(object):
             GrdFuncListNew = []
             for GPCobj in GrdFuncListNew:
                 GrdNew = GPCobj.generate_grid()
-                GrdFNew = GrdNew(self._func)
-                GrdFNew.save(fsave)
-                GrdFNew.save_family(fprefix_family)
+                GrdFNew = GrdNew(self._func, **self._kwargs)
+                if print_family:
+                    GrdFNew.save(fsave)
+                    GrdFNew.save_family(fprefix_family)
+                ret = np.append(ret, np.stack([GrdFNew.grid.x, GrdFNew.values], axis = 1), axis = 0)
                 GrdFuncListNew.append(GrdFNew)
             GrdFuncList.remove(GrdF)
             GrdFuncList = GrdFuncList + GrdFuncListNew
-        return                
+        return ret
 
 
 # 2D
@@ -399,12 +410,12 @@ class Grid2D(Grid2DAtom):
             return self.x[key[0]], self.y[key[1]]
         return self.xRank[key], self.yRank[key]
     
-    def __call__(self, func):
+    def __call__(self, func, **kwargs):
         x_list = self.xRank
         y_list = self.yRank
         fxy_list = np.zeros(self.length)
         for i in range(self.length):
-            fxy_list[i] = func(x_list[i], y_list[i])
+            fxy_list[i] = func(x_list[i], y_list[i], **kwargs)
         return GridFunc(fxy_list, self)
 
 
@@ -574,37 +585,45 @@ class GridFuncPointsCollector(object):
 
 # Used when searching for (x,y) that can maximize func(x,y)
 class MultiGrid(object):
-    def __init__(self, func, x_range, y_range, N_x, N_y):
+    def __init__(self, func, x_range, y_range, N_x, N_y, **kwargs):
         x_min = x_range[0]
         x_max = x_range[1]
         y_min = y_range[0]
         y_max = y_range[1]
         self._grid = Grid2D(x_min, x_max, y_min, y_max, N_x, N_y)
         self._func = func
+        self._kwargs = kwargs
 
     @property
     def grid(self):
         return self._grid
     
-    def run(self, fsave, eps = 1e-6, magnification = 10, filter_thresh = 0.4, maxiter = 100):
-        fpath = Path(fsave)
-        if fpath.exists():
-            f = open(fpath, 'w')
-            f.close()
-        fprefix_family = fpath.parent / 'grid_family'
-        if not fprefix_family.exists():
-            fprefix_family.mkdir(parents = True)
-        GrdF = self._grid(self._func)
-        GrdF.save(fsave)
-        GrdF.save_family(fprefix_family)
+    def run(self, fsave = None, eps = 1e-6, magnification = 10, filter_thresh = 0.4, maxiter = 100):
+        GrdF = self._grid(self._func, **self._kwargs)
+        ret = np.stack([GrdF.grid.xRank, GrdF.grid.yRank, GrdF.values], axis = 1)
+        print_family = True
+        if fsave is None:
+            print_family = False
+        if print_family:
+            fpath = Path(fsave)
+            if fpath.exists():
+                f = open(fpath, 'w')
+                f.close()
+            fprefix_family = fpath.parent / 'grid_family'
+            if not fprefix_family.exists():
+                fprefix_family.mkdir(parents = True)
+            GrdF.save(fsave)
+            GrdF.save_family(fprefix_family)
         GPoints = GrdF.filter(thresh=filter_thresh)
         GPointsClusterList = GPoints.DBSCAN_cluster()
         GrdFuncList = []
         for GPCobj in GPointsClusterList:
             Grd = GPCobj.generate_grid()
-            GrdF = Grd(self._func)
-            GrdF.save(fsave)
-            GrdF.save_family(fprefix_family)
+            GrdF = Grd(self._func, **self._kwargs)
+            ret = np.append(ret, np.stack([GrdF.grid.xRank, GrdF.grid.yRank, GrdF.values], axis = 1), axis = 0)
+            if print_family:
+                GrdF.save(fsave)
+                GrdF.save_family(fprefix_family)
             GrdFuncList.append(GrdF)
         ind = 0
         dx_init = self._grid.dx
@@ -624,10 +643,12 @@ class MultiGrid(object):
             GrdFuncListNew = []
             for GPCobj in GrdFuncListNew:
                 GrdNew = GPCobj.generate_grid()
-                GrdFNew = GrdNew(self._func)
-                GrdFNew.save(fsave)
-                GrdFNew.save_family(fprefix_family)
+                GrdFNew = GrdNew(self._func, **self._kwargs)
+                ret = np.append(ret, np.stack([GrdFNew.grid.xRank, GrdFNew.grid.yRank, GrdFNew.values], axis = 1), axis = 0)
+                if print_family:
+                    GrdFNew.save(fsave)
+                    GrdFNew.save_family(fprefix_family)
                 GrdFuncListNew.append(GrdFNew)
             GrdFuncList.remove(GrdF)
             GrdFuncList = GrdFuncList + GrdFuncListNew
-        return                
+        return ret

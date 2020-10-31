@@ -1048,6 +1048,7 @@ def Compare_ecc_HM(argv = None):
         MtotalList_ecc = (20, 40, 70, 100, 130, 160, 190)
         FFL, _, tcL = calculate_ModeFF(h22EOB, h22NR, Mtotal = MtotalList_ecc, psd = psd)
         lnp = -np.power((1-FFL)/0.01, 2) - np.power(tcL/5, 2)
+        sys.stderr.write(f'FFL\n')
         return np.min(lnp)
     MG = MultiGrid1D(estimate_ecc, ecc_range, num_ecc)
     data = MG.run(fsave = None, eps = eps, magnification = mag, filter_thresh = filter_thresh, maxiter = max_step)

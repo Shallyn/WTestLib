@@ -217,7 +217,7 @@ class h22base(ModeBase):
         self._mode = self.interpolate(new_time)
         self._time = new_time
 
-    def pad(self, pad_width, mode, **kwargs):
+    def pad22(self, pad_width, mode, **kwargs):
         self._mode = np.pad(self._mode, pad_width, mode, **kwargs)
         self._time = np.arange(self._time[0], self._mode.size / self._srate, 1./self._srate)
         
@@ -373,10 +373,10 @@ def h22_alignment(wfA, wfB, peak_A = None, peak_B = None):
     # Check data shape 
     if tail_A > tail_B:
         lpad = tail_A - tail_B
-        wfB.pad((0,lpad), 'constant')
+        wfB.pad22((0,lpad), 'constant')
     else:
         lpad = tail_B - tail_A
-        wfA.pad((0,lpad), 'constant')
+        wfA.pad22((0,lpad), 'constant')
         
     return wfA, wfB, tmove
 

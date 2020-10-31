@@ -990,6 +990,7 @@ def Compare_ecc_HM(argv = None):
     parser.add_option('--mag', type = 'float', default = 10, help = 'Thresh of dx_init / dx (>1)')
     parser.add_option('--filter-thresh', type = 'float', default = 0.4, help = 'Thresh of grid search (<1)')
     parser.add_option('--max-step', type = 'int', default = 100, help = 'Max iter depth')
+    parser.add_option('--only22', action = 'store_true', help = 'only22 for EOB')
     args, _ = parser.parse_args(argv)
 
     exe = args.executable

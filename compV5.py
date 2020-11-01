@@ -1103,7 +1103,6 @@ def Compare_ecc_HM(argv = None):
         def max_FF_over_phic(phic):
             hpcEOB = EOBModes.construct_hpc(iota_input, phic, modelist = EOBModeList)
             FF, _1, _2 = calculate_ModeFF(hpcEOB, hpcNR.copy(), Mtotal = Mtotal_input, psd = psd)
-            print(f'{phic/np.pi} pi: {FF}')
             return FF
         dphic_range = (-np.pi*0.1, 2.1*np.pi)
         MG_phic = MultiGrid1D(max_FF_over_phic, dphic_range, 36)

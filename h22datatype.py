@@ -264,6 +264,8 @@ def Mode_alignment(modeA, modeB, deltaT = None):
         dt_final = dtA
     wfA = ModeBase(tA_new, valA.real, valA.imag)
     wfB = ModeBase(tB_new, valB.real, valB.imag)
+    if len(valA) == len(valB):
+        return wfA, wfB
     ipeak_A = wfA.argpeak
     ipeak_B = wfB.argpeak
     if ipeak_A > ipeak_B:
@@ -289,7 +291,7 @@ def Mode_alignment(modeA, modeB, deltaT = None):
         wfA.pad((0,lpad), 'constant', dt_final)
     return wfA, wfB        
 
-def calculate_ModeFF(modeA, modeB, psd, Mtotal = 20, deltaT = None):
+def calculate_ModeFF(modeA, modeB, psd, Mtotal = 20, deltaT = None, phase2zero = False):
     modeA, modeB = Mode_alignment(modeA, modeB, deltaT = deltaT)
     Atilde = np.fft.fft(modeA.value)
     Btilde = np.fft.fft(modeB.value)

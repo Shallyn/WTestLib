@@ -994,6 +994,7 @@ def Compare_ecc_HM(argv = None):
     parser.add_option('--filter-thresh', type = 'float', default = 0.4, help = 'Thresh of grid search (<1)')
     parser.add_option('--max-step', type = 'int', default = 100, help = 'Max iter depth')
     parser.add_option('--only22', action = 'store_true', help = 'only22 for EOB')
+    parser.add_option('--search-ecc', action = 'store_true', help = 'for test')
     args, _ = parser.parse_args(argv)
 
     exe = args.executable
@@ -1060,7 +1061,7 @@ def Compare_ecc_HM(argv = None):
     else:
         ecc_fit = args.ecc
 
-    sys.stderr.write(f'{LOG}: Estimate ecc_fit = {ecc_fit}\n')
+    sys.stderr.write(f'{LOG}: SXS_{SXSnum}, Estimate ecc_fit = {ecc_fit}\n')
     ecc_range_new = (ecc_fit - 0.015, ecc_fit + 0.015)
     max_mtotal = args.max_mtotal
     min_mtotal = args.min_mtotal
@@ -1079,6 +1080,7 @@ def Compare_ecc_HM(argv = None):
         EOBModeList = [(2,2), (2,-2)]
     else:
         EOBModeList = [(2,2), (2,-2), (2,1), (2,-1), (3,3), (3,-3), (4,4), (4,-4)]
+    sys.stderr.write(f'NRModeList:\n{NRModeList}\n')
     sys.stderr.write(f'EOBModeList:\n{EOBModeList}\n')
     def calculate_Max_FF_HM(ecc, Mtotal_input, iota_input):
         ret = ge(m1 = m1, m2 = m2, s1z = s1z, s2z = s2z, D = 100, 
@@ -1088,7 +1090,7 @@ def Compare_ecc_HM(argv = None):
             return 0
         EOBModes = waveform_mode_collector(0)
         t, h22r, h22i, h21r, h21i, h33r, h33i, h44r, h44i = \
-            ret[:,0], ret[:,1], ret[:,2], ret[:,3], ret[:,4], ret[:,5], ret[:,6], ret[:,7], ret[:,8]
+            ret[:,0], ret[:,1], ret[:,2], ret[:,3], ret[:,4], ret[:,5], ret[:,6], ret[:,7], ret[:,8]   
         EOBModes.append_mode(t, h22r, h22i, 2, 2)
         EOBModes.append_mode(t, h22r, -h22i, 2, -2)
         EOBModes.append_mode(t, h21r, h21i, 2, 1)
@@ -1100,10 +1102,11 @@ def Compare_ecc_HM(argv = None):
         hpcNR = NRModes.construct_hpc(iota_input, 0, modelist = NRModeList)
         def max_FF_over_phic(phic):
             hpcEOB = EOBModes.construct_hpc(iota_input, phic, modelist = EOBModeList)
-            FF, _1, _2 = calculate_ModeFF(hpcEOB, hpcNR, Mtotal = Mtotal_input, psd = psd)
+            FF, _1, _2 = calculate_ModeFF(hpcEOB, hpcNR.copy(), Mtotal = Mtotal_input, psd = psd)
+            print(f'{phic/np.pi} pi: {FF}')
             return FF
-        dphic_range = (0, 2.*np.pi)
-        MG_phic = MultiGrid1D(max_FF_over_phic, dphic_range, 18)
+        dphic_range = (-np.pi*0.1, 2.1*np.pi)
+        MG_phic = MultiGrid1D(max_FF_over_phic, dphic_range, 36)
         data = MG_phic.run(fsave = None, eps = eps, magnification = mag, filter_thresh = filter_thresh, maxiter = max_step)
         return np.max(data[:,1])
     fresults = prefix / f'results_{jobtag}.csv'
@@ -1113,14 +1116,20 @@ def Compare_ecc_HM(argv = None):
         iotaList = np.array([args.iota * np.pi])
     else:
         iotaList = np.linspace(0, np.pi, 15)
-    
-    for Mtotal, iota in product(MtotalList, iotaList):
-        MG = MultiGrid1D(calculate_Max_FF_HM, ecc_range_new, 10, Mtotal_input = Mtotal, iota_input = iota)
-        data = MG.run(fsave = None, eps = eps, magnification = mag, filter_thresh = filter_thresh, maxiter = max_step)
-        indmax = np.argmax(data[:,1])
-        final_FF = data[indmax,1]
-        final_ecc = data[indmax, 0]
-        add_csv(fresults, [[Mtotal, iota, final_ecc, final_FF]])
+    if args.search_ecc:
+        for Mtotal, iota in product(MtotalList, iotaList):
+            sys.stderr.write(f'Mtotal = {Mtotal}, iota = {iota/np.pi} pi\n')
+            MG = MultiGrid1D(calculate_Max_FF_HM, ecc_range_new, 10, Mtotal_input = Mtotal, iota_input = iota)
+            data = MG.run(fsave = None, eps = eps, magnification = mag, filter_thresh = filter_thresh, maxiter = max_step)
+            indmax = np.argmax(data[:,1])
+            final_FF = data[indmax,1]
+            final_ecc = data[indmax, 0]
+            add_csv(fresults, [[Mtotal, iota, final_ecc, final_FF]])
+    else:
+        for Mtotal, iota in product(MtotalList, iotaList):
+            sys.stderr.write(f'Mtotal = {Mtotal}, iota = {iota/np.pi} pi\n')
+            FF = calculate_Max_FF_HM(ecc_fit, Mtotal_input = Mtotal, iota_input = iota)
+            add_csv(fresults, [[Mtotal, iota, ecc_fit, FF]])
     return 0
 
 #-----Recover EOB vs SXS-----#

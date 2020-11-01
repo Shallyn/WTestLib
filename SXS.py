@@ -10,7 +10,7 @@ import numpy as np
 import sys, os, json
 from .Utils import switch, CEV, LOG, WARNING, CEV_parse_value, MESSAGE, plot_compare_attach_any, plot_marker, interp1d_complex
 from .Utils import SpinWeightedM2SphericalHarmonic
-from .h22datatype import dim_h, dim_t, h22base, h22_alignment, ModeBase
+from .h22datatype import dim_h, dim_t, h22base, h22_alignment, ModeBase, Mode_alignment
 from pathlib import Path
 from .generator import Generator, self_adaptivor
 import csv,codecs,h5py
@@ -426,10 +426,13 @@ class waveform_mode_collector(object):
         time_new = time - time[0]
         for (l, m), mode in self:
             mode_new = mode.interpolate(time)
+            amp = np.abs(mode_new)
+            phase = np.unwrap(np.angle(mode_new))
+            mode_new = amp * np.exp(1.j*phase)
             out.append_mode(time_new, mode_new.real, mode_new.imag, l, m)
         return out
 
-    def construct_hpc(self, iota, phic, modelist = None):
+    def construct_hpc(self, iota, phic, modelist = None, phaseFrom0 = False):
         out = np.zeros(len(self._time)) + 1.j*np.zeros(len(self._time))
         if modelist is None:
             modelist = self.get_mode_list()
@@ -438,9 +441,11 @@ class waveform_mode_collector(object):
             if mode is None:
                 continue
             Y = SpinWeightedM2SphericalHarmonic(iota, phic, l, m)
-            out += np.conjugate(Y * mode.value)
+            if phaseFrom0:
+                out += np.conjugate(Y * mode.amp * np.exp(1.j*mode.phaseFrom0))
+            else:
+                out += np.conjugate(Y * mode.value)
         return ModeBase(self.time, out.real, out.imag)
-        
 
 class SXSparameters(SXSObject):
     def __init__(self, SXSnum, table = DEFAULT_TABLE, f_ini = 0, Mtotal = 40, D = 100, verbose = False, ishertz = False):

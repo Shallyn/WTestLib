@@ -1055,7 +1055,7 @@ def Compare_ecc_HM(argv = None):
     ecc_fit = ecc_grid[np.argmax(lnp_grid)]
 
     sys.stderr.write(f'{LOG}: Estimate ecc_fit = {ecc_fit}\n')
-    ecc_range_new = (ecc_fit - 0.015, ecc_fit + 0.015)
+    ecc_range_new = (ecc_fit - 0.03, ecc_fit + 0.03)
     max_mtotal = args.max_mtotal
     min_mtotal = args.min_mtotal
     num_mtotal = args.num_mtotal

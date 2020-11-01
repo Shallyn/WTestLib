@@ -1070,6 +1070,7 @@ def Compare_ecc_HM(argv = None):
         EOBModeList = [(2,2), (2,-2)]
     else:
         EOBModeList = [(2,2), (2,-2), (2,1), (2,-1), (3,3), (3,-3), (4,4), (4,-4)]
+    sys.stderr.write(f'EOBModeList:\n{EOBModeList}\n')
     iotaList = np.linspace(0, np.pi, 15)
     def calculate_Max_FF_HM(ecc, Mtotal_input, iota_input):
         ret = ge(m1 = m1, m2 = m2, s1z = s1z, s2z = s2z, D = 100, 

@@ -985,6 +985,9 @@ def Compare_ecc_HM(argv = None):
     parser.add_option('--num-mtotal', type = 'int', default = 10, help = 'numbers for grid search')
     parser.add_option('--max-mtotal', type = 'float', default = 200, help = 'Upper bound of parameter')
     parser.add_option('--min-mtotal', type = 'float', default = 20, help = 'Lower bound of parameter')
+    parser.add_option('--iota', type = 'float', help = 'inclination 0 [pi]')
+    parser.add_option('--ecc', type = 'float', help = 'estimated ecc')
+    parser.add_option('--mtotal', type = 'float', help = 'this mtotal')
 
     parser.add_option('--eps', type = 'float', default = 1e-6, help = 'Thresh of div')
     parser.add_option('--mag', type = 'float', default = 10, help = 'Thresh of dx_init / dx (>1)')
@@ -1049,17 +1052,23 @@ def Compare_ecc_HM(argv = None):
         FFL, _, tcL = calculate_ModeFF(h22EOB, h22NR, Mtotal = MtotalList_ecc, psd = psd)
         lnp = -np.power((1-FFL)/0.01, 2) - np.power(tcL/5, 2)
         return np.min(lnp)
-    MG = MultiGrid1D(estimate_ecc, ecc_range, num_ecc)
-    data = MG.run(fsave = None, eps = eps, magnification = mag, filter_thresh = filter_thresh, maxiter = max_step)
-    ecc_grid, lnp_grid = data[:,0], data[:,1]
-    ecc_fit = ecc_grid[np.argmax(lnp_grid)]
+    if args.ecc is None:
+        MG = MultiGrid1D(estimate_ecc, ecc_range, num_ecc)
+        data = MG.run(fsave = None, eps = eps, magnification = mag, filter_thresh = filter_thresh, maxiter = max_step)
+        ecc_grid, lnp_grid = data[:,0], data[:,1]
+        ecc_fit = ecc_grid[np.argmax(lnp_grid)]
+    else:
+        ecc_fit = args.ecc
 
     sys.stderr.write(f'{LOG}: Estimate ecc_fit = {ecc_fit}\n')
     ecc_range_new = (ecc_fit - 0.015, ecc_fit + 0.015)
     max_mtotal = args.max_mtotal
     min_mtotal = args.min_mtotal
     num_mtotal = args.num_mtotal
-    MtotalList = np.linspace(min_mtotal, max_mtotal, num_mtotal)
+    if args.mtotal is None:
+        MtotalList = np.linspace(min_mtotal, max_mtotal, num_mtotal)
+    else:
+        MtotalList = np.array([args.mtotal])
 
     NRModeList = []
     for l in range(2, 5):
@@ -1071,7 +1080,6 @@ def Compare_ecc_HM(argv = None):
     else:
         EOBModeList = [(2,2), (2,-2), (2,1), (2,-1), (3,3), (3,-3), (4,4), (4,-4)]
     sys.stderr.write(f'EOBModeList:\n{EOBModeList}\n')
-    iotaList = np.linspace(0, np.pi, 15)
     def calculate_Max_FF_HM(ecc, Mtotal_input, iota_input):
         ret = ge(m1 = m1, m2 = m2, s1z = s1z, s2z = s2z, D = 100, 
                 ecc = ecc, srate = srate, f_ini = fini, L = 2, M = 2,
@@ -1090,8 +1098,8 @@ def Compare_ecc_HM(argv = None):
         EOBModes.append_mode(t, h44r, h44i, 4, 4)
         EOBModes.append_mode(t, h44r, -h44i, 4, -4)
         def max_FF_over_phic(phic):
-            hpcNR = NRModes.construct_hpc(iota, 0, modelist = NRModeList)
-            hpcEOB = EOBModes.construct_hpc(iota, phic, modelist = EOBModeList)
+            hpcNR = NRModes.construct_hpc(iota_input, 0, modelist = NRModeList)
+            hpcEOB = EOBModes.construct_hpc(iota_input, phic, modelist = EOBModeList)
             FF, _1, _2 = calculate_ModeFF(hpcEOB, hpcNR, Mtotal = Mtotal_input, psd = psd)
             return FF
         dphic_range = (0, 2.*np.pi)
@@ -1101,6 +1109,11 @@ def Compare_ecc_HM(argv = None):
     fresults = prefix / f'results_{jobtag}.csv'
     # Setting Results savimg filename.
     save_namecol(fresults, data = [['#Mtotal', '#iota', '#ecc', '#FF']])
+    if args.iota is not None:
+        iotaList = np.array([args.iota * np.pi])
+    else:
+        iotaList = np.linspace(0, np.pi, 15)
+    
     for Mtotal, iota in product(MtotalList, iotaList):
         MG = MultiGrid1D(calculate_Max_FF_HM, ecc_range_new, 10, Mtotal_input = Mtotal, iota_input = iota)
         data = MG.run(fsave = None, eps = eps, magnification = mag, filter_thresh = filter_thresh, maxiter = max_step)

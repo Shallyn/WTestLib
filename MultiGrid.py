@@ -65,7 +65,6 @@ class Grid1D(Grid1DAtom):
         return self.x[key]
     
     def __call__(self, func, **kwargs):
-        print(kwargs)
         x_list = self.x
         fx_list = np.zeros(self.length)
         for i in range(self.length):

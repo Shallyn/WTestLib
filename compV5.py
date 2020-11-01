@@ -1101,7 +1101,7 @@ def Compare_ecc_HM(argv = None):
     # Setting Results savimg filename.
     save_namecol(fresults, data = [['#Mtotal', '#iota', '#ecc', '#FF']])
     for Mtotal, iota in product(MtotalList, iotaList):
-        MG = MultiGrid1D(calculate_Max_FF_HM, ecc_range, 10, Mtotal_input = Mtotal, iota_input = iota)
+        MG = MultiGrid1D(calculate_Max_FF_HM, ecc_range_new, 10, Mtotal_input = Mtotal, iota_input = iota)
         data = MG.run(fsave = None, eps = eps, magnification = mag, filter_thresh = filter_thresh, maxiter = max_step)
         indmax = np.argmax(data[:,1])
         final_FF = data[indmax,1]

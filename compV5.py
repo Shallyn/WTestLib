@@ -1105,7 +1105,7 @@ def Compare_ecc_HM(argv = None):
             FF, _1, _2 = calculate_ModeFF(hpcEOB, hpcNR.copy(), Mtotal = Mtotal_input, psd = psd)
             return FF
         dphic_range = (-np.pi*0.1, 2.1*np.pi)
-        MG_phic = MultiGrid1D(max_FF_over_phic, dphic_range, 36)
+        MG_phic = MultiGrid1D(max_FF_over_phic, dphic_range, 60)
         data = MG_phic.run(fsave = None, eps = eps, magnification = mag, filter_thresh = filter_thresh, maxiter = max_step)
         return np.max(data[:,1])
     fresults = prefix / f'results_{jobtag}.csv'

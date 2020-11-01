@@ -966,7 +966,7 @@ def Compare_ecc_HM(argv = None):
     parser.add_option('--executable', type = 'str', default = DEFAULT_EXEV5, help = 'Exe command')
     parser.add_option('--approx', type = 'str', default = 'SEOBNREv5', help = 'Version of the code')
     parser.add_option('--fini', type = 'float', default = 0, help = 'Initial orbital frequency')
-    parser.add_option('--SXS', type = 'str',  default = '1368', help = 'SXS template for comparision')
+    parser.add_option('--SXS', type = 'str',  default = '1355', help = 'SXS template for comparision')
  
     parser.add_option('--prefix', type = 'str', default = '.', help = 'dir for results saving.')
     parser.add_option('--jobtag', type = 'str', default = '_lnprob', help = 'jobtag.')
@@ -1097,8 +1097,8 @@ def Compare_ecc_HM(argv = None):
         EOBModes.append_mode(t, h33r, -h33i, 3, -3)
         EOBModes.append_mode(t, h44r, h44i, 4, 4)
         EOBModes.append_mode(t, h44r, -h44i, 4, -4)
+        hpcNR = NRModes.construct_hpc(iota_input, 0, modelist = NRModeList)
         def max_FF_over_phic(phic):
-            hpcNR = NRModes.construct_hpc(iota_input, 0, modelist = NRModeList)
             hpcEOB = EOBModes.construct_hpc(iota_input, phic, modelist = EOBModeList)
             FF, _1, _2 = calculate_ModeFF(hpcEOB, hpcNR, Mtotal = Mtotal_input, psd = psd)
             return FF

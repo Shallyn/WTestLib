@@ -228,6 +228,11 @@ class h22base(ModeBase):
     def copy(self):
         return h22base(self._time.copy(), self._mode.copy().real, self._mode.copy().imag, self._srate, self._verbose)
 
+    def _getslice(self, index):
+        if index.start is not None and index.start < 0:
+            raise ValueError(('Negative start index ({}) is not supported').format(index.start))        
+        return h22base(self._time[index], self.real[index], self.imag[index], self._srate, self._verbose)
+
     def plot(self, fname = 'save.png'):
         plt.figure(figsize = (14,5))
         plt.title('waveform')

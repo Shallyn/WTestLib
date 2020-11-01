@@ -217,13 +217,16 @@ class h22base(ModeBase):
         self._mode = self.interpolate(new_time)
         self._time = new_time
 
-    def pad22(self, pad_width, mode, **kwargs):
+    def pad(self, pad_width, mode, **kwargs):
         self._mode = np.pad(self._mode, pad_width, mode, **kwargs)
         self._time = np.arange(self._time[0], self._mode.size / self._srate, 1./self._srate)
         
     def saveh22(self, fname, **kwargs):
         data = np.stack([self.time, self.real, self.imag], axis = 1)
         np.savetxt(fname, data, **kwargs)
+
+    def copy(self):
+        return h22base(self._time.copy(), self._mode.copy().real, self._mode.copy().imag, self._srate, self._verbose)
 
     def plot(self, fname = 'save.png'):
         plt.figure(figsize = (14,5))
@@ -373,10 +376,10 @@ def h22_alignment(wfA, wfB, peak_A = None, peak_B = None):
     # Check data shape 
     if tail_A > tail_B:
         lpad = tail_A - tail_B
-        wfB.pad22((0,lpad), 'constant')
+        wfB.pad((0,lpad), 'constant')
     else:
         lpad = tail_B - tail_A
-        wfA.pad22((0,lpad), 'constant')
+        wfA.pad((0,lpad), 'constant')
         
     return wfA, wfB, tmove
 

@@ -1052,6 +1052,7 @@ def Compare_ecc_HM(argv = None):
         MtotalList_ecc = (20, 40, 70, 100, 130, 160, 190)
         FFL, _, tcL = calculate_ModeFF(h22EOB, h22NR, Mtotal = MtotalList_ecc, psd = psd)
         lnp = -np.power((1-FFL)/0.01, 2) - np.power(tcL/5, 2)
+        sys.stderr.write(f'ecc = {ecc}: lnp = {lnp}\n')
         return np.min(lnp)
     if args.ecc is None:
         MG = MultiGrid1D(estimate_ecc, ecc_range, num_ecc)
@@ -1060,7 +1061,6 @@ def Compare_ecc_HM(argv = None):
         ecc_fit = ecc_grid[np.argmax(lnp_grid)]
     else:
         ecc_fit = args.ecc
-
     sys.stderr.write(f'{LOG}: SXS_{SXSnum}, Estimate ecc_fit = {ecc_fit}\n')
     ecc_range_new = (ecc_fit - 0.015, ecc_fit + 0.015)
     max_mtotal = args.max_mtotal

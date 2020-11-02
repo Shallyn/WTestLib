@@ -426,13 +426,13 @@ class waveform_mode_collector(object):
         time_new = time - time[0]
         for (l, m), mode in self:
             mode_new = mode.interpolate(time)
-            amp = np.abs(mode_new)
-            phase = np.unwrap(np.angle(mode_new))
-            if m < 0:
-                phase = -np.abs(phase - phase[0])
-            else:
-                phase = np.abs(phase - phase[0])
-            mode_new = amp * np.exp(1.j*phase)
+            # amp = np.abs(mode_new)
+            # phase = np.unwrap(np.angle(mode_new))
+            # if m < 0:
+            #     phase = -np.abs(phase - phase[0])
+            # else:
+            #     phase = np.abs(phase - phase[0])
+            # mode_new = amp * np.exp(1.j*phase)
             out.append_mode(time_new, mode_new.real, mode_new.imag, l, m)
         return out
 

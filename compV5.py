@@ -1099,10 +1099,11 @@ def Compare_ecc_HM(argv = None):
         EOBModes.append_mode(t, h33r, -h33i, 3, -3)
         EOBModes.append_mode(t, h44r, h44i, 4, 4)
         EOBModes.append_mode(t, h44r, -h44i, 4, -4)
-        hpcNR = NRModes.construct_hpc(iota_input, 0, modelist = NRModeList)
+        hpcNR = NRModes.construct_hpc(iota_input, 0, modelist = NRModeList, phaseFrom0 = True)
         def max_FF_over_phic(phic):
-            hpcEOB = EOBModes.construct_hpc(iota_input, phic, modelist = EOBModeList)
+            hpcEOB = EOBModes.construct_hpc(iota_input, phic, modelist = EOBModeList, phaseFrom0 = True)
             FF, _1, _2 = calculate_ModeFF(hpcEOB, hpcNR.copy(), Mtotal = Mtotal_input, psd = psd)
+            sys.stderr.write(f'{phic/np.pi} pi, {FF}\n')
             return FF
         dphic_range = (-np.pi*0.1, 2.1*np.pi)
         MG_phic = MultiGrid1D(max_FF_over_phic, dphic_range, 60)

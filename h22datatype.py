@@ -108,12 +108,12 @@ class ModeBase(object):
     
     @property
     def phase(self):
-        return np.abs(np.unwrap(np.angle(self._mode)))
+        return np.unwrap(np.angle(self._mode))
     
     @property
     def phaseFrom0(self):
         phase = self.phase
-        return phase - phase[0]
+        return np.abs(phase - phase[0])
 
     @property
     def frequency(self):

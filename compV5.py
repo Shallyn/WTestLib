@@ -1709,7 +1709,7 @@ def mode_compare(argv = None):
     parser.add_option('--mtotal', type = 'float', default = 16, help = 'Total mass of the binary system')
 
     parser.add_option('--ecc', type = 'float', action = 'append', default = [], help = 'eccentricity')
-    parser.add_option('--fini', type = 'float', default = 40, help = 'Initial orbit frequency')
+    parser.add_option('--fini', type = 'float', default = 0.002, help = 'Initial orbit frequency')
     parser.add_option('--natural', action = 'store_true', help = 'If added, will use natural dimension for fini.')
     parser.add_option('--distance', type = 'float', default = 100, help = 'BBH distance in Mpc')
     parser.add_option('--srate', type = 'float', default = 16384, help = 'Sample rate')

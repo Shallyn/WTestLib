@@ -557,8 +557,9 @@ class CompGenerator(object):
     def _core_calcFF(self, m1, m2, s1z, s2z, ecc,
                      D, f_ini, srate, timeout, jobtag, **kwargs):
         Mtotal = m1 + m2
+        f_ini_dim = f_ini * dim_t(Mtotal)
         data = self._get_wf1(m1 = m1, m2 = m2, s1z = s1z, s2z = s2z, 
-                             D = D, ecc = ecc, srate = srate, f_ini = f_ini, 
+                             D = D, ecc = ecc, srate = srate, f_ini = f_ini_dim, 
                              L = 2, M = 2,
                              timeout = timeout, jobtag = jobtag, **kwargs)
         if isinstance(data, CEV):
@@ -569,7 +570,7 @@ class CompGenerator(object):
         wf1 = h22base(t, hr, hi, srate)
 
         data = self._get_wf2(m1 = m1, m2 = m2, s1z = s1z, s2z = s2z, 
-                             D = D, ecc = ecc, srate = srate, f_ini = f_ini, 
+                             D = D, ecc = ecc, srate = srate, f_ini = f_ini_dim, 
                              L = 2, M = 2,
                              timeout = timeout, jobtag = jobtag, **kwargs)
         if isinstance(data, CEV):

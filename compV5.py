@@ -1767,7 +1767,7 @@ def mode_compare(argv = None):
                '#ecc',
                '#FF']]
     fsave = savedir / fname
-    save_namecol(fsave, data = namecol)
+    # save_namecol(fsave, data = namecol)
     if args.seed is not None:
         seed = int(pyt.time()%10000) + int(pyt.time()%args.seed)
     else:

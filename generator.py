@@ -315,7 +315,7 @@ class Generator(object):
                                   ecc = ecc,
                                   s1z = s1z,
                                   s2z = s2z,
-                                  f_ini = f_ini / dim_t(1),
+                                  f_ini = f_ini / dim_t(m1 + m2),
                                   **kwargs)
                 def _pretreat(t, hr, hi, r, M, **kwargs):
                     t = t / dim_t(M)

@@ -958,14 +958,13 @@ def Compare_ecc_HM(argv = None):
     from .SXS import DEFAULT_TABLE
     from .SXS import DEFAULT_SRCLOC
     from .SXS import DEFAULT_SRCLOC_ALL
-    from .SXS import save_namecol, add_csv
+    from .SXS import save_namecol, add_csv, ModeC_alignment
     from .generator import self_adaptivor
 
     parser = OptionParser(description='Waveform Comparation With SXS')
 
     parser.add_option('--executable', type = 'str', default = DEFAULT_EXEV5, help = 'Exe command')
     parser.add_option('--approx', type = 'str', default = 'SEOBNREv5', help = 'Version of the code')
-    parser.add_option('--fini', type = 'float', default = 0, help = 'Initial orbital frequency')
     parser.add_option('--SXS', type = 'str',  default = '1355', help = 'SXS template for comparision')
  
     parser.add_option('--prefix', type = 'str', default = '.', help = 'dir for results saving.')
@@ -995,12 +994,12 @@ def Compare_ecc_HM(argv = None):
     parser.add_option('--max-step', type = 'int', default = 100, help = 'Max iter depth')
     parser.add_option('--only22', action = 'store_true', help = 'only22 for EOB')
     parser.add_option('--search-ecc', action = 'store_true', help = 'for test')
+    parser.add_option('--search-ecc-mtotal', action = 'store_true', help = 'for test')
     args, _ = parser.parse_args(argv)
 
     exe = args.executable
     approx = args.approx
     SXSnum = args.SXS
-    fini = args.fini
     table = args.table
     jobtag = args.jobtag
 
@@ -1031,16 +1030,18 @@ def Compare_ecc_HM(argv = None):
     s2z = NR.s2z
     srate = dim_t(m1 + m2) / deltaT
     ge = Generator(approx = approx, executable = exe, verbose = True)
-    if SXSnum not in DEFAULT_ECC_ORBIT_DICT:
-        return 0
+    CIRC = False
     f0, min_e, max_e = get_ecc_range(SXSnum, args.min_ecc, args.max_ecc)
+    if f0 is None:
+        f0 = NR.Sf_ini
+        CIRC = True
     fini = f0 * dim_t(m1 + m2)
     max_ecc = max_e
     min_ecc = min_e
     ecc_range = (min_ecc, max_ecc)
     num_ecc = args.num_ecc
 
-    def estimate_ecc(ecc):
+    def estimate_ecc(ecc, Mtotal = None):
         ret = ge(m1 = m1, m2 = m2, s1z = s1z, s2z = s2z, D = 100, 
                 ecc = ecc, srate = srate, f_ini = fini, L = 2, M = 2,
                 timeout = 3600, jobtag = jobtag, mode = 22)
@@ -1050,19 +1051,23 @@ def Compare_ecc_HM(argv = None):
         h22EOB = ModeBase(t, h22r, h22i)
         h22NR = NRModes.get_mode(2, 2)
         MtotalList_ecc = (20, 40, 70, 100, 130, 160, 190)
+        if Mtotal is not None:
+            MtotalList_ecc = Mtotal
         FFL, _, tcL = calculate_ModeFF(h22EOB, h22NR, Mtotal = MtotalList_ecc, psd = psd)
         lnp = -np.power((1-FFL)/0.01, 2) - np.power(tcL/5, 2)
         sys.stderr.write(f'ecc = {ecc}: lnp = {lnp}\n')
         return np.min(lnp)
-    if args.ecc is None:
+    if CIRC:
+        ecc_fit = 0.0
+    elif args.ecc is None:
         MG = MultiGrid1D(estimate_ecc, ecc_range, num_ecc)
         data = MG.run(fsave = None, eps = eps, magnification = mag, filter_thresh = filter_thresh, maxiter = max_step)
         ecc_grid, lnp_grid = data[:,0], data[:,1]
         ecc_fit = ecc_grid[np.argmax(lnp_grid)]
     else:
         ecc_fit = args.ecc
+    
     sys.stderr.write(f'{LOG}: SXS_{SXSnum}, Estimate ecc_fit = {ecc_fit}\n')
-    ecc_range_new = (ecc_fit - 0.015, ecc_fit + 0.015)
     max_mtotal = args.max_mtotal
     min_mtotal = args.min_mtotal
     num_mtotal = args.num_mtotal
@@ -1077,8 +1082,10 @@ def Compare_ecc_HM(argv = None):
             if m!=0:
                 NRModeList.append((l,m))
     if args.only22:
+        jtag = 'only22'
         EOBModeList = [(2,2), (2,-2)]
     else:
+        jtag = 'HM'
         EOBModeList = [(2,2), (2,-2), (2,1), (2,-1), (3,3), (3,-3), (4,4), (4,-4)]
     sys.stderr.write(f'NRModeList:\n{NRModeList}\n')
     sys.stderr.write(f'EOBModeList:\n{EOBModeList}\n')
@@ -1109,14 +1116,40 @@ def Compare_ecc_HM(argv = None):
         MG_phic = MultiGrid1D(max_FF_over_phic, dphic_range, 60)
         data = MG_phic.run(fsave = None, eps = eps, magnification = mag, filter_thresh = filter_thresh, maxiter = max_step)
         return np.max(data[:,1])
-    fresults = prefix / f'results_{jobtag}.csv'
+    fresults = prefix / f'results_{jobtag}_{jtag}.csv'
     # Setting Results savimg filename.
-    save_namecol(fresults, data = [['#Mtotal', '#iota', '#ecc', '#FF']])
+    if CIRC:
+        save_namecol(fresults, data = [['#Mtotal', '#FF']])
+    else:
+        save_namecol(fresults, data = [['#Mtotal', '#ecc', '#FF']])
     if args.iota is not None:
         iotaList = np.array([args.iota * np.pi])
     else:
         iotaList = np.linspace(0, np.pi, 15)
-    if args.search_ecc:
+    
+    if CIRC:
+        for Mtotal in MtotalList:
+            FF_avg = 0
+            for iota in iotaList:
+                sys.stderr.write(f'Mtotal = {Mtotal}, iota = {iota/np.pi} pi\n')
+                FF = calculate_Max_FF_HM(ecc_fit, Mtotal_input = Mtotal, iota_input = iota)
+                FF_avg += FF
+            add_csv(fresults, [[Mtotal, FF_avg / len(iotaList)]])
+    elif args.search_ecc_mtotal:
+        ecc_range_new = (ecc_fit - 0.02, ecc_fit + 0.02)
+        for Mtotal in MtotalList:
+            MG = MultiGrid1D(estimate_ecc, ecc_range_new, 20, Mtotal = Mtotal)
+            data = MG.run(fsave = None, eps = eps, magnification = mag, filter_thresh = filter_thresh, maxiter = max_step)
+            ecc_grid, lnp_grid = data[:,0], data[:,1]
+            ecc_fit = ecc_grid[np.argmax(lnp_grid)]
+            FF_avg = 0
+            for iota in iotaList:
+                sys.stderr.write(f'Mtotal = {Mtotal}, iota = {iota/np.pi} pi\n')
+                FF = calculate_Max_FF_HM(ecc_fit, Mtotal_input = Mtotal, iota_input = iota)
+                FF_avg += FF
+            add_csv(fresults, [[Mtotal, ecc_fit, FF_avg / len(iotaList)]])
+    elif args.search_ecc:
+        ecc_range_new = (ecc_fit - 0.015, ecc_fit + 0.015)
         for Mtotal, iota in product(MtotalList, iotaList):
             sys.stderr.write(f'Mtotal = {Mtotal}, iota = {iota/np.pi} pi\n')
             MG = MultiGrid1D(calculate_Max_FF_HM, ecc_range_new, 10, Mtotal_input = Mtotal, iota_input = iota)
@@ -1126,10 +1159,13 @@ def Compare_ecc_HM(argv = None):
             final_ecc = data[indmax, 0]
             add_csv(fresults, [[Mtotal, iota, final_ecc, final_FF]])
     else:
-        for Mtotal, iota in product(MtotalList, iotaList):
-            sys.stderr.write(f'Mtotal = {Mtotal}, iota = {iota/np.pi} pi\n')
-            FF = calculate_Max_FF_HM(ecc_fit, Mtotal_input = Mtotal, iota_input = iota)
-            add_csv(fresults, [[Mtotal, iota, ecc_fit, FF]])
+        for Mtotal in MtotalList:
+            FF_avg = 0
+            for iota in iotaList:
+                sys.stderr.write(f'Mtotal = {Mtotal}, iota = {iota/np.pi} pi\n')
+                FF = calculate_Max_FF_HM(ecc_fit, Mtotal_input = Mtotal, iota_input = iota)
+                FF_avg += FF
+            add_csv(fresults, [[Mtotal, ecc_fit, FF_avg / len(iotaList)]])
     return 0
 
 #-----Recover EOB vs SXS-----#

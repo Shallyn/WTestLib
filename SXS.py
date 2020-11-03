@@ -346,6 +346,9 @@ class waveform_mode_collector(object):
     def __len__(self):
         return len(self._modes)
     
+    def size(self):
+        return len(self._time)
+    
     def __iter__(self):
         for key in self._modes:
             yield self._get_mode_lm(key), self._modes[key]
@@ -414,6 +417,24 @@ class waveform_mode_collector(object):
         del self._modes
         del self._time
 
+    def __getitem__(self, key):
+        if isinstance(key, int) or isinstance(key, np.integer):
+            ret = {'time':self._time[key]}
+            for (l,m), mode in self:
+                ret[self._get_key(l, m)] = mode[key]
+            return ret
+        return self._getslice(key)
+
+    def _getslice(self, index):
+        if index.start is not None and index.start < 0:
+            raise ValueError(('Negative start index ({}) is not supported').format(index.start)) 
+        out = waveform_mode_collector(0)  
+        time_cut = self._time[index]
+        for (l,m), mode in self:
+            mode_cut = mode[index]
+            out.append_mode(time_cut, mode_cut.real, mode_cut.imag, l, m)
+        return out
+
     def get_time_peak(self, l, m, Mtotal = None):
         mode = self.get_mode(l,m)
         if Mtotal is not None:
@@ -453,6 +474,66 @@ class waveform_mode_collector(object):
             else:
                 out += np.conjugate(Y * mode.value)
         return ModeBase(self.time, out.real, out.imag)
+
+    def pad(self, pad_width, padmode, deltaT, **kwargs):
+        out = waveform_mode_collector(0)
+        length = None
+        for (l, m), mode in self:
+            mode_pad = np.pad(mode, pad_width, padmode, **kwargs)
+            if length is None:
+                length = len(mode_pad)
+                time_pad = np.arange(self._time[0], length * deltaT, deltaT)
+            out.append_mode(time_pad, mode_pad.real, mode_pad.imag, l, m)
+        return out
+
+def ModeC_alignment(modeA, modeB, deltaT = None):
+    tA = modeA.time
+    tB = modeB.time
+    dtA = tA[1] - tA[0]
+    dtB = tB[1] - tB[0]
+    if dtA != dtB:
+        if deltaT is not None:
+            dt_final = deltaT
+        elif dtA < dtB:
+            dt_final = dtB
+        else:
+            dt_final = dtA
+        tA_new = np.arange(tA[0], tA[-1], dt_final)
+        tB_new = np.arange(tB[0], tB[-1], dt_final)
+        modeA = modeA.resample(tA_new)
+        modeB = modeB.resample(tB_new)
+    else:
+        tA_new = tA
+        tB_new = tB
+        dt_final = dtA
+    wf22A = modeA.get_mode(2,2)
+    wf22B = modeB.get_mode(2,2)
+    if len(wf22A) == len(wf22B):
+        return modeA, modeB
+    ipeak_A = wf22A.argpeak
+    ipeak_B = wf22B.argpeak
+    if ipeak_A > ipeak_B:
+        idx_A = ipeak_A - ipeak_B
+        idx_B = 0
+    else:
+        idx_A = 0
+        idx_B = ipeak_B - ipeak_A
+    # tmove = (ipeak_A - ipeak_B) * dt_final
+    modeA = modeA[idx_A:]
+    modeB = modeB[idx_B:]
+    lenA = len(modeA)
+    lenB = len(modeB)
+    ipeak_A = ipeak_A - idx_A
+    ipeak_B = ipeak_B - idx_B
+    tail_A = lenA - ipeak_A
+    tail_B = lenB - ipeak_B
+    if tail_A > tail_B:
+        lpad = tail_A - tail_B
+        modeB = modeB.pad((0,lpad), 'constant', dt_final)
+    else:
+        lpad = tail_B - tail_A
+        modeA = modeA.pad((0,lpad), 'constant', dt_final)
+    return modeA, modeB        
 
 class SXSparameters(SXSObject):
     def __init__(self, SXSnum, table = DEFAULT_TABLE, f_ini = 0, Mtotal = 40, D = 100, verbose = False, ishertz = False):

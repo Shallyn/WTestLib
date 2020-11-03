@@ -564,10 +564,10 @@ class CompGenerator(object):
                              timeout = timeout, jobtag = jobtag, **kwargs)
         if isinstance(data, CEV):
             return -1
-        t, hr, hi = data[:,0], data[:,1], data[:,2]
-        t, hr, hi = self._pretreat1(t, hr, hi, D, Mtotal)
+        t1, hr1, hi1 = data[:,0], data[:,1], data[:,2]
+        t1, hr1, hi1 = self._pretreat1(t1, hr1, hi1, D, Mtotal)
 
-        wf1 = h22base(t, hr, hi, srate)
+        wf1 = h22base(t1, hr1, hi1, srate)
 
         data = self._get_wf2(m1 = m1, m2 = m2, s1z = s1z, s2z = s2z, 
                              D = D, ecc = ecc, srate = srate, f_ini = f_ini_dim, 
@@ -575,9 +575,9 @@ class CompGenerator(object):
                              timeout = timeout, jobtag = jobtag, **kwargs)
         if isinstance(data, CEV):
             return 0
-        t, hr, hi = data[:,0], data[:,1], data[:,2]
-        t, hr, hi = self._pretreat2(t, hr, hi, D, Mtotal)
-        wf2 = h22base(t, hr, hi, srate)
+        t2, hr2, hi2 = data[:,0], data[:,1], data[:,2]
+        t2, hr2, hi2 = self._pretreat2(t2, hr2, hi2, D, Mtotal)
+        wf2 = h22base(t2, hr2, hi2, srate)
         wf1, wf2, tmove = h22_alignment(wf1, wf2)
         fs = wf1.srate
         NFFT = len(wf1)

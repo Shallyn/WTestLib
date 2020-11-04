@@ -1009,7 +1009,7 @@ def Compare_ecc_HM(argv = None):
     mag = args.mag
     filter_thresh = args.filter_thresh
     max_step = args.max_step
-    prefix = Path(args.prefix) / SXSnum
+    prefix = Path(args.prefix)
     if not prefix.exists():
         prefix.mkdir(parents = True)
 
@@ -1116,7 +1116,7 @@ def Compare_ecc_HM(argv = None):
         MG_phic = MultiGrid1D(max_FF_over_phic, dphic_range, 60)
         data = MG_phic.run(fsave = None, eps = eps, magnification = mag, filter_thresh = filter_thresh, maxiter = max_step)
         return np.max(data[:,1])
-    fresults = prefix / f'results_{jobtag}_{jtag}.csv'
+    fresults = prefix / f'results_{SXSnum}_{jtag}.csv'
     # Setting Results savimg filename.
     if CIRC:
         save_namecol(fresults, data = [['#Mtotal', '#FF']])

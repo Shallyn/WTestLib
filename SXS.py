@@ -462,6 +462,8 @@ class waveform_mode_collector(object):
         if modelist is None:
             modelist = self.get_mode_list()
         for (l, m) in modelist:
+            if m == 0:
+                continue
             mode = self.get_mode(l, m)
             if mode is None:
                 continue

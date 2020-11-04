@@ -1131,8 +1131,8 @@ def Compare_ecc_HM(argv = None):
         for Mtotal in MtotalList:
             FF_avg = 0
             for iota in iotaList:
-                sys.stderr.write(f'Mtotal = {Mtotal}, iota = {iota/np.pi} pi\n')
                 FF = calculate_Max_FF_HM(ecc_fit, Mtotal_input = Mtotal, iota_input = iota)
+                sys.stderr.write(f'Mtotal = {Mtotal}, iota = {iota/np.pi} pi, FF = {FF}\n')
                 FF_avg += FF
             add_csv(fresults, [[Mtotal, FF_avg / len(iotaList)]])
     elif args.search_ecc_mtotal:

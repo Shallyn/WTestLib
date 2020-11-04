@@ -668,6 +668,7 @@ def GridSearch_ecc(argv = None):
     parser.add_option('--filter-thresh', type = 'float', default = 0.4, help = 'Thresh of grid search (<1)')
     parser.add_option('--max-step', type = 'int', default = 100, help = 'Max iter depth')
     parser.add_option('--version', type = 'str', default = 'default', help = 'code version')
+    parser.add_option('--only22', action = 'store_true', help = 'only use 22 mode')
     args, _ = parser.parse_args(argv)
 
     exe = args.executable
@@ -712,6 +713,8 @@ def GridSearch_ecc(argv = None):
         if not prefixSXS.exists():
             prefixSXS.mkdir(parents=True)
         for ymode in ymodeDict:
+            if args.only22 and ymode != 22:
+                continue
             mDebug = f'{SXSnum}_mode{ymode}:\n'
             srcloc, fname_collect, prefixM = ymodeDict[ymode]
             f0, min_e, max_e = get_ecc_range(SXSnum, args.min_ecc, args.max_ecc)
@@ -755,7 +758,6 @@ def GridSearch_ecc(argv = None):
                 ret = ge.get_lnprob(jobtag = args.jobtag, timeout = args.timeout, mode = ymode,
                             KK = KK_default, dSO = dSO_default, dSS = dSS_default, dtPeak = dtpeak_fit, ecc = ecc)
                 return ret[0]
-            
             prefix = prefixSXS / f'mode_{ymode}'
             if not prefix.exists():
                 prefix.mkdir(parents=True)

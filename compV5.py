@@ -669,6 +669,7 @@ def GridSearch_ecc(argv = None):
     parser.add_option('--max-step', type = 'int', default = 100, help = 'Max iter depth')
     parser.add_option('--version', type = 'str', default = 'default', help = 'code version')
     parser.add_option('--only22', action = 'store_true', help = 'only use 22 mode')
+    parser.add_option('--cutpct', type = 'float', default = 0, help = 'cut the NR waveform')
     args, _ = parser.parse_args(argv)
 
     exe = args.executable
@@ -731,7 +732,7 @@ def GridSearch_ecc(argv = None):
                         srate = srate,
                         srcloc = srcloc,
                         table = table,
-                        srcloc_all = srcloc_all)
+                        srcloc_all = srcloc_all, cutpct = args.cutpct)
             if (ymode % 10) % 2 and NR.q == 1 and NR.s1z ==  NR.s2z:
                 continue
             ge = NR.construct_generator(approx, exe, psd = psd)

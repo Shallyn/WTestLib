@@ -600,7 +600,7 @@ class SXSh22(SXSparameters, h22base):
     def __init__(self, SXSnum, modeL = None, modeM = None,
                  srcloc = DEFAULT_SRCLOC, srcloc_all = DEFAULT_SRCLOC_ALL, 
                  table = DEFAULT_TABLE , 
-                 f_ini = 0, srate = 16384, Mtotal = 40, D = 100, verbose = False, ishertz = False):
+                 f_ini = 0, srate = 16384, Mtotal = 40, D = 100, verbose = False, ishertz = False, cutpct = 0):
         if verbose:
             sys.stderr.write(f'{LOG}:Initialize SXSparameters...\n')
         SXSparameters.__init__(self, SXSnum, table, f_ini, Mtotal, D, verbose = verbose, ishertz = ishertz)
@@ -615,6 +615,10 @@ class SXSh22(SXSparameters, h22base):
                 raise ValueError(f'Mode {modeL} {modeM} is not available.')
         else:
             t, hr, hi = loadSXStxtdata(SXSnum, srcloc)
+        icut = int(len(t) * cutpct)
+        t = t[icut:]
+        hr = hr[icut:]
+        hi = hi[icut:]
         self._rawData = ModeBase(t.copy(), hr, hi)
         t /= dim_t(Mtotal)
         self._srcloc = srcloc

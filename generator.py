@@ -540,11 +540,11 @@ class CompGenerator(object):
             if (mode % 10) % 2 and q[i] == 1 and s1z[i] ==  s2z[i]:
                 ans = 1.
             else:
-                ans = self._core_calcFF(q, mtotal_list, 
+                ans = self._core_calcFF(q,[i] mtotal_list, 
                                         s1z[i], s2z[i], ecc[i],
                                         D, f_ini, 
                                         srate, timeout, jobtag, mode = mode)
-            sys.stderr.write(f'PMS: q = {q}, s1z = {s1z[i]}, s2z = {s2z[i]} ecc = {ecc[i]}\n\t FF = {ans}\n\n')
+            sys.stderr.write(f'PMS: q = {q[i]}, s1z = {s1z[i]}, s2z = {s2z[i]} ecc = {ecc[i]}\n\t FF = {ans}\n\n')
             if ans < 0:
                 continue
             data = [[q[i], s1z[i], s2z[i], ecc[i], ans]]

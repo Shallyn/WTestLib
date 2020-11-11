@@ -531,33 +531,35 @@ class CompGenerator(object):
             ecc = np.random.uniform(min_ecc, max_ecc, Num)
         
         if min_Mtotal is None or max_Mtotal is None:
-            mtotal = np.ones(Num) * Mtotal
+            mtotal_list = np.linspace(10, 200, 30)
         else:
-            mtotal = np.random.uniform(min_Mtotal, max_Mtotal, Num)
+            mtotal_list = np.linspace(min_Mtotal, max_Mtotal, 30)
         
         
         for i in range(Num):
-            m1 = mtotal[i] * q[i] / (1 + q[i])
-            m2 = mtotal[i] / (1 + q[i])
             if (mode % 10) % 2 and q[i] == 1 and s1z[i] ==  s2z[i]:
                 ans = 1.
             else:
-                ans = self._core_calcFF(m1, m2, 
+                ans = self._core_calcFF(q, mtotal_list, 
                                         s1z[i], s2z[i], ecc[i],
                                         D, f_ini, 
                                         srate, timeout, jobtag, mode = mode)
-            sys.stderr.write(f'PMS: m1 = {m1}, m2 = {m2}, s1z = {s1z[i]}, s2z = {s2z[i]} ecc = {ecc[i]}\n\t FF = {ans}\n\n')
+            sys.stderr.write(f'PMS: q = {q}, s1z = {s1z[i]}, s2z = {s2z[i]} ecc = {ecc[i]}\n\t FF = {ans}\n\n')
             if ans < 0:
                 continue
-            data = [[mtotal[i], q[i], s1z[i], s2z[i], ecc[i], ans]]
+            data = [[q[i], s1z[i], s2z[i], ecc[i], ans]]
             add_csv(fsave, data)   
         return
         
     
-    def _core_calcFF(self, m1, m2, s1z, s2z, ecc,
+    def _core_calcFF(self, q, mtotal_list, s1z, s2z, ecc,
                      D, f_ini, srate, timeout, jobtag, **kwargs):
-        Mtotal = m1 + m2
-        f_ini_dim = f_ini * dim_t(Mtotal)
+        mtotal_base = 40
+        mtotal_min = np.min(mtotal_list)
+        m1 = mtotal_base * q / (1 + q)
+        m2 = mtotal_base / (1 + q)
+        f_ini_dim = f_ini * dim_t(mtotal_base)
+        # f_ini_dim = 25
         data = self._get_wf1(m1 = m1, m2 = m2, s1z = s1z, s2z = s2z, 
                              D = D, ecc = ecc, srate = srate, f_ini = f_ini_dim, 
                              L = 2, M = 2,
@@ -565,7 +567,7 @@ class CompGenerator(object):
         if isinstance(data, CEV):
             return -1
         t1, hr1, hi1 = data[:,0], data[:,1], data[:,2]
-        t1, hr1, hi1 = self._pretreat1(t1, hr1, hi1, D, Mtotal)
+        t1, hr1, hi1 = self._pretreat1(t1, hr1, hi1, D, mtotal_base)
 
         wf1 = h22base(t1, hr1, hi1, srate)
 
@@ -576,24 +578,29 @@ class CompGenerator(object):
         if isinstance(data, CEV):
             return 0
         t2, hr2, hi2 = data[:,0], data[:,1], data[:,2]
-        t2, hr2, hi2 = self._pretreat2(t2, hr2, hi2, D, Mtotal)
+        t2, hr2, hi2 = self._pretreat2(t2, hr2, hi2, D, mtotal_base)
         wf2 = h22base(t2, hr2, hi2, srate)
         wf1, wf2, tmove = h22_alignment(wf1, wf2)
-        fs = wf1.srate
+        fs_old = wf1.srate
         NFFT = len(wf1)
-        freqs = np.abs(np.fft.fftfreq(NFFT, 1./fs))
-        power_vec = self._psd(freqs)
-        df = fs/NFFT
-        Stilde = wf1.h22f
-        htilde = wf2.h22f
-        O11 = np.sum(Stilde * Stilde.conjugate() / power_vec).real * df
-        O22 = np.sum(htilde * htilde.conjugate() / power_vec).real * df
-        Ox = Stilde * htilde.conjugate() / power_vec
-        Oxt = np.fft.ifft(Ox) * fs
-        Oxt_abs = np.abs(Oxt) / np.sqrt(O11 * O22)
-        idx = np.where(Oxt_abs == max(Oxt_abs))[0][0]
-        FF = Oxt_abs[idx]
-        return FF
+        df_old = fs_old/NFFT
+        FF_list = []
+        for Mtotal in mtotal_list:
+            df = df_old *  mtotal_base / Mtotal
+            fs = df * NFFT
+            freqs = np.abs(np.fft.fftfreq(NFFT, 1./fs))
+            power_vec = self._psd(freqs)
+            Stilde = wf1.h22f
+            htilde = wf2.h22f
+            O11 = np.sum(Stilde * Stilde.conjugate() / power_vec).real * df
+            O22 = np.sum(htilde * htilde.conjugate() / power_vec).real * df
+            Ox = Stilde * htilde.conjugate() / power_vec
+            Oxt = np.fft.ifft(Ox) * fs
+            Oxt_abs = np.abs(Oxt) / np.sqrt(O11 * O22)
+            idx = np.where(Oxt_abs == max(Oxt_abs))[0][0]
+            FF = Oxt_abs[idx]
+            FF_list.append(FF)
+        return np.min(FF)
 
 
         

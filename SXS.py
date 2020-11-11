@@ -140,6 +140,7 @@ class SXSObject(object):
         self.s2z = float('%.6f'%spin2[2])
         self.spin1 = np.sqrt(self.s1x**2 + self.s1y**2 + self.s1z**2)
         self.spin2 = np.sqrt(self.s2x**2 + self.s2y**2 + self.s2z**2)
+        self.Norb = pms['number_of_orbits']
         # eccentricity
         self.Sf_ini = pms['initial_orbital_frequency'] / np.pi
         # Relaxed Eccentricity

@@ -540,7 +540,7 @@ class CompGenerator(object):
             if (mode % 10) % 2 and q[i] == 1 and s1z[i] ==  s2z[i]:
                 ans = 1.
             else:
-                ans = self._core_calcFF(q,[i] mtotal_list, 
+                ans = self._core_calcFF(q[i], mtotal_list, 
                                         s1z[i], s2z[i], ecc[i],
                                         D, f_ini, 
                                         srate, timeout, jobtag, mode = mode)

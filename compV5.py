@@ -1093,7 +1093,7 @@ def Compare_ecc_HM(argv = None):
         EOBModeList = [(2,2), (2,-2), (2,1), (2,-1), (3,3), (3,-3), (4,4), (4,-4)]
     sys.stderr.write(f'NRModeList:\n{NRModeList}\n')
     sys.stderr.write(f'EOBModeList:\n{EOBModeList}\n')
-    def calculate_Max_FF_HM(ecc, Mtotal_input, iota_input):
+    def calculate_Max_FF_HM(ecc, Mtotal_input, iota_input, phic_input=None):
         ret = ge(m1 = m1, m2 = m2, s1z = s1z, s2z = s2z, D = 100, 
                 ecc = ecc, srate = srate, f_ini = fini, L = 2, M = 2,
                 timeout = 3600, jobtag = jobtag, mode = 0)
@@ -1116,10 +1116,22 @@ def Compare_ecc_HM(argv = None):
             FF, _1, _2 = calculate_ModeFF(hpcEOB, hpcNR.copy(), Mtotal = Mtotal_input, psd = psd)
             # sys.stderr.write(f'{phic/np.pi} pi {FF}\n')
             return FF
-        dphic_range = (-np.pi*0.1, 2.1*np.pi)
-        MG_phic = MultiGrid1D(max_FF_over_phic, dphic_range, 60)
-        data = MG_phic.run(fsave = None, eps = eps, magnification = mag, filter_thresh = filter_thresh, maxiter = max_step)
-        return np.max(data[:,1])
+        if phic_input is None:
+            dphic_range = (-np.pi*0.1, 2.1*np.pi)
+            MG_phic = MultiGrid1D(max_FF_over_phic, dphic_range, 60)
+            data = MG_phic.run(fsave = None, eps = eps, magnification = mag, filter_thresh = filter_thresh, maxiter = max_step)
+            return np.max(data[:,1])
+        elif hasattr(phic_input, '__len__'):
+            dphic_range = phic_input
+            MG_phic = MultiGrid1D(max_FF_over_phic, dphic_range, 10)
+            data = MG_phic.run(fsave = None, eps = eps, magnification = mag, filter_thresh = filter_thresh, maxiter = max_step)
+            imax = np.argmax(data[:,1])
+            phic_max = data[imax,0]
+            FF_max = data[imax,1]
+        else:
+            FF_max = max_FF_over_phic(phic_input)
+            phic_max = phic_input
+        return FF_max, phic_max
 
     def calculate_Max_FF_HM_Circ(Mtotal_input, iota_input, phic_input = None):
         ret_C = ge(m1 = m1, m2 = m2, s1z = s1z, s2z = s2z, D = 100, 
@@ -1212,9 +1224,12 @@ def Compare_ecc_HM(argv = None):
     else:
         for Mtotal in MtotalList:
             FF_avg = 0
+            phic_fit_list = 'init'
             for iota in iotaList:
-                sys.stderr.write(f'Mtotal = {Mtotal}, iota = {iota/np.pi} pi\n')
-                FF = calculate_Max_FF_HM(ecc_fit, Mtotal_input = Mtotal, iota_input = iota)
+                FF, phic_ret = calculate_Max_FF_HM(ecc_fit, Mtotal_input = Mtotal, iota_input = iota, phic_input = phic_fit_list)
+                sys.stderr.write(f'Mtotal = {Mtotal}, iota = {iota/np.pi} pi, FF = {FF}, phic_ret = {phic_ret/np.pi}\n')
+                if phic_fit_list == 'init':
+                    phic_fit_list = (phic_ret - np.pi*1.1/7, phic_ret + np.pi*1.1/7)
                 FF_avg += FF
             add_csv(fresults, [[Mtotal, ecc_fit, FF_avg / len(iotaList)]])
     return 0

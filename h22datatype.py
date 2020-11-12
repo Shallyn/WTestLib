@@ -117,7 +117,7 @@ class ModeBase(object):
 
     @property
     def frequency(self):
-        return np.gradient(self.phase) / np.gradient(self._time)
+        return np.abs(np.gradient(self.phase) / np.gradient(self._time))
     
     @property
     def argpeak(self):

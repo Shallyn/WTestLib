@@ -1122,8 +1122,13 @@ def Compare_ecc_HM(argv = None):
             data = MG_phic.run(fsave = None, eps = eps, magnification = mag, filter_thresh = filter_thresh, maxiter = max_step)
             return np.max(data[:,1])
         elif hasattr(phic_input, '__len__'):
-            dphic_range = phic_input
-            MG_phic = MultiGrid1D(max_FF_over_phic, dphic_range, 10)
+            if type(phic_input) is str:
+                dphic_range = (-np.pi*0.1, 2.1*np.pi)
+                num_dp = 60
+            else:
+                dphic_range = phic_input
+                num_dp = 10
+            MG_phic = MultiGrid1D(max_FF_over_phic, dphic_range, num_dp)
             data = MG_phic.run(fsave = None, eps = eps, magnification = mag, filter_thresh = filter_thresh, maxiter = max_step)
             imax = np.argmax(data[:,1])
             phic_max = data[imax,0]

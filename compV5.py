@@ -1180,6 +1180,21 @@ def Compare_ecc_HM(argv = None):
             phic_max = phic_input
         return FF_max, phic_max
 
+    def calculate_Max_FF_HM_only22(ecc, Mtotal_input, iota_input):
+        ret = ge(m1 = m1, m2 = m2, s1z = s1z, s2z = s2z, D = 100, 
+                ecc = ecc, srate = srate, f_ini = fini, L = 2, M = 2,
+                timeout = 3600, jobtag = jobtag, mode = 0)
+        if isinstance(ret, CEV):
+            return 0
+        EOBModes = waveform_mode_collector(0)
+        t, h22r, h22i = \
+            ret[:,0], ret[:,1], ret[:,2]
+        EOBModes.append_mode(t, h22r, h22i, 2, 2)
+        hpcNR = NRModes.construct_hpc(iota_input, 0, modelist = NRModeList, phaseFrom0 = True)
+        hpcEOB = 2*EOBModes.construct_hpc(iota_input, 0, modelist = EOBModeList, phaseFrom0 = True)
+        FF, _1, _2 = calculate_ModeFF(hpcEOB, hpcNR.copy(), Mtotal = Mtotal_input, psd = psd)
+        return FF
+
     fresults = prefix / f'results_{SXSnum}_{jtag}.csv'
     # Setting Results savimg filename.
     if CIRC:
@@ -1192,7 +1207,15 @@ def Compare_ecc_HM(argv = None):
         # iotaList = np.linspace(0, np.pi, 15)
         iotaList = np.concatenate([np.linspace(0, 7, 8)[::-1], np.linspace(8, 14, 7)])*np.pi / 14
     
-    if CIRC:
+    if args.only22:
+        FF_out = np.zeros(len(MtotalList))
+        for iota in iotaList:
+            FF_List = calculate_Max_FF_HM_only22(ecc_fit, MtotalList, iota)
+            FF_out = FF_out + FF_List
+        FF_out = FF_out / len(iotaList)
+        out = np.stack([MtotalList, FF_out], axis = 1)
+        add_csv(fresults, out.tolist())
+    elif CIRC:
         for Mtotal in MtotalList:
             FF_avg = 0
             phic_fit_list = None

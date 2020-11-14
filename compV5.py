@@ -1189,9 +1189,9 @@ def Compare_ecc_HM(argv = None):
         EOBModes = waveform_mode_collector(0)
         t, h22r, h22i = \
             ret[:,0], ret[:,1], ret[:,2]
-        EOBModes.append_mode(t, h22r, h22i, 2, 2)
+        EOBModes.append_mode(t, 2*h22r, 2*h22i, 2, 2)
         hpcNR = NRModes.construct_hpc(iota_input, 0, modelist = NRModeList, phaseFrom0 = True)
-        hpcEOB = 2*EOBModes.construct_hpc(iota_input, 0, modelist = EOBModeList, phaseFrom0 = True)
+        hpcEOB = EOBModes.construct_hpc(iota_input, 0, modelist = [[2,2]], phaseFrom0 = True)
         FF, _1, _2 = calculate_ModeFF(hpcEOB, hpcNR.copy(), Mtotal = Mtotal_input, psd = psd)
         return FF
 

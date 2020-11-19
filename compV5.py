@@ -669,6 +669,7 @@ def GridSearch_ecc(argv = None):
     parser.add_option('--max-step', type = 'int', default = 100, help = 'Max iter depth')
     parser.add_option('--version', type = 'str', default = 'default', help = 'code version')
     parser.add_option('--only22', action = 'store_true', help = 'only use 22 mode')
+    parser.add_option('--circ', action = 'store_true', help = 'force ecc = 0')
     parser.add_option('--cutpct', type = 'float', default = 0, help = 'cut the NR waveform')
     parser.add_option('--plot', action = 'store_true', help = 'code version')
     args, _ = parser.parse_args(argv)
@@ -765,7 +766,7 @@ def GridSearch_ecc(argv = None):
                 prefix.mkdir(parents=True)
             if args.ecc is not None:
                 ecc = args.ecc
-            elif SXSnum not in DEFAULT_ECC_ORBIT_DICT:
+            elif SXSnum not in DEFAULT_ECC_ORBIT_DICT or args.circ:
                 ecc = 0.0
             elif oldecc is not None:
                 ecc = oldecc
@@ -991,6 +992,9 @@ def Compare_ecc_HM(argv = None):
     parser.add_option('--iota', type = 'float', help = 'inclination 0 [pi]')
     parser.add_option('--ecc', type = 'float', help = 'estimated ecc')
     parser.add_option('--mtotal', type = 'float', help = 'this mtotal')
+    parser.add_option('--circ', action = 'store_true', help = 'force ecc = 0')
+    parser.add_option('--usemp', action = 'store_true', help = 'use multi process')
+    parser.add_option('--verbose', action = 'store_true', help = 'verbose output')
 
     parser.add_option('--eps', type = 'float', default = 1e-6, help = 'Thresh of div')
     parser.add_option('--mag', type = 'float', default = 10, help = 'Thresh of dx_init / dx (>1)')
@@ -1034,7 +1038,7 @@ def Compare_ecc_HM(argv = None):
     s2z = NR.s2z
     srate = dim_t(m1 + m2) / deltaT
     ge = Generator(approx = approx, executable = exe, verbose = True)
-    CIRC = False
+    CIRC = args.circ
     f0, min_e, max_e = get_ecc_range(SXSnum, args.min_ecc, args.max_ecc)
     if f0 is None:
         f0 = NR.Sf_ini
@@ -1114,7 +1118,8 @@ def Compare_ecc_HM(argv = None):
         def max_FF_over_phic(phic):
             hpcEOB = EOBModes.construct_hpc(iota_input, phic, modelist = EOBModeList, phaseFrom0 = True)
             FF, _1, _2 = calculate_ModeFF(hpcEOB, hpcNR.copy(), Mtotal = Mtotal_input, psd = psd)
-            # sys.stderr.write(f'{phic/np.pi} pi {FF}\n')
+            if args.verbose:
+                sys.stderr.write(f'{phic/np.pi} pi: {FF}\n')
             return FF
         if phic_input is None:
             dphic_range = (-np.pi*0.1, 2.1*np.pi)
@@ -1159,7 +1164,8 @@ def Compare_ecc_HM(argv = None):
         def max_FF_over_phic(phic):
             hpcEOB = EOBModes_C.construct_hpc(iota_input, phic, modelist = EOBModeList, phaseFrom0 = True)
             FF, _1, _2 = calculate_ModeFF(hpcEOB, hpcNR.copy(), Mtotal = Mtotal_input, psd = psd)
-            # sys.stderr.write(f'{phic/np.pi} pi {FF}\n')
+            if args.verbose:
+                sys.stderr.write(f'{phic/np.pi} pi {FF}\n')
             return FF
         if phic_input is None:
             dphic_range = (-np.pi*0.1, 2.1*np.pi)

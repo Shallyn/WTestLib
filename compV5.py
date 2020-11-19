@@ -1085,13 +1085,18 @@ def Compare_ecc_HM(argv = None):
         MtotalList = np.array([args.mtotal])
 
     NRModeList = []
-    for l in range(2, 5):
-        for m in range(-l, l+1):
-            if m!=0:
-                NRModeList.append((l,m))
+    if 1:
+        for l in range(2, 5):
+            for m in range(-l, l+1):
+                if m!=0:
+                    NRModeList.append((l,m))
+    else:
+        NRModeList = [(2,2), (2,-2), (2,1), (2,-1), (3,3), (3,-3), (4,4), (4,-4)]
+        # NRModeList = [(2,1)]
     if args.only22:
         jtag = 'only22'
         EOBModeList = [(2,2), (2,-2)]
+        # EOBModeList = [(2,1)]
     else:
         jtag = 'HM'
         EOBModeList = [(2,2), (2,-2), (2,1), (2,-1), (3,3), (3,-3), (4,4), (4,-4)]
@@ -1186,6 +1191,46 @@ def Compare_ecc_HM(argv = None):
             phic_max = phic_input
         return FF_max, phic_max
 
+    def calculate_Max_FF_HM_fit(EOBModes, Mtotal_input, iota_input, phic_input = None):        
+        # EOBModes_C = waveform_mode_collector(0)
+        # fit 2,2 mode
+        # for l,m in [(2,2), (2,1), (3,3), (4,4)]:
+        #     if m % 2 and m1 == m2 and s1z == s2z:
+        #         continue
+        #     hlmEOB = EOBModes.get_mode(l, m)
+        #     hlmNR = NRModes.get_mode(l, m)
+        #     FFlm, phiclm, _ = calculate_ModeFF(hlmEOB, hlmNR, Mtotal = Mtotal_input, psd = psd)
+        #     if args.verbose:
+        #         sys.stderr.write(f'l,|m| = ({l}, {m}), FF = {FFlm}, amp = {hlmNR.amp.max()}, ampEOB = {hlmEOB.amp.max()}\n')
+        #     hlmEOB.apply_phic(phiclm)
+        #     EOBModes_C.append_mode(hlmEOB.time, hlmEOB.real, hlmEOB.imag, l, m)
+        #     EOBModes_C.append_mode(hlmEOB.time, hlmEOB.real, -hlmEOB.imag, l, -m)
+        hpcNR = NRModes.construct_hpc(iota_input, 0, modelist = NRModeList, phaseFrom0 = True)
+        def max_FF_over_phic(phic):
+            hpcEOB = EOBModes.construct_hpc(iota_input, phic, modelist = EOBModeList, phaseFrom0 = True)
+            FF, _1, _2 = calculate_ModeFF(hpcEOB, hpcNR, Mtotal = Mtotal_input, psd = psd)
+            if args.verbose:
+                sys.stderr.write(f'{phic/np.pi} pi {FF}\n')
+            return FF
+        if phic_input is None:
+            dphic_range = (-np.pi*0.1, 2.1*np.pi)
+            MG_phic = MultiGrid1D(max_FF_over_phic, dphic_range, 60)
+            data = MG_phic.run(fsave = None, eps = eps, magnification = mag, filter_thresh = filter_thresh, maxiter = max_step)
+            imax = np.argmax(data[:,1])
+            phic_max = data[imax,0]
+            FF_max = data[imax,1]
+        elif hasattr(phic_input, '__len__'):
+            dphic_range = phic_input
+            MG_phic = MultiGrid1D(max_FF_over_phic, dphic_range, 10)
+            data = MG_phic.run(fsave = None, eps = eps, magnification = mag, filter_thresh = filter_thresh, maxiter = max_step)
+            imax = np.argmax(data[:,1])
+            phic_max = data[imax,0]
+            FF_max = data[imax,1]
+        else:
+            FF_max = max_FF_over_phic(phic_input)
+            phic_max = phic_input
+        return FF_max, phic_max
+
     fresults = prefix / f'results_{SXSnum}_{jtag}.csv'
     # Setting Results savimg filename.
     if CIRC:
@@ -1199,6 +1244,48 @@ def Compare_ecc_HM(argv = None):
         iotaList = np.concatenate([np.linspace(0, 7, 8)[::-1], np.linspace(8, 14, 7)])*np.pi / 14
     
     if CIRC:
+        ret1 = ge(m1 = m1, m2 = m2, s1z = s1z, s2z = s2z, D = 100, 
+                ecc = 0.0, srate = srate, f_ini = fini, L = 2, M = 2,
+                timeout = 3600, jobtag = jobtag, mode = 0)
+        if isinstance(ret1, CEV):
+            return 0
+        t, h22r, h22i, h21r, h21i, h33r, h33i, h44r, h44i = \
+            ret1[:,0], ret1[:,1], ret1[:,2], ret1[:,3], ret1[:,4], ret1[:,5], ret1[:,6], ret1[:,7], ret1[:,8]
+        EOBModes = waveform_mode_collector(0) 
+        EOBModes.append_mode(t, h22r, h22i, 2, 2)
+        EOBModes.append_mode(t, h22r, -h22i, 2, -2)
+        EOBModes.append_mode(t, h21r, h21i, 2, 1)
+        EOBModes.append_mode(t, h21r, -h21i, 2, -1)
+        EOBModes.append_mode(t, h33r, h33i, 3, 3)
+        EOBModes.append_mode(t, h33r, -h33i, 3, -3)
+        EOBModes.append_mode(t, h44r, h44i, 4, 4)
+        EOBModes.append_mode(t, h44r, -h44i, 4, -4)
+        # for (l,m) in [(2,2), (2,1), (3,3), (4,4)]:
+        #     comb = EOBModes.get_mode(l,m)
+        #     ymode = int(l*10 + m)
+        #     retlm = ge(m1 = m1, m2 = m2, s1z = s1z, s2z = s2z, D = 100, 
+        #             ecc = 0.0, srate = srate, f_ini = fini, L = 2, M = 2,
+        #             timeout = 3600, jobtag = jobtag, mode = ymode)
+        #     if isinstance(retlm, CEV):
+        #         return 0
+        #     tlm, hlmr, hlmi = retlm[:,0], retlm[:,1], retlm[:,2]
+        #     plt.figure(figsize = (10, 3))
+        #     plt.plot(comb.time, comb.amp, label = 'comb')
+        #     plt.plot(tlm, np.abs(hlmr + 1.j*hlmi), label = 'sep')
+        #     plt.legend()
+        #     plt.savefig(prefix / f'h{ymode}.png', dpi = 200)
+        #     plt.close()
+        for Mtotal in MtotalList:
+            FF_avg = 0
+            phic_fit_list = None
+            for iota in iotaList:
+                FF, phic_ret = calculate_Max_FF_HM_fit(EOBModes, Mtotal_input = Mtotal, iota_input = iota, phic_input = phic_fit_list)
+                sys.stderr.write(f'Mtotal = {Mtotal}, iota = {iota/np.pi} pi, FF = {FF}, phic_ret = {phic_ret/np.pi}\n')
+                if phic_fit_list is None:
+                    phic_fit_list = (phic_ret - np.pi*1.1/7, phic_ret + np.pi*1.1/7)
+                FF_avg += FF
+            add_csv(fresults, [[Mtotal, FF_avg / len(iotaList)]])
+    elif 0:
         for Mtotal in MtotalList:
             FF_avg = 0
             phic_fit_list = None

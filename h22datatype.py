@@ -74,6 +74,9 @@ class ModeBase(object):
         self._time = time - time[0]
         self._mode = np.asarray(hreal) + 1.j * np.asarray(himag)
 
+    def apply_phic(self, phic):
+        self._mode * np.exp(1.j*phic)
+
     @property
     def t0(self):
         return self._t0

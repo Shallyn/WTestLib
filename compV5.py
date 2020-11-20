@@ -970,7 +970,7 @@ def Compare_ecc_HM(argv = None):
 
     parser.add_option('--executable', type = 'str', default = DEFAULT_EXEV5, help = 'Exe command')
     parser.add_option('--approx', type = 'str', default = 'SEOBNREv5', help = 'Version of the code')
-    parser.add_option('--SXS', type = 'str',  default = '1355', help = 'SXS template for comparision')
+    parser.add_option('--SXS', type = 'str', action = 'append', default = [], help = 'SXS template for comparision')
  
     parser.add_option('--prefix', type = 'str', default = '.', help = 'dir for results saving.')
     parser.add_option('--jobtag', type = 'str', default = '_lnprob', help = 'jobtag.')
@@ -1007,7 +1007,9 @@ def Compare_ecc_HM(argv = None):
 
     exe = args.executable
     approx = args.approx
-    SXSnum = args.SXS
+    SXSnum_list = args.SXS
+    if len(SXSnum_list) == 0:
+        SXSnum_list.append('0001')
     table = args.table
     jobtag = args.jobtag
 
@@ -1021,343 +1023,345 @@ def Compare_ecc_HM(argv = None):
     if not prefix.exists():
         prefix.mkdir(parents = True)
 
-    NR = SXSAllMode(SXSnum, table = table, srcloc = srcloc_all, cutpct = 1.5)
-    h22 = NR.get_mode(2,2)
-    h21 = NR.get_mode(2,1)
-    h33 = NR.get_mode(3,3)
-    h44 = NR.get_mode(4,4)
+    for SXSnum in SXSnum_list:
+        NR = SXSAllMode(SXSnum, table = table, srcloc = srcloc_all, cutpct = 1.5)
+        h22 = NR.get_mode(2,2)
+        h21 = NR.get_mode(2,1)
+        h33 = NR.get_mode(3,3)
+        h44 = NR.get_mode(4,4)
 
-    max_freq = max(h22.frequency.max(), h21.frequency.max(), h33.frequency.max(), h44.frequency.max())
-    deltaT = np.pi / max_freq
-    NRModetime = np.arange(h22.time[0], h22.time[-1], deltaT)
-    NRModes = NR.mode_resample(NRModetime)
+        max_freq = max(h22.frequency.max(), h21.frequency.max(), h33.frequency.max(), h44.frequency.max())
+        deltaT = np.pi / max_freq
+        NRModetime = np.arange(h22.time[0], h22.time[-1], deltaT)
+        NRModes = NR.mode_resample(NRModetime)
 
-    m1 = NR.mQ1
-    m2 = NR.mQ2
-    s1z = NR.s1z
-    s2z = NR.s2z
-    srate = dim_t(m1 + m2) / deltaT
-    ge = Generator(approx = approx, executable = exe, verbose = True)
-    CIRC = args.circ
-    f0, min_e, max_e = get_ecc_range(SXSnum, args.min_ecc, args.max_ecc)
-    if f0 is None:
-        f0 = NR.Sf_ini
-        # f0 = 0.002
-        CIRC = True
-    fini = f0 * dim_t(m1 + m2)
-    max_ecc = max_e
-    min_ecc = min_e
-    ecc_range = (min_ecc, max_ecc)
-    num_ecc = args.num_ecc
+        m1 = NR.mQ1
+        m2 = NR.mQ2
+        s1z = NR.s1z
+        s2z = NR.s2z
+        sys.stderr.write(f'q = {m1/m2}, chiA = {(s1z-s2z)/2}')
+        srate = dim_t(m1 + m2) / deltaT
+        ge = Generator(approx = approx, executable = exe, verbose = True)
+        CIRC = args.circ
+        f0, min_e, max_e = get_ecc_range(SXSnum, args.min_ecc, args.max_ecc)
+        if f0 is None:
+            f0 = NR.Sf_ini
+            # f0 = 0.002
+            CIRC = True
+        fini = f0 * dim_t(m1 + m2)
+        max_ecc = max_e
+        min_ecc = min_e
+        ecc_range = (min_ecc, max_ecc)
+        num_ecc = args.num_ecc
 
-    def estimate_ecc(ecc, Mtotal = None):
-        ret = ge(m1 = m1, m2 = m2, s1z = s1z, s2z = s2z, D = 100, 
-                ecc = ecc, srate = srate, f_ini = fini, L = 2, M = 2,
-                timeout = 3600, jobtag = jobtag, mode = 22)
-        if isinstance(ret, CEV):
-            return 0
-        t, h22r, h22i = ret[:,0], ret[:,1], ret[:,2]
-        h22EOB = ModeBase(t, h22r, h22i)
-        h22NR = NRModes.get_mode(2, 2)
-        MtotalList_ecc = (20, 40, 70, 100, 130, 160, 190)
-        if Mtotal is not None:
-            MtotalList_ecc = Mtotal
-        FFL, _, tcL = calculate_ModeFF(h22EOB, h22NR, Mtotal = MtotalList_ecc, psd = psd)
-        lnp = -np.power((1-FFL)/0.01, 2) - np.power(tcL/5, 2)
-        sys.stderr.write(f'ecc = {ecc}: lnp = {lnp}\n')
-        return np.min(lnp)
-    if CIRC:
-        ecc_fit = 0.0
-    elif args.ecc is None:
-        MG = MultiGrid1D(estimate_ecc, ecc_range, num_ecc)
-        data = MG.run(fsave = None, eps = eps, magnification = mag, filter_thresh = filter_thresh, maxiter = max_step)
-        ecc_grid, lnp_grid = data[:,0], data[:,1]
-        ecc_fit = ecc_grid[np.argmax(lnp_grid)]
-    else:
-        ecc_fit = args.ecc
-    
-    sys.stderr.write(f'{LOG}: SXS_{SXSnum}, Estimate ecc_fit = {ecc_fit}\n')
-    max_mtotal = args.max_mtotal
-    min_mtotal = args.min_mtotal
-    num_mtotal = args.num_mtotal
-    if args.mtotal is None:
-        MtotalList = np.linspace(min_mtotal, max_mtotal, num_mtotal)
-    else:
-        MtotalList = np.array([args.mtotal])
-
-    NRModeList = []
-    if 1:
-        for l in range(2, 5):
-            for m in range(-l, l+1):
-                if m!=0:
-                    NRModeList.append((l,m))
-    else:
-        NRModeList = [(2,2), (2,-2), (2,1), (2,-1), (3,3), (3,-3), (4,4), (4,-4)]
-        # NRModeList = [(2,1)]
-    if args.only22:
-        jtag = 'only22'
-        EOBModeList = [(2,2), (2,-2)]
-        # EOBModeList = [(2,1)]
-    else:
-        jtag = 'HM'
-        EOBModeList = [(2,2), (2,-2), (2,1), (2,-1), (3,3), (3,-3), (4,4), (4,-4)]
-    sys.stderr.write(f'NRModeList:\n{NRModeList}\n')
-    sys.stderr.write(f'EOBModeList:\n{EOBModeList}\n')
-    def calculate_Max_FF_HM(ecc, Mtotal_input, iota_input, phic_input=None):
-        ret = ge(m1 = m1, m2 = m2, s1z = s1z, s2z = s2z, D = 100, 
-                ecc = ecc, srate = srate, f_ini = fini, L = 2, M = 2,
-                timeout = 3600, jobtag = jobtag, mode = 0)
-        if isinstance(ret, CEV):
-            return 0
-        EOBModes = waveform_mode_collector(0)
-        t, h22r, h22i, h21r, h21i, h33r, h33i, h44r, h44i = \
-            ret[:,0], ret[:,1], ret[:,2], ret[:,3], ret[:,4], ret[:,5], ret[:,6], ret[:,7], ret[:,8]   
-        EOBModes.append_mode(t, h22r, h22i, 2, 2)
-        EOBModes.append_mode(t, h22r, -h22i, 2, -2)
-        EOBModes.append_mode(t, h21r, h21i, 2, 1)
-        EOBModes.append_mode(t, h21r, -h21i, 2, -1)
-        EOBModes.append_mode(t, h33r, h33i, 3, 3)
-        EOBModes.append_mode(t, h33r, -h33i, 3, -3)
-        EOBModes.append_mode(t, h44r, h44i, 4, 4)
-        EOBModes.append_mode(t, h44r, -h44i, 4, -4)
-        hpcNR = NRModes.construct_hpc(iota_input, 0, modelist = NRModeList, phaseFrom0 = True)
-        def max_FF_over_phic(phic):
-            hpcEOB = EOBModes.construct_hpc(iota_input, phic, modelist = EOBModeList, phaseFrom0 = True)
-            FF, _1, _2 = calculate_ModeFF(hpcEOB, hpcNR.copy(), Mtotal = Mtotal_input, psd = psd)
-            if args.verbose:
-                sys.stderr.write(f'{phic/np.pi} pi: {FF}\n')
-            return FF
-        if phic_input is None:
-            dphic_range = (-np.pi*0.1, 2.1*np.pi)
-            MG_phic = MultiGrid1D(max_FF_over_phic, dphic_range, 60)
-            data = MG_phic.run(fsave = None, eps = eps, magnification = mag, filter_thresh = filter_thresh, maxiter = max_step)
-            return np.max(data[:,1])
-        elif hasattr(phic_input, '__len__'):
-            if type(phic_input) is str:
-                dphic_range = (-np.pi*0.1, 2.1*np.pi)
-                num_dp = 60
-            else:
-                dphic_range = phic_input
-                num_dp = 10
-            MG_phic = MultiGrid1D(max_FF_over_phic, dphic_range, num_dp)
-            data = MG_phic.run(fsave = None, eps = eps, magnification = mag, filter_thresh = filter_thresh, maxiter = max_step)
-            imax = np.argmax(data[:,1])
-            phic_max = data[imax,0]
-            FF_max = data[imax,1]
-        else:
-            FF_max = max_FF_over_phic(phic_input)
-            phic_max = phic_input
-        return FF_max, phic_max
-
-    def calculate_Max_FF_HM_Circ(Mtotal_input, iota_input, phic_input = None):
-        ret_C = ge(m1 = m1, m2 = m2, s1z = s1z, s2z = s2z, D = 100, 
-                ecc = 0.0, srate = srate, f_ini = fini, L = 2, M = 2,
-                timeout = 3600, jobtag = jobtag, mode = 0)
-        if isinstance(ret_C, CEV):
-            return 0
-        EOBModes_C = waveform_mode_collector(0)
-        t, h22r, h22i, h21r, h21i, h33r, h33i, h44r, h44i = \
-            ret_C[:,0], ret_C[:,1], ret_C[:,2], ret_C[:,3], ret_C[:,4], ret_C[:,5], ret_C[:,6], ret_C[:,7], ret_C[:,8]   
-        EOBModes_C.append_mode(t, h22r, h22i, 2, 2)
-        EOBModes_C.append_mode(t, h22r, -h22i, 2, -2)
-        EOBModes_C.append_mode(t, h21r, h21i, 2, 1)
-        EOBModes_C.append_mode(t, h21r, -h21i, 2, -1)
-        EOBModes_C.append_mode(t, h33r, h33i, 3, 3)
-        EOBModes_C.append_mode(t, h33r, -h33i, 3, -3)
-        EOBModes_C.append_mode(t, h44r, h44i, 4, 4)
-        EOBModes_C.append_mode(t, h44r, -h44i, 4, -4)
-        hpcNR = NRModes.construct_hpc(iota_input, 0, modelist = NRModeList, phaseFrom0 = True)
-        def max_FF_over_phic(phic):
-            hpcEOB = EOBModes_C.construct_hpc(iota_input, phic, modelist = EOBModeList, phaseFrom0 = True)
-            FF, _1, _2 = calculate_ModeFF(hpcEOB, hpcNR.copy(), Mtotal = Mtotal_input, psd = psd)
-            if args.verbose:
-                sys.stderr.write(f'{phic/np.pi} pi {FF}\n')
-            return FF
-        if phic_input is None:
-            dphic_range = (-np.pi*0.1, 2.1*np.pi)
-            MG_phic = MultiGrid1D(max_FF_over_phic, dphic_range, 60)
-            data = MG_phic.run(fsave = None, eps = eps, magnification = mag, filter_thresh = filter_thresh, maxiter = max_step)
-            imax = np.argmax(data[:,1])
-            phic_max = data[imax,0]
-            FF_max = data[imax,1]
-        elif hasattr(phic_input, '__len__'):
-            dphic_range = phic_input
-            MG_phic = MultiGrid1D(max_FF_over_phic, dphic_range, 10)
-            data = MG_phic.run(fsave = None, eps = eps, magnification = mag, filter_thresh = filter_thresh, maxiter = max_step)
-            imax = np.argmax(data[:,1])
-            phic_max = data[imax,0]
-            FF_max = data[imax,1]
-        else:
-            FF_max = max_FF_over_phic(phic_input)
-            phic_max = phic_input
-        return FF_max, phic_max
-
-    def calculate_Max_FF_HM_fit(EOBModes, Mtotal_input, iota_input, phic_input = None):        
-        # EOBModes_C = waveform_mode_collector(0)
-        # # fit 2,2 mode
-        # for l,m in [(2,2), (2,1), (3,3), (4,4)]:
-        #     if m % 2 and m1 == m2 and s1z == s2z:
-        #         continue
-        #     hlmEOB = EOBModes.get_mode(l, m)
-        #     hlmNR = NRModes.get_mode(l, m)
-        #     FFlm, phiclm, _ = calculate_ModeFF(hlmEOB, hlmNR, Mtotal = Mtotal_input, psd = psd)
-        #     if args.verbose:
-        #         sys.stderr.write(f'l,|m| = ({l}, {m}), FF = {FFlm}, amp = {hlmNR.amp.max()}, ampEOB = {hlmEOB.amp.max()}\n')
-        #     hlmEOB.apply_phic(phiclm)
-        #     EOBModes_C.append_mode(hlmEOB.time, hlmEOB.real, hlmEOB.imag, l, m)
-        #     EOBModes_C.append_mode(hlmEOB.time, hlmEOB.real, -hlmEOB.imag, l, -m)
-        hpcNR = NRModes.construct_hpc(iota_input, 0, modelist = NRModeList, phaseFrom0 = True)
-        def max_FF_over_phic(phic):
-            hpcEOB = EOBModes.construct_hpc(iota_input, phic, modelist = EOBModeList, phaseFrom0 = True)
-            FF, _1, _2 = calculate_ModeFF(hpcEOB, hpcNR, Mtotal = Mtotal_input, psd = psd)
-            if args.verbose:
-                sys.stderr.write(f'{phic/np.pi} pi {FF}\n')
-            return FF
-        if phic_input is None:
-            dphic_range = (-np.pi*0.1, 2.1*np.pi)
-            MG_phic = MultiGrid1D(max_FF_over_phic, dphic_range, 60)
-            data = MG_phic.run(fsave = None, eps = eps, magnification = mag, filter_thresh = filter_thresh, maxiter = max_step)
-            imax = np.argmax(data[:,1])
-            phic_max = data[imax,0]
-            FF_max = data[imax,1]
-        elif hasattr(phic_input, '__len__'):
-            dphic_range = phic_input
-            MG_phic = MultiGrid1D(max_FF_over_phic, dphic_range, 10)
-            data = MG_phic.run(fsave = None, eps = eps, magnification = mag, filter_thresh = filter_thresh, maxiter = max_step)
-            imax = np.argmax(data[:,1])
-            phic_max = data[imax,0]
-            FF_max = data[imax,1]
-        else:
-            FF_max = max_FF_over_phic(phic_input)
-            phic_max = phic_input
-        return FF_max, phic_max
-
-    fresults = prefix / f'results_{SXSnum}_{jtag}.csv'
-    # Setting Results savimg filename.
-    if CIRC:
-        save_namecol(fresults, data = [['#Mtotal', '#FF']])
-    else:
-        save_namecol(fresults, data = [['#Mtotal', '#ecc', '#FF']])
-    if args.iota is not None:
-        iotaList = np.array([args.iota * np.pi])
-    else:
-        # iotaList = np.linspace(0, np.pi, 15)
-        iotaList = np.concatenate([np.linspace(0, 7, 8)[::-1], np.linspace(8, 14, 7)])*np.pi / 14
-    
-    if CIRC:
-        ret1 = ge(m1 = m1, m2 = m2, s1z = s1z, s2z = s2z, D = 100, 
-                ecc = 0.0, srate = srate, f_ini = fini, L = 2, M = 2,
-                timeout = 3600, jobtag = jobtag, mode = 0)
-        if isinstance(ret1, CEV):
-            return 0
-        t, h22r, h22i, h21r, h21i, h33r, h33i, h44r, h44i = \
-            ret1[:,0], ret1[:,1], ret1[:,2], ret1[:,3], ret1[:,4], ret1[:,5], ret1[:,6], ret1[:,7], ret1[:,8]
-        EOBModes = waveform_mode_collector(0) 
-        EOBModes.append_mode(t, h22r, h22i, 2, 2)
-        EOBModes.append_mode(t, h22r, -h22i, 2, -2)
-        EOBModes.append_mode(t, h21r, h21i, 2, 1)
-        EOBModes.append_mode(t, h21r, -h21i, 2, -1)
-        EOBModes.append_mode(t, h33r, h33i, 3, 3)
-        EOBModes.append_mode(t, h33r, -h33i, 3, -3)
-        EOBModes.append_mode(t, h44r, h44i, 4, 4)
-        EOBModes.append_mode(t, h44r, -h44i, 4, -4)
-        # for (l,m) in [(2,2), (2,1), (3,3), (4,4)]:
-        #     comb = EOBModes.get_mode(l,m)
-        #     ymode = int(l*10 + m)
-        #     retlm = ge(m1 = m1, m2 = m2, s1z = s1z, s2z = s2z, D = 100, 
-        #             ecc = 0.0, srate = srate, f_ini = fini, L = 2, M = 2,
-        #             timeout = 3600, jobtag = jobtag, mode = ymode)
-        #     if isinstance(retlm, CEV):
-        #         return 0
-        #     tlm, hlmr, hlmi = retlm[:,0], retlm[:,1], retlm[:,2]
-        #     plt.figure(figsize = (10, 3))
-        #     plt.plot(comb.time, comb.amp, label = 'comb')
-        #     plt.plot(tlm, np.abs(hlmr + 1.j*hlmi), label = 'sep')
-        #     plt.legend()
-        #     plt.savefig(prefix / f'h{ymode}.png', dpi = 200)
-        #     plt.close()
-        # for (l,m) in [(2,2), (4,4)]:
-        #     ymode = int(l*10 + m)
-        #     # comb = EOBModes.get_mode(l,m)
-        #     nr = NRModes.get_mode(l,m)
-        #     retlm = ge(m1 = m1, m2 = m2, s1z = s1z, s2z = s2z, D = 100, 
-        #             ecc = 0.0, srate = srate, f_ini = fini, L = 2, M = 2,
-        #             timeout = 3600, jobtag = jobtag, mode = ymode)
-        #     if isinstance(retlm, CEV):
-        #         return 0
-        #     # retlm = np.loadtxt('waveform.dat')
-        #     tlm, hlmr, hlmi = retlm[:,0], retlm[:,1], retlm[:,2]
-        #     comb = ModeBase(tlm, hlmr, hlmi)
-        #     FF, _1, _2 = calculate_ModeFF(comb.copy(), nr.copy(), Mtotal = 190, psd = psd)
-        #     print(FF)
-        #     comb, nr = Mode_alignment(comb.copy(), nr.copy(), deltaT = None)
-        #     plt.figure(figsize = (10, 6))
-        #     plt.subplot(211)
-        #     plt.plot(comb.time, comb.amp, label = 'comb')
-        #     plt.plot(nr.time, nr.amp, label = 'amp')
-        #     plt.legend()
-        #     plt.subplot(212)
-        #     plt.plot(comb.time, comb.real, label = 'comb')
-        #     plt.plot(nr.time, nr.imag, label = 'amp')
-        #     plt.legend()
-        #     plt.savefig(prefix / f'hnr{ymode}.png', dpi = 200)
-        #     plt.close()
-        # return 0
-        for Mtotal in MtotalList:
-            FF_avg = 0
-            phic_fit_list = None
-            for iota in iotaList:
-                FF, phic_ret = calculate_Max_FF_HM_fit(EOBModes, Mtotal_input = Mtotal, iota_input = iota, phic_input = phic_fit_list)
-                sys.stderr.write(f'Mtotal = {Mtotal}, iota = {iota/np.pi} pi, FF = {FF}, phic_ret = {phic_ret/np.pi}\n')
-                if phic_fit_list is None:
-                    phic_fit_list = (phic_ret - np.pi*1.1/7, phic_ret + np.pi*1.1/7)
-                FF_avg += FF
-            add_csv(fresults, [[Mtotal, FF_avg / len(iotaList)]])
-    elif 0:
-        for Mtotal in MtotalList:
-            FF_avg = 0
-            phic_fit_list = None
-            for iota in iotaList:
-                FF, phic_ret = calculate_Max_FF_HM_Circ(Mtotal_input = Mtotal, iota_input = iota, phic_input = phic_fit_list)
-                sys.stderr.write(f'Mtotal = {Mtotal}, iota = {iota/np.pi} pi, FF = {FF}, phic_ret = {phic_ret/np.pi}\n')
-                if phic_fit_list is None:
-                    phic_fit_list = (phic_ret - np.pi*1.1/7, phic_ret + np.pi*1.1/7)
-                FF_avg += FF
-            add_csv(fresults, [[Mtotal, FF_avg / len(iotaList)]])
-    elif args.search_ecc_mtotal:
-        ecc_range_new = (ecc_fit - 0.02, ecc_fit + 0.02)
-        for Mtotal in MtotalList:
-            MG = MultiGrid1D(estimate_ecc, ecc_range_new, 20, Mtotal = Mtotal)
+        def estimate_ecc(ecc, Mtotal = None):
+            ret = ge(m1 = m1, m2 = m2, s1z = s1z, s2z = s2z, D = 100, 
+                    ecc = ecc, srate = srate, f_ini = fini, L = 2, M = 2,
+                    timeout = 3600, jobtag = jobtag, mode = 22)
+            if isinstance(ret, CEV):
+                return 0
+            t, h22r, h22i = ret[:,0], ret[:,1], ret[:,2]
+            h22EOB = ModeBase(t, h22r, h22i)
+            h22NR = NRModes.get_mode(2, 2)
+            MtotalList_ecc = (20, 40, 70, 100, 130, 160, 190)
+            if Mtotal is not None:
+                MtotalList_ecc = Mtotal
+            FFL, _, tcL = calculate_ModeFF(h22EOB, h22NR, Mtotal = MtotalList_ecc, psd = psd)
+            lnp = -np.power((1-FFL)/0.01, 2) - np.power(tcL/5, 2)
+            sys.stderr.write(f'ecc = {ecc}: lnp = {lnp}\n')
+            return np.min(lnp)
+        if CIRC:
+            ecc_fit = 0.0
+        elif args.ecc is None:
+            MG = MultiGrid1D(estimate_ecc, ecc_range, num_ecc)
             data = MG.run(fsave = None, eps = eps, magnification = mag, filter_thresh = filter_thresh, maxiter = max_step)
             ecc_grid, lnp_grid = data[:,0], data[:,1]
             ecc_fit = ecc_grid[np.argmax(lnp_grid)]
-            FF_avg = 0
-            for iota in iotaList:
+        else:
+            ecc_fit = args.ecc
+        
+        sys.stderr.write(f'{LOG}: SXS_{SXSnum}, Estimate ecc_fit = {ecc_fit}\n')
+        max_mtotal = args.max_mtotal
+        min_mtotal = args.min_mtotal
+        num_mtotal = args.num_mtotal
+        if args.mtotal is None:
+            MtotalList = np.linspace(min_mtotal, max_mtotal, num_mtotal)
+        else:
+            MtotalList = np.array([args.mtotal])
+
+        NRModeList = []
+        if 1:
+            for l in range(2, 5):
+                for m in range(-l, l+1):
+                    if m!=0:
+                        NRModeList.append((l,m))
+        else:
+            NRModeList = [(2,2), (2,-2), (2,1), (2,-1), (3,3), (3,-3), (4,4), (4,-4)]
+            # NRModeList = [(2,1)]
+        if args.only22:
+            jtag = 'only22'
+            EOBModeList = [(2,2), (2,-2)]
+            # EOBModeList = [(2,1)]
+        else:
+            jtag = 'HM'
+            EOBModeList = [(2,2), (2,-2), (2,1), (2,-1), (3,3), (3,-3), (4,4), (4,-4)]
+        sys.stderr.write(f'NRModeList:\n{NRModeList}\n')
+        sys.stderr.write(f'EOBModeList:\n{EOBModeList}\n')
+        def calculate_Max_FF_HM(ecc, Mtotal_input, iota_input, phic_input=None):
+            ret = ge(m1 = m1, m2 = m2, s1z = s1z, s2z = s2z, D = 100, 
+                    ecc = ecc, srate = srate, f_ini = fini, L = 2, M = 2,
+                    timeout = 3600, jobtag = jobtag, mode = 0)
+            if isinstance(ret, CEV):
+                return 0
+            EOBModes = waveform_mode_collector(0)
+            t, h22r, h22i, h21r, h21i, h33r, h33i, h44r, h44i = \
+                ret[:,0], ret[:,1], ret[:,2], ret[:,3], ret[:,4], ret[:,5], ret[:,6], ret[:,7], ret[:,8]   
+            EOBModes.append_mode(t, h22r, h22i, 2, 2)
+            EOBModes.append_mode(t, h22r, -h22i, 2, -2)
+            EOBModes.append_mode(t, h21r, h21i, 2, 1)
+            EOBModes.append_mode(t, h21r, -h21i, 2, -1)
+            EOBModes.append_mode(t, h33r, h33i, 3, 3)
+            EOBModes.append_mode(t, h33r, -h33i, 3, -3)
+            EOBModes.append_mode(t, h44r, h44i, 4, 4)
+            EOBModes.append_mode(t, h44r, -h44i, 4, -4)
+            hpcNR = NRModes.construct_hpc(iota_input, 0, modelist = NRModeList, phaseFrom0 = True)
+            def max_FF_over_phic(phic):
+                hpcEOB = EOBModes.construct_hpc(iota_input, phic, modelist = EOBModeList, phaseFrom0 = True)
+                FF, _1, _2 = calculate_ModeFF(hpcEOB, hpcNR.copy(), Mtotal = Mtotal_input, psd = psd)
+                if args.verbose:
+                    sys.stderr.write(f'{phic/np.pi} pi: {FF}\n')
+                return FF
+            if phic_input is None:
+                dphic_range = (-np.pi*0.1, 2.1*np.pi)
+                MG_phic = MultiGrid1D(max_FF_over_phic, dphic_range, 60)
+                data = MG_phic.run(fsave = None, eps = eps, magnification = mag, filter_thresh = filter_thresh, maxiter = max_step)
+                return np.max(data[:,1])
+            elif hasattr(phic_input, '__len__'):
+                if type(phic_input) is str:
+                    dphic_range = (-np.pi*0.1, 2.1*np.pi)
+                    num_dp = 60
+                else:
+                    dphic_range = phic_input
+                    num_dp = 10
+                MG_phic = MultiGrid1D(max_FF_over_phic, dphic_range, num_dp)
+                data = MG_phic.run(fsave = None, eps = eps, magnification = mag, filter_thresh = filter_thresh, maxiter = max_step)
+                imax = np.argmax(data[:,1])
+                phic_max = data[imax,0]
+                FF_max = data[imax,1]
+            else:
+                FF_max = max_FF_over_phic(phic_input)
+                phic_max = phic_input
+            return FF_max, phic_max
+
+        def calculate_Max_FF_HM_Circ(Mtotal_input, iota_input, phic_input = None):
+            ret_C = ge(m1 = m1, m2 = m2, s1z = s1z, s2z = s2z, D = 100, 
+                    ecc = 0.0, srate = srate, f_ini = fini, L = 2, M = 2,
+                    timeout = 3600, jobtag = jobtag, mode = 0)
+            if isinstance(ret_C, CEV):
+                return 0
+            EOBModes_C = waveform_mode_collector(0)
+            t, h22r, h22i, h21r, h21i, h33r, h33i, h44r, h44i = \
+                ret_C[:,0], ret_C[:,1], ret_C[:,2], ret_C[:,3], ret_C[:,4], ret_C[:,5], ret_C[:,6], ret_C[:,7], ret_C[:,8]   
+            EOBModes_C.append_mode(t, h22r, h22i, 2, 2)
+            EOBModes_C.append_mode(t, h22r, -h22i, 2, -2)
+            EOBModes_C.append_mode(t, h21r, h21i, 2, 1)
+            EOBModes_C.append_mode(t, h21r, -h21i, 2, -1)
+            EOBModes_C.append_mode(t, h33r, h33i, 3, 3)
+            EOBModes_C.append_mode(t, h33r, -h33i, 3, -3)
+            EOBModes_C.append_mode(t, h44r, h44i, 4, 4)
+            EOBModes_C.append_mode(t, h44r, -h44i, 4, -4)
+            hpcNR = NRModes.construct_hpc(iota_input, 0, modelist = NRModeList, phaseFrom0 = True)
+            def max_FF_over_phic(phic):
+                hpcEOB = EOBModes_C.construct_hpc(iota_input, phic, modelist = EOBModeList, phaseFrom0 = True)
+                FF, _1, _2 = calculate_ModeFF(hpcEOB, hpcNR.copy(), Mtotal = Mtotal_input, psd = psd)
+                if args.verbose:
+                    sys.stderr.write(f'{phic/np.pi} pi {FF}\n')
+                return FF
+            if phic_input is None:
+                dphic_range = (-np.pi*0.1, 2.1*np.pi)
+                MG_phic = MultiGrid1D(max_FF_over_phic, dphic_range, 60)
+                data = MG_phic.run(fsave = None, eps = eps, magnification = mag, filter_thresh = filter_thresh, maxiter = max_step)
+                imax = np.argmax(data[:,1])
+                phic_max = data[imax,0]
+                FF_max = data[imax,1]
+            elif hasattr(phic_input, '__len__'):
+                dphic_range = phic_input
+                MG_phic = MultiGrid1D(max_FF_over_phic, dphic_range, 10)
+                data = MG_phic.run(fsave = None, eps = eps, magnification = mag, filter_thresh = filter_thresh, maxiter = max_step)
+                imax = np.argmax(data[:,1])
+                phic_max = data[imax,0]
+                FF_max = data[imax,1]
+            else:
+                FF_max = max_FF_over_phic(phic_input)
+                phic_max = phic_input
+            return FF_max, phic_max
+
+        def calculate_Max_FF_HM_fit(EOBModes, Mtotal_input, iota_input, phic_input = None):        
+            # EOBModes_C = waveform_mode_collector(0)
+            # # fit 2,2 mode
+            # for l,m in [(2,2), (2,1), (3,3), (4,4)]:
+            #     if m % 2 and m1 == m2 and s1z == s2z:
+            #         continue
+            #     hlmEOB = EOBModes.get_mode(l, m)
+            #     hlmNR = NRModes.get_mode(l, m)
+            #     FFlm, phiclm, _ = calculate_ModeFF(hlmEOB, hlmNR, Mtotal = Mtotal_input, psd = psd)
+            #     if args.verbose:
+            #         sys.stderr.write(f'l,|m| = ({l}, {m}), FF = {FFlm}, amp = {hlmNR.amp.max()}, ampEOB = {hlmEOB.amp.max()}\n')
+            #     hlmEOB.apply_phic(phiclm)
+            #     EOBModes_C.append_mode(hlmEOB.time, hlmEOB.real, hlmEOB.imag, l, m)
+            #     EOBModes_C.append_mode(hlmEOB.time, hlmEOB.real, -hlmEOB.imag, l, -m)
+            hpcNR = NRModes.construct_hpc(iota_input, 0, modelist = NRModeList, phaseFrom0 = True)
+            def max_FF_over_phic(phic):
+                hpcEOB = EOBModes.construct_hpc(iota_input, phic, modelist = EOBModeList, phaseFrom0 = True)
+                FF, _1, _2 = calculate_ModeFF(hpcEOB, hpcNR, Mtotal = Mtotal_input, psd = psd)
+                if args.verbose:
+                    sys.stderr.write(f'{phic/np.pi} pi {FF}\n')
+                return FF
+            if phic_input is None:
+                dphic_range = (-np.pi*0.1, 2.1*np.pi)
+                MG_phic = MultiGrid1D(max_FF_over_phic, dphic_range, 60)
+                data = MG_phic.run(fsave = None, eps = eps, magnification = mag, filter_thresh = filter_thresh, maxiter = max_step)
+                imax = np.argmax(data[:,1])
+                phic_max = data[imax,0]
+                FF_max = data[imax,1]
+            elif hasattr(phic_input, '__len__'):
+                dphic_range = phic_input
+                MG_phic = MultiGrid1D(max_FF_over_phic, dphic_range, 10)
+                data = MG_phic.run(fsave = None, eps = eps, magnification = mag, filter_thresh = filter_thresh, maxiter = max_step)
+                imax = np.argmax(data[:,1])
+                phic_max = data[imax,0]
+                FF_max = data[imax,1]
+            else:
+                FF_max = max_FF_over_phic(phic_input)
+                phic_max = phic_input
+            return FF_max, phic_max
+
+        fresults = prefix / f'results_{SXSnum}_{jtag}.csv'
+        # Setting Results savimg filename.
+        if CIRC:
+            save_namecol(fresults, data = [['#Mtotal', '#FF']])
+        else:
+            save_namecol(fresults, data = [['#Mtotal', '#ecc', '#FF']])
+        if args.iota is not None:
+            iotaList = np.array([args.iota * np.pi])
+        else:
+            # iotaList = np.linspace(0, np.pi, 15)
+            iotaList = np.concatenate([np.linspace(0, 7, 8)[::-1], np.linspace(8, 14, 7)])*np.pi / 14
+        
+        if CIRC:
+            ret1 = ge(m1 = m1, m2 = m2, s1z = s1z, s2z = s2z, D = 100, 
+                    ecc = 0.0, srate = srate, f_ini = fini, L = 2, M = 2,
+                    timeout = 3600, jobtag = jobtag, mode = 0)
+            if isinstance(ret1, CEV):
+                return 0
+            t, h22r, h22i, h21r, h21i, h33r, h33i, h44r, h44i = \
+                ret1[:,0], ret1[:,1], ret1[:,2], ret1[:,3], ret1[:,4], ret1[:,5], ret1[:,6], ret1[:,7], ret1[:,8]
+            EOBModes = waveform_mode_collector(0) 
+            EOBModes.append_mode(t, h22r, h22i, 2, 2)
+            EOBModes.append_mode(t, h22r, -h22i, 2, -2)
+            EOBModes.append_mode(t, h21r, h21i, 2, 1)
+            EOBModes.append_mode(t, h21r, -h21i, 2, -1)
+            EOBModes.append_mode(t, h33r, h33i, 3, 3)
+            EOBModes.append_mode(t, h33r, -h33i, 3, -3)
+            EOBModes.append_mode(t, h44r, h44i, 4, 4)
+            EOBModes.append_mode(t, h44r, -h44i, 4, -4)
+            # for (l,m) in [(2,2), (2,1), (3,3), (4,4)]:
+            #     comb = EOBModes.get_mode(l,m)
+            #     ymode = int(l*10 + m)
+            #     retlm = ge(m1 = m1, m2 = m2, s1z = s1z, s2z = s2z, D = 100, 
+            #             ecc = 0.0, srate = srate, f_ini = fini, L = 2, M = 2,
+            #             timeout = 3600, jobtag = jobtag, mode = ymode)
+            #     if isinstance(retlm, CEV):
+            #         return 0
+            #     tlm, hlmr, hlmi = retlm[:,0], retlm[:,1], retlm[:,2]
+            #     plt.figure(figsize = (10, 3))
+            #     plt.plot(comb.time, comb.amp, label = 'comb')
+            #     plt.plot(tlm, np.abs(hlmr + 1.j*hlmi), label = 'sep')
+            #     plt.legend()
+            #     plt.savefig(prefix / f'h{ymode}.png', dpi = 200)
+            #     plt.close()
+            # for (l,m) in [(2,2), (4,4)]:
+            #     ymode = int(l*10 + m)
+            #     # comb = EOBModes.get_mode(l,m)
+            #     nr = NRModes.get_mode(l,m)
+            #     retlm = ge(m1 = m1, m2 = m2, s1z = s1z, s2z = s2z, D = 100, 
+            #             ecc = 0.0, srate = srate, f_ini = fini, L = 2, M = 2,
+            #             timeout = 3600, jobtag = jobtag, mode = ymode)
+            #     if isinstance(retlm, CEV):
+            #         return 0
+            #     # retlm = np.loadtxt('waveform.dat')
+            #     tlm, hlmr, hlmi = retlm[:,0], retlm[:,1], retlm[:,2]
+            #     comb = ModeBase(tlm, hlmr, hlmi)
+            #     FF, _1, _2 = calculate_ModeFF(comb.copy(), nr.copy(), Mtotal = 190, psd = psd)
+            #     print(FF)
+            #     comb, nr = Mode_alignment(comb.copy(), nr.copy(), deltaT = None)
+            #     plt.figure(figsize = (10, 6))
+            #     plt.subplot(211)
+            #     plt.plot(comb.time, comb.amp, label = 'comb')
+            #     plt.plot(nr.time, nr.amp, label = 'amp')
+            #     plt.legend()
+            #     plt.subplot(212)
+            #     plt.plot(comb.time, comb.real, label = 'comb')
+            #     plt.plot(nr.time, nr.imag, label = 'amp')
+            #     plt.legend()
+            #     plt.savefig(prefix / f'hnr{ymode}.png', dpi = 200)
+            #     plt.close()
+            # return 0
+            for Mtotal in MtotalList:
+                FF_avg = 0
+                phic_fit_list = None
+                for iota in iotaList:
+                    FF, phic_ret = calculate_Max_FF_HM_fit(EOBModes, Mtotal_input = Mtotal, iota_input = iota, phic_input = phic_fit_list)
+                    sys.stderr.write(f'Mtotal = {Mtotal}, iota = {iota/np.pi} pi, FF = {FF}, phic_ret = {phic_ret/np.pi}\n')
+                    if phic_fit_list is None:
+                        phic_fit_list = (phic_ret - np.pi*1.1/7, phic_ret + np.pi*1.1/7)
+                    FF_avg += FF
+                add_csv(fresults, [[Mtotal, FF_avg / len(iotaList)]])
+        elif 0:
+            for Mtotal in MtotalList:
+                FF_avg = 0
+                phic_fit_list = None
+                for iota in iotaList:
+                    FF, phic_ret = calculate_Max_FF_HM_Circ(Mtotal_input = Mtotal, iota_input = iota, phic_input = phic_fit_list)
+                    sys.stderr.write(f'Mtotal = {Mtotal}, iota = {iota/np.pi} pi, FF = {FF}, phic_ret = {phic_ret/np.pi}\n')
+                    if phic_fit_list is None:
+                        phic_fit_list = (phic_ret - np.pi*1.1/7, phic_ret + np.pi*1.1/7)
+                    FF_avg += FF
+                add_csv(fresults, [[Mtotal, FF_avg / len(iotaList)]])
+        elif args.search_ecc_mtotal:
+            ecc_range_new = (ecc_fit - 0.02, ecc_fit + 0.02)
+            for Mtotal in MtotalList:
+                MG = MultiGrid1D(estimate_ecc, ecc_range_new, 20, Mtotal = Mtotal)
+                data = MG.run(fsave = None, eps = eps, magnification = mag, filter_thresh = filter_thresh, maxiter = max_step)
+                ecc_grid, lnp_grid = data[:,0], data[:,1]
+                ecc_fit = ecc_grid[np.argmax(lnp_grid)]
+                FF_avg = 0
+                for iota in iotaList:
+                    sys.stderr.write(f'Mtotal = {Mtotal}, iota = {iota/np.pi} pi\n')
+                    FF = calculate_Max_FF_HM(ecc_fit, Mtotal_input = Mtotal, iota_input = iota)
+                    FF_avg += FF
+                add_csv(fresults, [[Mtotal, ecc_fit, FF_avg / len(iotaList)]])
+        elif args.search_ecc:
+            ecc_range_new = (ecc_fit - 0.015, ecc_fit + 0.015)
+            for Mtotal, iota in product(MtotalList, iotaList):
                 sys.stderr.write(f'Mtotal = {Mtotal}, iota = {iota/np.pi} pi\n')
-                FF = calculate_Max_FF_HM(ecc_fit, Mtotal_input = Mtotal, iota_input = iota)
-                FF_avg += FF
-            add_csv(fresults, [[Mtotal, ecc_fit, FF_avg / len(iotaList)]])
-    elif args.search_ecc:
-        ecc_range_new = (ecc_fit - 0.015, ecc_fit + 0.015)
-        for Mtotal, iota in product(MtotalList, iotaList):
-            sys.stderr.write(f'Mtotal = {Mtotal}, iota = {iota/np.pi} pi\n')
-            MG = MultiGrid1D(calculate_Max_FF_HM, ecc_range_new, 10, Mtotal_input = Mtotal, iota_input = iota)
-            data = MG.run(fsave = None, eps = eps, magnification = mag, filter_thresh = filter_thresh, maxiter = max_step)
-            indmax = np.argmax(data[:,1])
-            final_FF = data[indmax,1]
-            final_ecc = data[indmax, 0]
-            add_csv(fresults, [[Mtotal, iota, final_ecc, final_FF]])
-    else:
-        for Mtotal in MtotalList:
-            FF_avg = 0
-            phic_fit_list = 'init'
-            for iota in iotaList:
-                FF, phic_ret = calculate_Max_FF_HM(ecc_fit, Mtotal_input = Mtotal, iota_input = iota, phic_input = phic_fit_list)
-                sys.stderr.write(f'Mtotal = {Mtotal}, iota = {iota/np.pi} pi, FF = {FF}, phic_ret = {phic_ret/np.pi}\n')
-                if phic_fit_list == 'init':
-                    phic_fit_list = (phic_ret - np.pi*1.1/7, phic_ret + np.pi*1.1/7)
-                FF_avg += FF
-            add_csv(fresults, [[Mtotal, ecc_fit, FF_avg / len(iotaList)]])
+                MG = MultiGrid1D(calculate_Max_FF_HM, ecc_range_new, 10, Mtotal_input = Mtotal, iota_input = iota)
+                data = MG.run(fsave = None, eps = eps, magnification = mag, filter_thresh = filter_thresh, maxiter = max_step)
+                indmax = np.argmax(data[:,1])
+                final_FF = data[indmax,1]
+                final_ecc = data[indmax, 0]
+                add_csv(fresults, [[Mtotal, iota, final_ecc, final_FF]])
+        else:
+            for Mtotal in MtotalList:
+                FF_avg = 0
+                phic_fit_list = 'init'
+                for iota in iotaList:
+                    FF, phic_ret = calculate_Max_FF_HM(ecc_fit, Mtotal_input = Mtotal, iota_input = iota, phic_input = phic_fit_list)
+                    sys.stderr.write(f'Mtotal = {Mtotal}, iota = {iota/np.pi} pi, FF = {FF}, phic_ret = {phic_ret/np.pi}\n')
+                    if phic_fit_list == 'init':
+                        phic_fit_list = (phic_ret - np.pi*1.1/7, phic_ret + np.pi*1.1/7)
+                    FF_avg += FF
+                add_csv(fresults, [[Mtotal, ecc_fit, FF_avg / len(iotaList)]])
     return 0
 
 #-----Recover EOB vs SXS-----#

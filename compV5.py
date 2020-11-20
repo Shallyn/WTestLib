@@ -1197,19 +1197,6 @@ def Compare_ecc_HM(argv = None):
             return FF_max, phic_max
 
         def calculate_Max_FF_HM_fit(EOBModes, Mtotal_input, iota_input, phic_input = None):        
-            # EOBModes_C = waveform_mode_collector(0)
-            # # fit 2,2 mode
-            # for l,m in [(2,2), (2,1), (3,3), (4,4)]:
-            #     if m % 2 and m1 == m2 and s1z == s2z:
-            #         continue
-            #     hlmEOB = EOBModes.get_mode(l, m)
-            #     hlmNR = NRModes.get_mode(l, m)
-            #     FFlm, phiclm, _ = calculate_ModeFF(hlmEOB, hlmNR, Mtotal = Mtotal_input, psd = psd)
-            #     if args.verbose:
-            #         sys.stderr.write(f'l,|m| = ({l}, {m}), FF = {FFlm}, amp = {hlmNR.amp.max()}, ampEOB = {hlmEOB.amp.max()}\n')
-            #     hlmEOB.apply_phic(phiclm)
-            #     EOBModes_C.append_mode(hlmEOB.time, hlmEOB.real, hlmEOB.imag, l, m)
-            #     EOBModes_C.append_mode(hlmEOB.time, hlmEOB.real, -hlmEOB.imag, l, -m)
             hpcNR = NRModes.construct_hpc(iota_input, 0, modelist = NRModeList, phaseFrom0 = True)
             def max_FF_over_phic(phic):
                 hpcEOB = EOBModes.construct_hpc(iota_input, phic, modelist = EOBModeList, phaseFrom0 = True)
@@ -1248,9 +1235,9 @@ def Compare_ecc_HM(argv = None):
             # iotaList = np.linspace(0, np.pi, 15)
             iotaList = np.concatenate([np.linspace(0, 7, 8)[::-1], np.linspace(8, 14, 7)])*np.pi / 14
         
-        if CIRC:
+        if 1:
             ret1 = ge(m1 = m1, m2 = m2, s1z = s1z, s2z = s2z, D = 100, 
-                    ecc = 0.0, srate = srate, f_ini = fini, L = 2, M = 2,
+                    ecc = ecc_fit, srate = srate, f_ini = fini, L = 2, M = 2,
                     timeout = 3600, jobtag = jobtag, mode = 0)
             if isinstance(ret1, CEV):
                 return 0
@@ -1265,48 +1252,6 @@ def Compare_ecc_HM(argv = None):
             EOBModes.append_mode(t, h33r, -h33i, 3, -3)
             EOBModes.append_mode(t, h44r, h44i, 4, 4)
             EOBModes.append_mode(t, h44r, -h44i, 4, -4)
-            # for (l,m) in [(2,2), (2,1), (3,3), (4,4)]:
-            #     comb = EOBModes.get_mode(l,m)
-            #     ymode = int(l*10 + m)
-            #     retlm = ge(m1 = m1, m2 = m2, s1z = s1z, s2z = s2z, D = 100, 
-            #             ecc = 0.0, srate = srate, f_ini = fini, L = 2, M = 2,
-            #             timeout = 3600, jobtag = jobtag, mode = ymode)
-            #     if isinstance(retlm, CEV):
-            #         return 0
-            #     tlm, hlmr, hlmi = retlm[:,0], retlm[:,1], retlm[:,2]
-            #     plt.figure(figsize = (10, 3))
-            #     plt.plot(comb.time, comb.amp, label = 'comb')
-            #     plt.plot(tlm, np.abs(hlmr + 1.j*hlmi), label = 'sep')
-            #     plt.legend()
-            #     plt.savefig(prefix / f'h{ymode}.png', dpi = 200)
-            #     plt.close()
-            # for (l,m) in [(2,2), (4,4)]:
-            #     ymode = int(l*10 + m)
-            #     # comb = EOBModes.get_mode(l,m)
-            #     nr = NRModes.get_mode(l,m)
-            #     retlm = ge(m1 = m1, m2 = m2, s1z = s1z, s2z = s2z, D = 100, 
-            #             ecc = 0.0, srate = srate, f_ini = fini, L = 2, M = 2,
-            #             timeout = 3600, jobtag = jobtag, mode = ymode)
-            #     if isinstance(retlm, CEV):
-            #         return 0
-            #     # retlm = np.loadtxt('waveform.dat')
-            #     tlm, hlmr, hlmi = retlm[:,0], retlm[:,1], retlm[:,2]
-            #     comb = ModeBase(tlm, hlmr, hlmi)
-            #     FF, _1, _2 = calculate_ModeFF(comb.copy(), nr.copy(), Mtotal = 190, psd = psd)
-            #     print(FF)
-            #     comb, nr = Mode_alignment(comb.copy(), nr.copy(), deltaT = None)
-            #     plt.figure(figsize = (10, 6))
-            #     plt.subplot(211)
-            #     plt.plot(comb.time, comb.amp, label = 'comb')
-            #     plt.plot(nr.time, nr.amp, label = 'amp')
-            #     plt.legend()
-            #     plt.subplot(212)
-            #     plt.plot(comb.time, comb.real, label = 'comb')
-            #     plt.plot(nr.time, nr.imag, label = 'amp')
-            #     plt.legend()
-            #     plt.savefig(prefix / f'hnr{ymode}.png', dpi = 200)
-            #     plt.close()
-            # return 0
             for Mtotal in MtotalList:
                 FF_avg = 0
                 phic_fit_list = None

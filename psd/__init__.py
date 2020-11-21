@@ -146,7 +146,7 @@ class DetectorPSD(object):
         psd_data = self.__call__(freqs)
         stride = int(length / 2)
         seg = np.zeros(length)
-        ret = None
+        ret = []
         while(1):
             for j in range(0, stride):
                 ncount -= 1

@@ -84,6 +84,15 @@ class DetectorPSD(object):
             if case('Tianqin'):
                 self._psd = get_PSD_Space_fit(name = 'Tianqin', flow = flow, fhigh = fhigh)
                 break
+            if case('DECIGO_fit'):
+                self._psd = PSD_DECIGO_fit
+                break
+            if case('DECIGO_fit2'):
+                self._psd = PSD_DECIGO_fit2
+                break
+            if case('DECIGO_fit3'):
+                self._psd = PSD_DECIGO_fit3
+                break
             self._psd = lambda x : 1
         self._file = file
             
@@ -104,6 +113,52 @@ class DetectorPSD(object):
         else:
             valpsd[idxsift] = h[idxsift]
         return freq, valpsd
+
+    def _sim_noise_seg(self, seg, psd_data, srate):
+        segLen = len(seg)
+        df = srate / segLen
+        sigma = np.sqrt(psd_data / df) / 2
+        stilde = np.random.randn(len(sigma)) + 1.j*np.random.randn(len(sigma))
+        return np.fft.irfft(stilde)
+
+    def _sim_noise(self, stride, psd_data, seg, srate):
+        segLen = len(seg)
+        if stride == 0:
+            return self._sim_noise_seg(seg, psd_data, srate)
+        elif stride == segLen:
+            seg = self._sim_noise_seg(seg, psd_data, srate)
+            stride = 0
+        overlap = seg[stride:]
+        lenolp = len(overlap)
+        seg = self._sim_noise_seg(seg, psd_data, srate)
+        for i in range(len(overlap)):
+            x = np.cos(np.pi * i / (2*lenolp))
+            y = np.sin(np.pi * j / (2*lenolp))
+            seg[i] = x * overlap[i] + y * seg[i]
+        return seg
+
+    def generate_noise(self, duration, srate):
+        ncount = duration * srate
+        segdur = 4
+        length = segdur * srate
+        df = srate / length
+        freqs = np.fft.rfftfreq(length, df)
+        psd_data = self.__call__(freqs)
+        stride = int(length / 2)
+        seg = np.zeros(length)
+        ret = None
+        while(1):
+            for j in range(0, stride):
+                ncount -= 1
+                if ncount == 0:
+                    return np.asarray(ret)
+                ret.append(seg[j])
+            seg = self._sim_noise(stride, psd_data, seg, srate)
+            if ret is None:
+                ret = seg.copy()
+            else:
+                ret = np.append(ret, seg)
+
 
     
 
@@ -161,7 +216,17 @@ def PSD_DECIGO_fit(f):
         4.45e-51*fac_f_4 / (1 + 1/fac_f2) + \
         4.49e-52*fac_f_4
 
-    
+def PSD_DECIGO_fit2(f):
+    fac_f_4 = np.power(f, -4)
+    fac_f2 = np.power(f, 2)
+    return 1.25e-47 + 4.21e-50 * fac_f_4 + 3.92e-49 * fac_f2
+
+def PSD_DECIGO_fit3(f):
+    fac_f_4 = np.power(f, -4)
+    fac_f2 = np.power(f, 2)
+    return 1.88e-48 + 6.31e-51 * fac_f_4 + 5.88e-50 * fac_f2
+
+
 """
 	arXiv:0908.0353
 """

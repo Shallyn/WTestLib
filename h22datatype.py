@@ -294,7 +294,7 @@ def Mode_alignment(modeA, modeB, deltaT = None):
         wfA.pad((0,lpad), 'constant', dt_final)
     return wfA, wfB        
 
-def calculate_ModeFF(modeA, modeB, psd, Mtotal = 20, deltaT = None, phase2zero = False):
+def calculate_ModeFF(modeA, modeB, psd, Mtotal = 20, deltaT = None, retall = False):
     modeA, modeB = Mode_alignment(modeA, modeB, deltaT = deltaT)
     Atilde = np.fft.fft(modeA.value)
     Btilde = np.fft.fft(modeB.value)
@@ -318,6 +318,8 @@ def calculate_ModeFF(modeA, modeB, psd, Mtotal = 20, deltaT = None, phase2zero =
             tc = (idx - lth) * dtM
         else:
             tc = idx * dtM
+        if retall:
+            return Oxt_abs[idx], delta_phase, tc, modeA, modeB
         return Oxt_abs[idx], delta_phase, tc
     FF_list = []
     d_phase_list = []
@@ -343,7 +345,8 @@ def calculate_ModeFF(modeA, modeB, psd, Mtotal = 20, deltaT = None, phase2zero =
         else:
             tc = idx * dtM
         tc_list.append(tc)
-
+    if retall:
+        return np.asarray(FF_list), np.asarray(d_phase_list), np.asarray(tc_list), modeA, modeB
     return np.asarray(FF_list), np.asarray(d_phase_list), np.asarray(tc_list)
 
 

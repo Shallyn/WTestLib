@@ -959,6 +959,7 @@ def GridSearch_ecc(argv = None):
                 f.write(mDebug)
     return 0
 
+import scipy.optimize as op
 def Compare_ecc_HM(argv = None):
     from .SXS import DEFAULT_TABLE
     from .SXS import DEFAULT_SRCLOC
@@ -1096,12 +1097,12 @@ def Compare_ecc_HM(argv = None):
                     if m!=0:
                         NRModeList.append((l,m))
         else:
-            NRModeList = [(2,2), (2,-2), (2,1), (2,-1), (3,3), (3,-3), (4,4), (4,-4)]
-            # NRModeList = [(2,1)]
+            # NRModeList = [(2,2), (2,-2), (2,1), (2,-1), (3,3), (3,-3), (4,4), (4,-4)]
+            NRModeList = [(2,2),(2,-2)]
         if args.only22:
             jtag = 'only22'
             EOBModeList = [(2,2), (2,-2)]
-            # EOBModeList = [(2,1)]
+            # EOBModeList = [(3,3),(3,-3)]
         else:
             jtag = 'HM'
             EOBModeList = [(2,2), (2,-2), (2,1), (2,-1), (3,3), (3,-3), (4,4), (4,-4)]
@@ -1131,7 +1132,13 @@ def Compare_ecc_HM(argv = None):
                 if args.verbose:
                     sys.stderr.write(f'{phic/np.pi} pi: {FF}\n')
                 return FF
-            if phic_input is None:
+            if 1:
+                nll = lambda x : max_FF_over_phic(x[0])
+                result = op.minimize(nll, (0), args = ())
+                phic = result["x"][0]
+                FF = result["y"][0]
+                return FF, phic
+            elif phic_input is None:
                 dphic_range = (-np.pi*0.1, 2.1*np.pi)
                 MG_phic = MultiGrid1D(max_FF_over_phic, dphic_range, 60)
                 data = MG_phic.run(fsave = None, eps = eps, magnification = mag, filter_thresh = filter_thresh, maxiter = max_step)
@@ -1153,7 +1160,7 @@ def Compare_ecc_HM(argv = None):
                 phic_max = phic_input
             return FF_max, phic_max
 
-        def calculate_Max_FF_HM_Circ(Mtotal_input, iota_input, phic_input = None):
+        def calculate_Max_FF_HM_Circ(Mtotal_input, iota_input, phic_input = None, XX = 2):
             ret_C = ge(m1 = m1, m2 = m2, s1z = s1z, s2z = s2z, D = 100, 
                     ecc = 0.0, srate = srate, f_ini = fini, L = 2, M = 2,
                     timeout = 3600, jobtag = jobtag, mode = 0)
@@ -1196,7 +1203,7 @@ def Compare_ecc_HM(argv = None):
                 phic_max = phic_input
             return FF_max, phic_max
 
-        def calculate_Max_FF_HM_fit(EOBModes, Mtotal_input, iota_input, phic_input = None):        
+        def calculate_Max_FF_HM_fit(EOBModes, NRModes, Mtotal_input, iota_input, phic_input = None, XX = -5):        
             hpcNR = NRModes.construct_hpc(iota_input, 0, modelist = NRModeList, phaseFrom0 = True)
             def max_FF_over_phic(phic):
                 hpcEOB = EOBModes.construct_hpc(iota_input, phic, modelist = EOBModeList, phaseFrom0 = True)
@@ -1204,8 +1211,13 @@ def Compare_ecc_HM(argv = None):
                 if args.verbose:
                     sys.stderr.write(f'{phic/np.pi} pi {FF}\n')
                 return FF
-            if phic_input is None:
-                dphic_range = (-np.pi*0.1, 2.1*np.pi)
+            if 0:
+                nll = lambda x : max_FF_over_phic(x[0])
+                result = op.minimize(nll, (0), args = ())
+                phic = result["x"][0]
+                return max_FF_over_phic(phic), phic
+            elif phic_input is None:
+                dphic_range = (np.pi*(XX-0.1), (2.1+XX)*np.pi)
                 MG_phic = MultiGrid1D(max_FF_over_phic, dphic_range, 60)
                 data = MG_phic.run(fsave = None, eps = eps, magnification = mag, filter_thresh = filter_thresh, maxiter = max_step)
                 imax = np.argmax(data[:,1])
@@ -1243,7 +1255,7 @@ def Compare_ecc_HM(argv = None):
                 return 0
             t, h22r, h22i, h21r, h21i, h33r, h33i, h44r, h44i = \
                 ret1[:,0], ret1[:,1], ret1[:,2], ret1[:,3], ret1[:,4], ret1[:,5], ret1[:,6], ret1[:,7], ret1[:,8]
-            EOBModes = waveform_mode_collector(0) 
+            EOBModes = waveform_mode_collector(0)
             EOBModes.append_mode(t, h22r, h22i, 2, 2)
             EOBModes.append_mode(t, h22r, -h22i, 2, -2)
             EOBModes.append_mode(t, h21r, h21i, 2, 1)
@@ -1252,11 +1264,18 @@ def Compare_ecc_HM(argv = None):
             EOBModes.append_mode(t, h33r, -h33i, 3, -3)
             EOBModes.append_mode(t, h44r, h44i, 4, 4)
             EOBModes.append_mode(t, h44r, -h44i, 4, -4)
+            EOBModes_C, NRModes_C = ModeC_alignment(EOBModes, NRModes)
+            # for l,m in [(2,2), (2,-2), (2,1), (2,-1), (3,3), (3,-3), (4,4), (4,-4)]:
+            #     hlm = EOBModes.get_mode(l,m)
+            #     nlm = NRModes.get_mode(l,m)
+            #     FF, _1, _2, hlmC, nlmC = calculate_ModeFF(hlm, nlm, Mtotal = MtotalList[0], psd = psd, retall = True)
+            #     print(f'(l,m) = ({l},{m}), FF = {FF}, Mtotal = {MtotalList[0]}, amp = {np.max(hlm.amp)}')
+            # return 0
             for Mtotal in MtotalList:
                 FF_avg = 0
                 phic_fit_list = None
                 for iota in iotaList:
-                    FF, phic_ret = calculate_Max_FF_HM_fit(EOBModes, Mtotal_input = Mtotal, iota_input = iota, phic_input = phic_fit_list)
+                    FF, phic_ret = calculate_Max_FF_HM_fit(EOBModes_C, NRModes_C, Mtotal_input = Mtotal, iota_input = iota, phic_input = phic_fit_list)
                     sys.stderr.write(f'Mtotal = {Mtotal}, iota = {iota/np.pi} pi, FF = {FF}, phic_ret = {phic_ret/np.pi}\n')
                     if phic_fit_list is None:
                         phic_fit_list = (phic_ret - np.pi*1.1/7, phic_ret + np.pi*1.1/7)

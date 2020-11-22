@@ -487,6 +487,11 @@ class waveform_mode_collector(object):
             if length is None:
                 length = len(mode_pad)
                 time_pad = np.arange(self._time[0], self._time[0] + length * deltaT, deltaT)
+                if len(time_pad) > length:
+                    time_pad = time_pad[:length]
+                elif len(time_pad) < length:
+                    dl = length - len(time_pad)
+                    time_pad = np.arange(self._time[0], self._time[0] + (length+dl) * deltaT, deltaT)
             out.append_mode(time_pad, mode_pad.real, mode_pad.imag, l, m)
         return out
 
@@ -525,11 +530,13 @@ def ModeC_alignment(modeA, modeB, deltaT = None):
     # tmove = (ipeak_A - ipeak_B) * dt_final
     modeA = modeA[idx_A:]
     modeB = modeB[idx_B:]
+    # print(f'size: {modeA.size}, {modeB.size}')
     lenA = modeA.size
     lenB = modeB.size
     lenFinal = max(lenA, lenB)
     tail_A = lenFinal - lenA
     tail_B = lenFinal - lenB
+    # print(f'tail: {tail_A}, {tail_B}')
     if tail_A > 0:
         modeA = modeA.pad((0,tail_A), 'constant', dt_final)
     if tail_B > 0:

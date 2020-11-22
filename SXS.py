@@ -347,6 +347,7 @@ class waveform_mode_collector(object):
     def __len__(self):
         return len(self._modes)
     
+    @property
     def size(self):
         return len(self._time)
     
@@ -485,7 +486,7 @@ class waveform_mode_collector(object):
             mode_pad = np.pad(mode, pad_width, padmode, **kwargs)
             if length is None:
                 length = len(mode_pad)
-                time_pad = np.arange(self._time[0], length * deltaT, deltaT)
+                time_pad = np.arange(self._time[0], self._time[0] + length * deltaT, deltaT)
             out.append_mode(time_pad, mode_pad.real, mode_pad.imag, l, m)
         return out
 
@@ -524,18 +525,18 @@ def ModeC_alignment(modeA, modeB, deltaT = None):
     # tmove = (ipeak_A - ipeak_B) * dt_final
     modeA = modeA[idx_A:]
     modeB = modeB[idx_B:]
-    lenA = len(modeA)
-    lenB = len(modeB)
-    ipeak_A = ipeak_A - idx_A
-    ipeak_B = ipeak_B - idx_B
-    tail_A = lenA - ipeak_A
-    tail_B = lenB - ipeak_B
-    if tail_A > tail_B:
-        lpad = tail_A - tail_B
-        modeB = modeB.pad((0,lpad), 'constant', dt_final)
-    else:
-        lpad = tail_B - tail_A
-        modeA = modeA.pad((0,lpad), 'constant', dt_final)
+    lenA = modeA.size
+    lenB = modeB.size
+    lenFinal = max(lenA, lenB)
+    tail_A = lenFinal - lenA
+    tail_B = lenFinal - lenB
+    if tail_A > 0:
+        modeA = modeA.pad((0,tail_A), 'constant', dt_final)
+    if tail_B > 0:
+        modeB = modeB.pad((0,tail_B), 'constant', dt_final)
+    if modeA.size != modeB.size:
+        sys.stderr.write(f'lenA = {modeA.size} != lenB = {modeB.size}\n')
+        raise Exception('Error!')
     return modeA, modeB        
 
 class SXSparameters(SXSObject):

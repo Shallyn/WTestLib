@@ -1203,7 +1203,7 @@ def Compare_ecc_HM(argv = None):
                 phic_max = phic_input
             return FF_max, phic_max
 
-        def calculate_Max_FF_HM_fit(EOBModes, NRModes, Mtotal_input, iota_input, phic_input = None, XX = -5):        
+        def calculate_Max_FF_HM_fit(EOBModes, NRModes, Mtotal_input, iota_input, phic_input = None, XX = 0):        
             hpcNR = NRModes.construct_hpc(iota_input, 0, modelist = NRModeList, phaseFrom0 = True)
             def max_FF_over_phic(phic):
                 hpcEOB = EOBModes.construct_hpc(iota_input, phic, modelist = EOBModeList, phaseFrom0 = True)
@@ -1218,7 +1218,7 @@ def Compare_ecc_HM(argv = None):
                 return max_FF_over_phic(phic), phic
             elif phic_input is None:
                 dphic_range = (np.pi*(XX-0.1), (2.1+XX)*np.pi)
-                MG_phic = MultiGrid1D(max_FF_over_phic, dphic_range, 60)
+                MG_phic = MultiGrid1D(max_FF_over_phic, dphic_range, 90)
                 data = MG_phic.run(fsave = None, eps = eps, magnification = mag, filter_thresh = filter_thresh, maxiter = max_step)
                 imax = np.argmax(data[:,1])
                 phic_max = data[imax,0]

@@ -1218,7 +1218,7 @@ def Compare_ecc_HM(argv = None):
                 return max_FF_over_phic(phic), phic
             elif phic_input is None:
                 dphic_range = (np.pi*(XX-0.1), (2.1+XX)*np.pi)
-                MG_phic = MultiGrid1D(max_FF_over_phic, dphic_range, 90)
+                MG_phic = MultiGrid1D(max_FF_over_phic, dphic_range, 60)
                 data = MG_phic.run(fsave = None, eps = eps, magnification = mag, filter_thresh = filter_thresh, maxiter = max_step)
                 imax = np.argmax(data[:,1])
                 phic_max = data[imax,0]

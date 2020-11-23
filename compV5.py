@@ -1292,7 +1292,7 @@ def Compare_ecc_HM(argv = None):
                 FFlist = np.asarray(FFlist)
                 avg = np.average(FFlist)
                 print(f'avg = {avg}')
-                add_csv(fresults, [[avg]])
+                add_csv(fresults, [[Mtotal, avg]])
         elif 0:
             for Mtotal in MtotalList:
                 FF_avg = 0

@@ -1024,14 +1024,15 @@ def Compare_ecc_HM(argv = None):
     if not prefix.exists():
         prefix.mkdir(parents = True)
 
-    kappaList = np.linspace(0, 2*np.pi, 20)
-    phiXList = np.linspace(0, 2*np.pi, 20)
+    kappaList = np.linspace(0, 2*np.pi, 10)
+    phiXList = np.linspace(0, 2*np.pi, 15)
     if args.iota is not None:
         iotaList = np.array([args.iota * np.pi])
     else:
         # iotaList = np.linspace(0, np.pi, 15)
         # iotaList = np.concatenate([np.linspace(0, 7, 15)[::-1], np.linspace(8, 28, 21)])*np.pi / 28
-        iotaList = np.arccos(np.concatenate([np.arange(-1, 0, 0.05)[::-1], np.arange(0, 1, 0.05)]))
+        cosiList = np.arange(-1, 1, 0.06)
+        iotaList = np.arccos(np.roll(cosiList, int(len(cosiList)/2)))
 
     np.savetxt(prefix / 'iotalist.dat', iotaList)
 

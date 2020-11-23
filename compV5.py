@@ -1024,6 +1024,14 @@ def Compare_ecc_HM(argv = None):
     if not prefix.exists():
         prefix.mkdir(parents = True)
 
+    if args.iota is not None:
+        iotaList = np.array([args.iota * np.pi])
+    else:
+        # iotaList = np.linspace(0, np.pi, 15)
+        iotaList = np.concatenate([np.linspace(0, 7, 15)[::-1], np.linspace(8, 28, 21)])*np.pi / 28
+
+    np.savetxt(prefix / 'iotalist.dat', iotaList)
+
     for SXSnum in SXSnum_list:
         NR = SXSAllMode(SXSnum, table = table, srcloc = srcloc_all, cutpct = 1.5)
         h22 = NR.get_mode(2,2)
@@ -1203,8 +1211,9 @@ def Compare_ecc_HM(argv = None):
                 phic_max = phic_input
             return FF_max, phic_max
 
-        def calculate_Max_FF_HM_fit(EOBModes, NRModes, Mtotal_input, iota_input, phic_input = None, XX = 0):        
-            hpcNR = NRModes.construct_hpc(iota_input, 0, modelist = NRModeList, phaseFrom0 = True)
+        def calculate_Max_FF_HM_fit(EOBModes, NRModes, Mtotal_input, iota_input, phic_input = None, XX = 0, kappa = 0, phin = 0):        
+            hpcNR = NRModes.construct_hpc(iota_input, phin, modelist = NRModeList, phaseFrom0 = True)
+            hpcNR.apply_phic(kappa)
             def max_FF_over_phic(phic):
                 hpcEOB = EOBModes.construct_hpc(iota_input, phic, modelist = EOBModeList, phaseFrom0 = True)
                 FF, _1, _2 = calculate_ModeFF(hpcEOB, hpcNR, Mtotal = Mtotal_input, psd = psd)
@@ -1241,11 +1250,6 @@ def Compare_ecc_HM(argv = None):
             save_namecol(fresults, data = [['#Mtotal', '#FF']])
         else:
             save_namecol(fresults, data = [['#Mtotal', '#ecc', '#FF']])
-        if args.iota is not None:
-            iotaList = np.array([args.iota * np.pi])
-        else:
-            # iotaList = np.linspace(0, np.pi, 15)
-            iotaList = np.concatenate([np.linspace(0, 7, 8)[::-1], np.linspace(8, 14, 7)])*np.pi / 14
         
         if 1:
             ret1 = ge(m1 = m1, m2 = m2, s1z = s1z, s2z = s2z, D = 100, 
@@ -1272,15 +1276,15 @@ def Compare_ecc_HM(argv = None):
             #     print(f'(l,m) = ({l},{m}), FF = {FF}, Mtotal = {MtotalList[0]}, amp = {np.max(hlm.amp)}')
             # return 0
             for Mtotal in MtotalList:
-                FF_avg = 0
                 phic_fit_list = None
+                savelist = [Mtotal]
                 for iota in iotaList:
                     FF, phic_ret = calculate_Max_FF_HM_fit(EOBModes_C, NRModes_C, Mtotal_input = Mtotal, iota_input = iota, phic_input = phic_fit_list)
                     sys.stderr.write(f'Mtotal = {Mtotal}, iota = {iota/np.pi} pi, FF = {FF}, phic_ret = {phic_ret/np.pi}\n')
                     if phic_fit_list is None:
                         phic_fit_list = (phic_ret - np.pi*1.1/7, phic_ret + np.pi*1.1/7)
-                    FF_avg += FF
-                add_csv(fresults, [[Mtotal, FF_avg / len(iotaList)]])
+                    savelist.append(FF)
+                add_csv(fresults, [savelist])
         elif 0:
             for Mtotal in MtotalList:
                 FF_avg = 0

@@ -471,10 +471,14 @@ class waveform_mode_collector(object):
                 continue
             Y = SpinWeightedM2SphericalHarmonic(iota, phic, l, m)
             if phaseFrom0:
+                modeAbsm = mode.amp * np.exp(-1.j*mode.phaseFrom0)
                 if m < 0:
-                    out += np.conjugate(Y * mode.amp * np.exp(-1.j*mode.phaseFrom0))
+                    this_mode = np.conjugate(modeAbsm)
+                    if l%2:
+                        this_mode = -this_mode
+                    out += np.conjugate(Y * this_mode)
                 else:
-                    out += np.conjugate(Y * mode.amp * np.exp(1.j*mode.phaseFrom0))
+                    out += np.conjugate(Y * modeAbsm)
             else:
                 out += np.conjugate(Y * mode.value)
         return ModeBase(self.time, out.real, out.imag)

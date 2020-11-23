@@ -1024,11 +1024,14 @@ def Compare_ecc_HM(argv = None):
     if not prefix.exists():
         prefix.mkdir(parents = True)
 
+    kappaList = np.linspace(0, 2*np.pi, 20)
+    phiXList = np.linspace(0, 2*np.pi, 20)
     if args.iota is not None:
         iotaList = np.array([args.iota * np.pi])
     else:
         # iotaList = np.linspace(0, np.pi, 15)
-        iotaList = np.concatenate([np.linspace(0, 7, 15)[::-1], np.linspace(8, 28, 21)])*np.pi / 28
+        # iotaList = np.concatenate([np.linspace(0, 7, 15)[::-1], np.linspace(8, 28, 21)])*np.pi / 28
+        iotaList = np.arccos(np.concatenate([np.arange(-1, 0, 0.05)[::-1], np.arange(0, 1, 0.05)]))
 
     np.savetxt(prefix / 'iotalist.dat', iotaList)
 
@@ -1212,7 +1215,7 @@ def Compare_ecc_HM(argv = None):
             return FF_max, phic_max
 
         def calculate_Max_FF_HM_fit(EOBModes, NRModes, Mtotal_input, iota_input, phic_input = None, XX = 0, kappa = 0, phin = 0):        
-            hpcNR = NRModes.construct_hpc(iota_input, phin, modelist = NRModeList, phaseFrom0 = True)
+            hpcNR = NRModes.construct_hpc(iota_input, phin, modelist = NRModeList, phaseFrom0 = False)
             hpcNR.apply_phic(kappa)
             def max_FF_over_phic(phic):
                 hpcEOB = EOBModes.construct_hpc(iota_input, phic, modelist = EOBModeList, phaseFrom0 = True)
@@ -1234,7 +1237,7 @@ def Compare_ecc_HM(argv = None):
                 FF_max = data[imax,1]
             elif hasattr(phic_input, '__len__'):
                 dphic_range = phic_input
-                MG_phic = MultiGrid1D(max_FF_over_phic, dphic_range, 10)
+                MG_phic = MultiGrid1D(max_FF_over_phic, dphic_range, 20)
                 data = MG_phic.run(fsave = None, eps = eps, magnification = mag, filter_thresh = filter_thresh, maxiter = max_step)
                 imax = np.argmax(data[:,1])
                 phic_max = data[imax,0]
@@ -1263,9 +1266,9 @@ def Compare_ecc_HM(argv = None):
             EOBModes.append_mode(t, h22r, h22i, 2, 2)
             EOBModes.append_mode(t, h22r, -h22i, 2, -2)
             EOBModes.append_mode(t, h21r, h21i, 2, 1)
-            EOBModes.append_mode(t, h21r, -h21i, 2, -1)
+            EOBModes.append_mode(t, -h21r, h21i, 2, -1)
             EOBModes.append_mode(t, h33r, h33i, 3, 3)
-            EOBModes.append_mode(t, h33r, -h33i, 3, -3)
+            EOBModes.append_mode(t, -h33r, h33i, 3, -3)
             EOBModes.append_mode(t, h44r, h44i, 4, 4)
             EOBModes.append_mode(t, h44r, -h44i, 4, -4)
             EOBModes_C, NRModes_C = ModeC_alignment(EOBModes, NRModes)
@@ -1276,15 +1279,20 @@ def Compare_ecc_HM(argv = None):
             #     print(f'(l,m) = ({l},{m}), FF = {FF}, Mtotal = {MtotalList[0]}, amp = {np.max(hlm.amp)}')
             # return 0
             for Mtotal in MtotalList:
-                phic_fit_list = None
-                savelist = [Mtotal]
-                for iota in iotaList:
-                    FF, phic_ret = calculate_Max_FF_HM_fit(EOBModes_C, NRModes_C, Mtotal_input = Mtotal, iota_input = iota, phic_input = phic_fit_list)
-                    sys.stderr.write(f'Mtotal = {Mtotal}, iota = {iota/np.pi} pi, FF = {FF}, phic_ret = {phic_ret/np.pi}\n')
-                    if phic_fit_list is None:
-                        phic_fit_list = (phic_ret - np.pi*1.1/7, phic_ret + np.pi*1.1/7)
-                    savelist.append(FF)
-                add_csv(fresults, [savelist])
+                FFlist = []
+                kappa = 0
+                for phiX in phiXList:
+                    phic_fit_list = None
+                    for iota in iotaList:
+                        FF, phic_ret = calculate_Max_FF_HM_fit(EOBModes_C, NRModes_C, Mtotal_input = Mtotal, iota_input = iota, phic_input = phic_fit_list, kappa = kappa, phin = phiX)
+                        sys.stderr.write(f'Mtotal = {Mtotal}, iota = {iota/np.pi} pi, kappa = {kappa/np.pi} pi, phiX = {phiX/np.pi} pi, FF = {FF}\n')
+                        if phic_fit_list is None:
+                            phic_fit_list = (phic_ret - np.pi*1.1/5, phic_ret + np.pi*1.1/5)
+                        FFlist.append(FF)
+                FFlist = np.asarray(FFlist)
+                avg = np.average(FFlist)
+                print(f'avg = {avg}')
+                add_csv(fresults, [[avg]])
         elif 0:
             for Mtotal in MtotalList:
                 FF_avg = 0

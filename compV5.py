@@ -991,6 +991,8 @@ def Compare_ecc_HM(argv = None):
     parser.add_option('--max-mtotal', type = 'float', default = 200, help = 'Upper bound of parameter')
     parser.add_option('--min-mtotal', type = 'float', default = 20, help = 'Lower bound of parameter')
     parser.add_option('--iota', type = 'float', help = 'inclination 0 [pi]')
+    parser.add_option('--phix', type = 'float', help = 'phix 0 [pi]')
+    parser.add_option('--kappa', type = 'float', help = 'kappa 0 [pi]')
     parser.add_option('--ecc', type = 'float', help = 'estimated ecc')
     parser.add_option('--mtotal', type = 'float', help = 'this mtotal')
     parser.add_option('--circ', action = 'store_true', help = 'force ecc = 0')
@@ -1024,8 +1026,15 @@ def Compare_ecc_HM(argv = None):
     if not prefix.exists():
         prefix.mkdir(parents = True)
 
-    kappaList = np.linspace(0, 2*np.pi, 10)
-    phiXList = np.linspace(0, 2*np.pi, 15)
+    if args.kappa is not None:
+        kappaList = np.array([args.kappa * np.pi])
+    else:
+        kappaList = np.linspace(0, 2*np.pi, 10)
+
+    if args.phix is not None:
+        phiXList = np.array([args.phix * np.pi])
+    else:
+        phiXList = np.linspace(0, 2*np.pi, 15)
     if args.iota is not None:
         iotaList = np.array([args.iota * np.pi])
     else:
@@ -1281,8 +1290,7 @@ def Compare_ecc_HM(argv = None):
             # return 0
             for Mtotal in MtotalList:
                 FFlist = []
-                kappa = 0
-                for phiX in phiXList:
+                for phiX, kappa in product(phiXList, kappaList):
                     phic_fit_list = None
                     for iota in iotaList:
                         FF, phic_ret = calculate_Max_FF_HM_fit(EOBModes_C, NRModes_C, Mtotal_input = Mtotal, iota_input = iota, phic_input = phic_fit_list, kappa = kappa, phin = phiX)

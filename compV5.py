@@ -991,6 +991,7 @@ def Compare_ecc_HM(argv = None):
     parser.add_option('--max-mtotal', type = 'float', default = 200, help = 'Upper bound of parameter')
     parser.add_option('--min-mtotal', type = 'float', default = 20, help = 'Lower bound of parameter')
     parser.add_option('--iota', type = 'float', help = 'inclination 0 [pi]')
+    parser.add_option('--delta-ci', type = 'float', default = 0.1, help = 'cos iota step [0.1]')
     parser.add_option('--phix', type = 'float', help = 'phix 0 [pi]')
     parser.add_option('--kappa', type = 'float', help = 'kappa 0 [pi]')
     parser.add_option('--ecc', type = 'float', help = 'estimated ecc')
@@ -1035,15 +1036,16 @@ def Compare_ecc_HM(argv = None):
         phiXList = np.array([args.phix * np.pi])
     else:
         phiXList = np.linspace(0, 2*np.pi, 15)
+        np.savetxt(prefix / 'phiXList.dat', phiXList)
     if args.iota is not None:
         iotaList = np.array([args.iota * np.pi])
     else:
         # iotaList = np.linspace(0, np.pi, 15)
         # iotaList = np.concatenate([np.linspace(0, 7, 15)[::-1], np.linspace(8, 28, 21)])*np.pi / 28
-        cosiList = np.arange(-1, 1, 0.06)
+        cosiList = np.arange(-1, 1, args.delta_ci)
         iotaList = np.arccos(np.roll(cosiList, int(len(cosiList)/2)))
-
-    np.savetxt(prefix / 'iotalist.dat', iotaList)
+        np.savetxt(prefix / 'iotalist.dat', iotaList)
+        np.savetxt(prefix / 'cosiotalist.dat', cosiList)
 
     for SXSnum in SXSnum_list:
         NR = SXSAllMode(SXSnum, table = table, srcloc = srcloc_all, cutpct = 1.5)
@@ -1061,9 +1063,9 @@ def Compare_ecc_HM(argv = None):
         m2 = NR.mQ2
         s1z = NR.s1z
         s2z = NR.s2z
-        sys.stderr.write(f'q = {m1/m2}, chiA = {(s1z-s2z)/2}')
+        sys.stderr.write(f'q = {m1/m2}, chiA = {(s1z-s2z)/2}\n')
         srate = dim_t(m1 + m2) / deltaT
-        ge = Generator(approx = approx, executable = exe, verbose = True)
+        ge = Generator(approx = approx, executable = exe, verbose = args.verbose)
         CIRC = args.circ
         f0, min_e, max_e = get_ecc_range(SXSnum, args.min_ecc, args.max_ecc)
         if f0 is None:
@@ -1081,7 +1083,7 @@ def Compare_ecc_HM(argv = None):
                     ecc = ecc, srate = srate, f_ini = fini, L = 2, M = 2,
                     timeout = 3600, jobtag = jobtag, mode = 22)
             if isinstance(ret, CEV):
-                return 0
+                return -np.inf
             t, h22r, h22i = ret[:,0], ret[:,1], ret[:,2]
             h22EOB = ModeBase(t, h22r, h22i)
             h22NR = NRModes.get_mode(2, 2)
@@ -1090,8 +1092,12 @@ def Compare_ecc_HM(argv = None):
                 MtotalList_ecc = Mtotal
             FFL, _, tcL = calculate_ModeFF(h22EOB, h22NR, Mtotal = MtotalList_ecc, psd = psd)
             lnp = -np.power((1-FFL)/0.01, 2) - np.power(tcL/5, 2)
-            sys.stderr.write(f'ecc = {ecc}: lnp = {lnp}\n')
-            return np.min(lnp)
+            if args.verbose:
+                sys.stderr.write(f'ecc = {ecc}: lnp = {lnp}\n')
+            best = np.min(lnp)
+            if np.isnan(best):
+                return -np.inf
+            return best
         if CIRC:
             ecc_fit = 0.0
         elif args.ecc is None:
@@ -1099,6 +1105,8 @@ def Compare_ecc_HM(argv = None):
             data = MG.run(fsave = None, eps = eps, magnification = mag, filter_thresh = filter_thresh, maxiter = max_step)
             ecc_grid, lnp_grid = data[:,0], data[:,1]
             ecc_fit = ecc_grid[np.argmax(lnp_grid)]
+            lnp = estimate_ecc(ecc_fit)
+            print(f'best lnp = {lnp}')
         else:
             ecc_fit = args.ecc
         
@@ -1288,6 +1296,21 @@ def Compare_ecc_HM(argv = None):
             #     FF, _1, _2, hlmC, nlmC = calculate_ModeFF(hlm, nlm, Mtotal = MtotalList[0], psd = psd, retall = True)
             #     print(f'(l,m) = ({l},{m}), FF = {FF}, Mtotal = {MtotalList[0]}, amp = {np.max(hlm.amp)}')
             # return 0
+            if len(kappaList) == 1 and len(MtotalList) == 1:
+                FFret = np.zeros([len(phiXList),len(iotaList)])
+                kappa = kappaList[0]
+                Mtotal = MtotalList[0]
+                for i, phiX in enumerate(phiXList):
+                    phic_fit_list = None
+                    for j, iota in enumerate(iotaList):
+                            FF, phic_ret = calculate_Max_FF_HM_fit(EOBModes_C, NRModes_C, Mtotal_input = Mtotal, iota_input = iota, phic_input = phic_fit_list, kappa = kappa, phin = phiX)
+                            FFret[i,j] = FF
+                            sys.stderr.write(f'Mtotal = {Mtotal}, iota = {iota/np.pi} pi, kappa = {kappa/np.pi} pi, phiX = {phiX/np.pi} pi, FF = {FF}\n')
+                            if phic_fit_list is None:
+                                phic_fit_list = (phic_ret - np.pi*1.1/5, phic_ret + np.pi*1.1/5)
+                np.savetxt(prefix / f'c2d_{SXSnum}_{Mtotal}_{kappa}.dat', FFret)
+                return 0
+
             for Mtotal in MtotalList:
                 FFlist = []
                 for phiX, kappa in product(phiXList, kappaList):

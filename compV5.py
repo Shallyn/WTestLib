@@ -1043,6 +1043,7 @@ def Compare_ecc_HM(argv = None):
         # iotaList = np.linspace(0, np.pi, 15)
         # iotaList = np.concatenate([np.linspace(0, 7, 15)[::-1], np.linspace(8, 28, 21)])*np.pi / 28
         cosiList = np.arange(0, 1, args.delta_ci)
+        iotaList = np.arccos(cosiList)
         # iotaList = np.arccos(np.roll(cosiList, int(len(cosiList)/2)))
         np.savetxt(prefix / 'iotalist.dat', iotaList)
         np.savetxt(prefix / 'cosiotalist.dat', cosiList)

@@ -991,7 +991,7 @@ def Compare_ecc_HM(argv = None):
     parser.add_option('--max-mtotal', type = 'float', default = 200, help = 'Upper bound of parameter')
     parser.add_option('--min-mtotal', type = 'float', default = 20, help = 'Lower bound of parameter')
     parser.add_option('--iota', type = 'float', help = 'inclination 0 [pi]')
-    parser.add_option('--delta-ci', type = 'float', default = 0.1, help = 'cos iota step [0.1]')
+    parser.add_option('--delta-ci', type = 'float', default = 0.05, help = 'cos iota step [0.1]')
     parser.add_option('--phix', type = 'float', help = 'phix 0 [pi]')
     parser.add_option('--kappa', type = 'float', help = 'kappa 0 [pi]')
     parser.add_option('--ecc', type = 'float', help = 'estimated ecc')
@@ -1042,8 +1042,8 @@ def Compare_ecc_HM(argv = None):
     else:
         # iotaList = np.linspace(0, np.pi, 15)
         # iotaList = np.concatenate([np.linspace(0, 7, 15)[::-1], np.linspace(8, 28, 21)])*np.pi / 28
-        cosiList = np.arange(-1, 1, args.delta_ci)
-        iotaList = np.arccos(np.roll(cosiList, int(len(cosiList)/2)))
+        cosiList = np.arange(0, 1, args.delta_ci)
+        # iotaList = np.arccos(np.roll(cosiList, int(len(cosiList)/2)))
         np.savetxt(prefix / 'iotalist.dat', iotaList)
         np.savetxt(prefix / 'cosiotalist.dat', cosiList)
 

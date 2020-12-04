@@ -210,6 +210,8 @@ class Generator(object):
                 case('SEOBNRv1') or \
                 case('SEOBNRv2') or \
                 case('IMRPhenomD') or \
+                case('SEOBNRv4P') or \
+                case('SEOBNRv4PHM') or \
                 case('SEOBNRv4'):
                 self._CMD = lambda m1, m2, s1z, s2z, D, ecc, srate, f_ini, L, M, **kwargs : \
                     CMD_lalsim_inspiral(exe = self._exe,

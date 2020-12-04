@@ -130,6 +130,22 @@ def CMD_pyEOBCal(exe,
                 --sample-rate={srate} --f-min={f_ini} --eccentricity={ecc}'
     return CMD
 
+def CMD_SEOBNRP(exe,  
+                m1,
+                m2,
+                s1z,
+                s2z,
+                srate,
+                f_ini,
+                approx,
+                **kwargs):
+    CMD = f'{exe} --m1={m1} --m2={m2} \
+            --spin1z={s1z} --spin2z={s2z} \
+            --sample-rate={srate} \
+            --f-min={f_ini} --inclination=0'
+    return CMD
+
+
 def CMD_SEOBNREv5(exe,
                   q,
                   deltaT,
@@ -205,6 +221,25 @@ class Generator(object):
                 self._pretreat = _pretreat
                 self._allow_ecc = False
                 break
+            if case('SEOBNRP'):
+                self._CMD = lambda m1, m2, s1z, s2z, D, ecc, srate, f_ini, L, M, **kwargs : \
+                    CMD_SEOBNRP(exe = self._exe,
+                                m1 = m1,
+                                m2 = m2,
+                                s1z = s1z,
+                                s2z = s2z,
+                                srate = srate,
+                                f_ini = f_ini,
+                                approx = self._approx,
+                                **kwargs)
+                def _pretreat(t, hr, hi, r, M, **kwargs):
+                    hr *= np.sqrt(4 * np.pi / 5) * dim_h(r, M)
+                    hi *= -np.sqrt(4 * np.pi / 5) * dim_h(r, M)
+                    return t, hr, hi
+                self._pretreat = _pretreat
+                self._allow_ecc = False
+                break
+
             if case('SEOBNREv1'):
                 self._CMD = lambda m1, m2, s1z, s2z, D, ecc, srate, f_ini, L, M, **kwargs: \
                     CMD_SEOBNREv1(exe = self._exe, 
@@ -385,6 +420,33 @@ class Generator(object):
     @property
     def HM(self):
         return self._HM
+
+    def get_CMD(self, 
+                 m1, 
+                 m2,
+                 s1z, 
+                 s2z,
+                 D,
+                 ecc,
+                 srate,
+                 f_ini,
+                 L,
+                 M,
+                 timeout = 60,
+                 jobtag = '_test',
+                 **kwargs):
+        EXE = self._CMD(m1 = m1,
+                        m2 = m2,
+                        s1z = s1z,
+                        s2z = s2z,
+                        D = D,
+                        ecc = ecc,
+                        srate = srate,
+                        f_ini = f_ini,
+                        L = L,
+                        M = M,
+                        **kwargs)
+        return EXE
         
     def __call__(self, 
                  m1, 

@@ -967,15 +967,15 @@ def modcomp(argv = None):
     Comp = CompGenerator(approx1, exe1, approx2, exe2, psd = psd, verbose = verbose)
 
     if args.random:
-        ret = Comp.compare_random(args.min_mratio, args.max_mratio, 
-                                  args.min_spin1z, args.max_spin1z, 
-                                  args.min_spin2z, args.max_spin2z, 
-                                  args.min_ecc, args.max_ecc, 
-                                  Num = args.ncompare, 
-                                  Mtotal = Mtotal, 
-                                  D = D, f_ini = f_ini, 
-                                  srate = srate, jobtag = jobtag)
-        data = ret
+        Comp.compare_random(args.min_mratio, args.max_mratio, 
+                                args.min_spin1z, args.max_spin1z, 
+                                args.min_spin2z, args.max_spin2z, 
+                                args.min_ecc, args.max_ecc, fsave = fsave,
+                                Num = args.ncompare, 
+                                Mtotal = Mtotal, 
+                                D = D, f_ini = f_ini, 
+                                srate = srate, jobtag = jobtag)
+        return 0
     else:
         ret = Comp.compare(q, s1z, s2z, ecc, Mtotal, D, f_ini, srate, timeout, jobtag)
         # shape of ret:[nq, ns1z, ns2z, necc]

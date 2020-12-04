@@ -1927,6 +1927,16 @@ def mode_compare(argv = None):
     parser.add_option('--random', action = 'store_true', help = 'If added, will use random parameters.')
     parser.add_option('--min-mratio', type = 'float', default = 1, help = 'Used in random mode [1]')
     parser.add_option('--max-mratio', type = 'float', default = 9, help = 'Used in random mode [9]')
+    parser.add_option('--min-spin1x', type = 'float',  help = 'Used in random mode')
+    parser.add_option('--max-spin1x', type = 'float',  help = 'Used in random mode')
+    parser.add_option('--min-spin2x', type = 'float',  help = 'Used in random mode')
+    parser.add_option('--max-spin2x', type = 'float',  help = 'Used in random mode')
+
+    parser.add_option('--min-spin1y', type = 'float',  help = 'Used in random mode')
+    parser.add_option('--max-spin1y', type = 'float',  help = 'Used in random mode')
+    parser.add_option('--min-spin2y', type = 'float',  help = 'Used in random mode')
+    parser.add_option('--max-spin2y', type = 'float',  help = 'Used in random mode')
+
     parser.add_option('--min-spin1z', type = 'float',  help = 'Used in random mode')
     parser.add_option('--max-spin1z', type = 'float',  help = 'Used in random mode')
     parser.add_option('--min-spin2z', type = 'float',  help = 'Used in random mode')

@@ -34,10 +34,14 @@ def CMD_lalsim_inspiral(exe,
                         f_ini,
                         approx,
                         **kwargs):
+    adjpms = ''
+    for kw in kwargs:
+        op = kw.replace('_','-')
+        adjpms += f' --{op}={kwargs[kw]}'
     CMD = f'{exe} --m1={m1} --m2={m2} \
             --spin1z={s1z} --spin2z={s2z} \
             --distance={D} --sample-rate={srate} \
-            --f-min={f_ini} --approx={approx} --inclination=0'
+            --f-min={f_ini} --approx={approx} --inclination=0 ' + adjpms
     return CMD
 
 # Type 02: For SEOBNREv1:
@@ -139,10 +143,14 @@ def CMD_SEOBNRP(exe,
                 f_ini,
                 approx,
                 **kwargs):
+    adjpms = ''
+    for kw in kwargs:
+        op = kw.replace('_','-')
+        adjpms += f' --{op}={kwargs[kw]}'
     CMD = f'{exe} --m1={m1} --m2={m2} \
             --spin1z={s1z} --spin2z={s2z} \
             --sample-rate={srate} \
-            --f-min={f_ini} --inclination=0'
+            --f-min={f_ini} --inclination=0 ' + adjpms
     return CMD
 
 
@@ -572,7 +580,15 @@ class CompGenerator(object):
                        srate = 16384,
                        timeout = 60,
                        jobtag = '_CompareRandom',
-                       mode = 22):
+                       mode = 22,
+                       max_s1x = None,
+                       min_s1x = None,
+                       max_s2x = None,
+                       min_s2x = None,
+                       max_s1y = None,
+                       min_s1y = None,
+                       max_s2y = None,
+                       min_s2y = None):
         if self._verbose:
             sys.stderr.write(f'{LOG}:Initialize parameter...\n')
         Num = int(Num)
@@ -598,6 +614,27 @@ class CompGenerator(object):
         else:
             mtotal_list = np.linspace(min_Mtotal, max_Mtotal, 30)
         
+        # spinx
+        if min_s1x is None or max_s1x is None:
+            s1x = np.zeros(Num)
+        else:
+            s1x = np.random.uniform(min_s1x, max_s1x, Num)
+
+        if min_s2x is None or max_s2x is None:
+            s2x = np.zeros(Num)
+        else:
+            s2x = np.random.uniform(min_s2x, max_s2x, Num)
+        # spiny
+        if min_s1y is None or max_s1y is None:
+            s1y = np.zeros(Num)
+        else:
+            s1y = np.random.uniform(min_s1y, max_s1y, Num)
+
+        if min_s2y is None or max_s2y is None:
+            s2y = np.zeros(Num)
+        else:
+            s2y = np.random.uniform(min_s2y, max_s2y, Num)
+
         
         for i in range(Num):
             if (mode % 10) % 2 and q[i] == 1 and s1z[i] ==  s2z[i]:
@@ -606,7 +643,9 @@ class CompGenerator(object):
                 ans = self._core_calcFF(q[i], mtotal_list, 
                                         s1z[i], s2z[i], ecc[i],
                                         D, f_ini, 
-                                        srate, timeout, jobtag, mode = mode)
+                                        srate, timeout, jobtag, mode = mode, 
+                                        spin1x = s1x[i], spin2x = s2x[i],
+                                        spin1y = s1y[i], spin2y = s2y[i])
             sys.stderr.write(f'PMS: q = {q[i]}, s1z = {s1z[i]}, s2z = {s2z[i]} ecc = {ecc[i]}\n\t FF = {ans}\n\n')
             if ans < 0:
                 continue

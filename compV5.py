@@ -1998,6 +1998,10 @@ def mode_compare(argv = None):
                         min_Mtotal = args.min_mtotal, max_Mtotal = args.max_mtotal,
                         D = D, f_ini = f_ini, 
                         srate = srate, jobtag = jobtag, timeout = timeout,
-                        mode = args.ymode)     
+                        mode = args.ymode, 
+                        max_s1x = args.max_s1x, min_s1x = args.min_s1x,
+                        max_s2x = args.max_s2x, min_s2x = args.min_s2x,
+                        max_s1y = args.max_s1y, min_s1y = args.min_s1y,
+                        max_s2y = args.max_s2y, min_s2y = args.min_s2y)     
     return 0
 

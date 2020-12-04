@@ -33,15 +33,16 @@ def CMD_lalsim_inspiral(exe,
                         srate,
                         f_ini,
                         approx,
-                        **kwargs):
-    adjpms = ''
-    for kw in kwargs:
-        op = kw.replace('_','-')
-        adjpms += f' --{op}={kwargs[kw]}'
+                        s1x = 0,
+                        s2x = 0,
+                        s1y = 0,
+                        s2y = 0):
     CMD = f'{exe} --m1={m1} --m2={m2} \
             --spin1z={s1z} --spin2z={s2z} \
             --distance={D} --sample-rate={srate} \
-            --f-min={f_ini} --approx={approx} --inclination=0 ' + adjpms
+            --f-min={f_ini} --approx={approx} --inclination=0 \
+            --spin1x={s1x} --spin2x={s2x} \
+            --spin1y={s1y} --spin2y={s2y}'
     return CMD
 
 # Type 02: For SEOBNREv1:
@@ -142,15 +143,16 @@ def CMD_SEOBNRP(exe,
                 srate,
                 f_ini,
                 approx,
-                **kwargs):
-    adjpms = ''
-    for kw in kwargs:
-        op = kw.replace('_','-')
-        adjpms += f' --{op}={kwargs[kw]}'
+                s1x = 0,
+                s2x = 0,
+                s1y = 0,
+                s2y = 0):
     CMD = f'{exe} --m1={m1} --m2={m2} \
             --spin1z={s1z} --spin2z={s2z} \
             --sample-rate={srate} \
-            --f-min={f_ini} --inclination=0 ' + adjpms
+            --f-min={f_ini} --inclination=0 \
+            --spin1x={s1x} --spin2x={s2x} \
+            --spin1y={s1y} --spin2y={s2y}'
     return CMD
 
 
@@ -646,8 +648,8 @@ class CompGenerator(object):
                                         s1z[i], s2z[i], ecc[i],
                                         D, f_ini, 
                                         srate, timeout, jobtag, mode = mode, 
-                                        spin1x = s1x[i], spin2x = s2x[i],
-                                        spin1y = s1y[i], spin2y = s2y[i])
+                                        s1x = s1x[i], s2x = s2x[i],
+                                        s1y = s1y[i], s2y = s2y[i])
             sys.stderr.write(f'PMS: q = {q[i]}, s1z = {s1z[i]}, s2z = {s2z[i]} ecc = {ecc[i]}\n\t FF = {ans}\n\n')
             if ans < 0:
                 continue

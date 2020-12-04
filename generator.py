@@ -36,7 +36,8 @@ def CMD_lalsim_inspiral(exe,
                         s1x = 0,
                         s2x = 0,
                         s1y = 0,
-                        s2y = 0):
+                        s2y = 0,
+                        **kwargs):
     CMD = f'{exe} --m1={m1} --m2={m2} \
             --spin1z={s1z} --spin2z={s2z} \
             --distance={D} --sample-rate={srate} \
@@ -146,7 +147,8 @@ def CMD_SEOBNRP(exe,
                 s1x = 0,
                 s2x = 0,
                 s1y = 0,
-                s2y = 0):
+                s2y = 0,
+                **kwargs):
     CMD = f'{exe} --m1={m1} --m2={m2} \
             --spin1z={s1z} --spin2z={s2z} \
             --sample-rate={srate} \

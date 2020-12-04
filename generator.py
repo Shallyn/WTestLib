@@ -641,21 +641,33 @@ class CompGenerator(object):
         else:
             s2y = np.random.uniform(min_s2y, max_s2y, Num)
 
-        
+        # spin normalization
         for i in range(Num):
+            s1Vec = np.array([s1x[i], s1y[i], s1z[i]])
+            s1 = np.linalg.norm(s1Vec)
+            s2Vec = np.array([s2x[i], s2y[i], s2z[i]])
+            s2 = np.linalg.norm(s2Vec)
+            if s1 > 1:
+                s1Vec = s1Vec / s1
+                s1Vec[s1Vec > 0.99] = 0.99
+                s1Vec[s1Vec < -0.99] = -0.99
+            if s2 > 1:
+                s2Vec = s2Vec / s2
+                s2Vec[s2Vec > 0.99] = 0.99
+                s2Vec[s2Vec < -0.99] = -0.99
             if (mode % 10) % 2 and q[i] == 1 and s1z[i] ==  s2z[i]:
                 ans = 1.
             else:
                 ans = self._core_calcFF(q[i], mtotal_list, 
-                                        s1z[i], s2z[i], ecc[i],
+                                        s1Vec[2], s2Vec[2], ecc[i],
                                         D, f_ini, 
                                         srate, timeout, jobtag, mode = mode, 
-                                        s1x = s1x[i], s2x = s2x[i],
-                                        s1y = s1y[i], s2y = s2y[i])
+                                        s1x = s1Vec[0], s2x = s2Vec[0],
+                                        s1y = s1Vec[1], s2y = s2Vec[1])
             sys.stderr.write(f'PMS: q = {q[i]}, s1z = {s1z[i]}, s2z = {s2z[i]} ecc = {ecc[i]}\n\t FF = {ans}\n\n')
             if ans < 0:
                 continue
-            data = [[q[i], s1z[i], s2z[i], ecc[i], ans]]
+            data = [[q[i], s1Vec[0], s1Vec[1], s1Vec[2], s2Vec[0], s2Vec[1], s2Vec[2], ecc[i], ans]]
             add_csv(fsave, data)   
         return
         

@@ -1977,7 +1977,11 @@ def mode_compare(argv = None):
     # 1. save all
     namecol = [['#Mtotal',
                '#mass_ratio',
+               '#spin1x',
+               '#spin1y',
                '#spin1z',
+               '#spin2x',
+               '#spin2y',
                '#spin2z',
                '#ecc',
                '#FF']]

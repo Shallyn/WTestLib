@@ -997,8 +997,10 @@ def Compare_ecc_HM(argv = None):
     parser.add_option('--ecc', type = 'float', help = 'estimated ecc')
     parser.add_option('--mtotal', type = 'float', help = 'this mtotal')
     parser.add_option('--circ', action = 'store_true', help = 'force ecc = 0')
+    parser.add_option('--save-all', action = 'store_true', help = 'dump ciota')
     parser.add_option('--usemp', action = 'store_true', help = 'use multi process')
     parser.add_option('--verbose', action = 'store_true', help = 'verbose output')
+    parser.add_option('--num-mc', type = 'int', default = 0, help = 'if > 0 will use Monte-Carlo sample spherical integration for phix-iota')
 
     parser.add_option('--eps', type = 'float', default = 1e-6, help = 'Thresh of div')
     parser.add_option('--mag', type = 'float', default = 10, help = 'Thresh of dx_init / dx (>1)')
@@ -1035,10 +1037,11 @@ def Compare_ecc_HM(argv = None):
     if args.phix is not None:
         phiXList = np.array([args.phix * np.pi])
     else:
-        phiXList = np.linspace(0, 2*np.pi, 15)
+        phiXList = np.arange(0, 2, 0.125) * np.pi
         np.savetxt(prefix / 'phiXList.dat', phiXList)
     if args.iota is not None:
         iotaList = np.array([args.iota * np.pi])
+        cosiList = np.cos(iotaList)
     else:
         # iotaList = np.linspace(0, np.pi, 15)
         # iotaList = np.concatenate([np.linspace(0, 7, 15)[::-1], np.linspace(8, 28, 21)])*np.pi / 28
@@ -1267,12 +1270,20 @@ def Compare_ecc_HM(argv = None):
             return FF_max, phic_max
 
         fresults = prefix / f'results_{SXSnum}_{jtag}.csv'
+        ci_slist = []
+        for ci in cosiList:
+            ci_slist.append(f'#{ci}')
         # Setting Results savimg filename.
         if CIRC:
-            save_namecol(fresults, data = [['#Mtotal', '#FF']])
+            if args.save_all:
+                save_namecol(fresults, data = [['#Mtotal'] + ci_slist])
+            else:
+                save_namecol(fresults, data = [['#Mtotal', '#FF']])
         else:
-            save_namecol(fresults, data = [['#Mtotal', '#ecc', '#FF']])
-        
+            if args.save_all:
+                save_namecol(fresults, data = [['#Mtotal', f'#e={ecc_fit}'] + ci_slist])
+            else:
+                save_namecol(fresults, data = [['#Mtotal', f'#e={ecc_fit}', '#FF']])
         if 1:
             ret1 = ge(m1 = m1, m2 = m2, s1z = s1z, s2z = s2z, D = 100, 
                     ecc = ecc_fit, srate = srate, f_ini = fini, L = 2, M = 2,
@@ -1301,6 +1312,9 @@ def Compare_ecc_HM(argv = None):
                 FFret = np.zeros([len(phiXList),len(iotaList)])
                 kappa = kappaList[0]
                 Mtotal = MtotalList[0]
+                prefix2d = prefix / f'{SXSnum}_c2d_{jtag}'
+                if not prefix2d.exists():
+                    prefix2d.mkdir(parents = True)
                 for i, phiX in enumerate(phiXList):
                     phic_fit_list = None
                     for j, iota in enumerate(iotaList):
@@ -1309,9 +1323,29 @@ def Compare_ecc_HM(argv = None):
                             sys.stderr.write(f'Mtotal = {Mtotal}, iota = {iota/np.pi} pi, kappa = {kappa/np.pi} pi, phiX = {phiX/np.pi} pi, FF = {FF}\n')
                             if phic_fit_list is None:
                                 phic_fit_list = (phic_ret - np.pi*1.1/5, phic_ret + np.pi*1.1/5)
-                np.savetxt(prefix / f'c2d_{SXSnum}_{Mtotal}_{kappa}.dat', FFret)
+                save_namecol(prefix2d / 'info.csv', [['#Mtotal', '#kappa'], [Mtotal, kappa]])
+                np.savetxt(prefix2d / f'c2d.dat', FFret)
+                np.savetxt(prefix2d / 'phiXList.dat', phiXList)
+                np.savetxt(prefix2d / 'cosiotaList.dat', cosiList)
                 return 0
-
+            if args.num_mc > 0 and not args.save_all:
+                for Mtotal in MtotalList:
+                    FFlist = []
+                    for i in range(args.num_mc):
+                        vec = np.random.randn(3)
+                        vecR = np.linalg.norm(vec)
+                        Vcosi = min(vec[2] / vecR, 1)
+                        Vcosi = max(Vcosi, -1)
+                        Viota = np.arccos(Vcosi)
+                        Vphi = np.arctan2(vec[1], vecR)
+                        kappa = 0
+                        FF, _ = calculate_Max_FF_HM_fit(EOBModes_C, NRModes_C, Mtotal_input = Mtotal, iota_input = Viota, phic_input = None, kappa = kappa, phin = Vphi)
+                        sys.stderr.write(f'Mtotal = {Mtotal}, iota = {Viota/np.pi} pi, phiX = {Vphi/np.pi} pi, FF = {FF}\n')
+                        FFlist.append(FF)
+                    FFlist = np.asarray(FFlist)
+                    avg = np.average(FFlist)
+                    add_csv(fresults, [[Mtotal, avg]])
+                return 0
             for Mtotal in MtotalList:
                 FFlist = []
                 for phiX, kappa in product(phiXList, kappaList):
@@ -1325,7 +1359,10 @@ def Compare_ecc_HM(argv = None):
                 FFlist = np.asarray(FFlist)
                 avg = np.average(FFlist)
                 print(f'avg = {avg}')
-                add_csv(fresults, [[Mtotal, avg]])
+                if args.save_all:
+                    add_csv(fresults, [[Mtotal] + FFlist.tolist()])
+                else:
+                    add_csv(fresults, [[Mtotal, avg]])
         elif 0:
             for Mtotal in MtotalList:
                 FF_avg = 0
@@ -1927,16 +1964,7 @@ def mode_compare(argv = None):
     parser.add_option('--random', action = 'store_true', help = 'If added, will use random parameters.')
     parser.add_option('--min-mratio', type = 'float', default = 1, help = 'Used in random mode [1]')
     parser.add_option('--max-mratio', type = 'float', default = 9, help = 'Used in random mode [9]')
-    parser.add_option('--min-spin1x', type = 'float',  help = 'Used in random mode')
-    parser.add_option('--max-spin1x', type = 'float',  help = 'Used in random mode')
-    parser.add_option('--min-spin2x', type = 'float',  help = 'Used in random mode')
-    parser.add_option('--max-spin2x', type = 'float',  help = 'Used in random mode')
-
-    parser.add_option('--min-spin1y', type = 'float',  help = 'Used in random mode')
-    parser.add_option('--max-spin1y', type = 'float',  help = 'Used in random mode')
-    parser.add_option('--min-spin2y', type = 'float',  help = 'Used in random mode')
-    parser.add_option('--max-spin2y', type = 'float',  help = 'Used in random mode')
-
+    parser.add_option('--prec', action = 'store_true', help = 'use prec')
     parser.add_option('--min-spin1z', type = 'float',  help = 'Used in random mode')
     parser.add_option('--max-spin1z', type = 'float',  help = 'Used in random mode')
     parser.add_option('--min-spin2z', type = 'float',  help = 'Used in random mode')
@@ -2003,9 +2031,6 @@ def mode_compare(argv = None):
                         D = D, f_ini = f_ini, 
                         srate = srate, jobtag = jobtag, timeout = timeout,
                         mode = args.ymode, 
-                        max_s1x = args.max_spin1x, min_s1x = args.min_spin1x,
-                        max_s2x = args.max_spin2x, min_s2x = args.min_spin2x,
-                        max_s1y = args.max_spin1y, min_s1y = args.min_spin1y,
-                        max_s2y = args.max_spin2y, min_s2y = args.min_spin2y)     
+                        use_prec = args.prec)     
     return 0
 

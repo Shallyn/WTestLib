@@ -172,6 +172,10 @@ def CMD_SEOBNREv5(exe,
                   dtPeak = None,
                   ret = 0,
                   dump = None,
+                  s1x = 0,
+                  s2x = 0,
+                  s1y = 0,
+                  s2y = 0,
                   **kwargs):
     adjpms = ''
     if KK is not None:
@@ -587,14 +591,7 @@ class CompGenerator(object):
                        timeout = 60,
                        jobtag = '_CompareRandom',
                        mode = 22,
-                       max_s1x = None,
-                       min_s1x = None,
-                       max_s2x = None,
-                       min_s2x = None,
-                       max_s1y = None,
-                       min_s1y = None,
-                       max_s2y = None,
-                       min_s2y = None):
+                       use_prec = False):
         if self._verbose:
             sys.stderr.write(f'{LOG}:Initialize parameter...\n')
         Num = int(Num)
@@ -620,42 +617,22 @@ class CompGenerator(object):
         else:
             mtotal_list = np.linspace(min_Mtotal, max_Mtotal, 30)
         
-        # spinx
-        if min_s1x is None or max_s1x is None:
-            s1x = np.zeros(Num)
-        else:
-            s1x = np.random.uniform(min_s1x, max_s1x, Num)
-
-        if min_s2x is None or max_s2x is None:
-            s2x = np.zeros(Num)
-        else:
-            s2x = np.random.uniform(min_s2x, max_s2x, Num)
-        # spiny
-        if min_s1y is None or max_s1y is None:
-            s1y = np.zeros(Num)
-        else:
-            s1y = np.random.uniform(min_s1y, max_s1y, Num)
-
-        if min_s2y is None or max_s2y is None:
-            s2y = np.zeros(Num)
-        else:
-            s2y = np.random.uniform(min_s2y, max_s2y, Num)
+        # use_prec
 
         # spin normalization
         for i in range(Num):
-            s1Vec = np.array([s1x[i], s1y[i], s1z[i]])
-            s1 = np.linalg.norm(s1Vec)
-            s2Vec = np.array([s2x[i], s2y[i], s2z[i]])
-            s2 = np.linalg.norm(s2Vec)
-            if s1 > 1:
-                s1Vec = s1Vec / s1
-                s1Vec[s1Vec > 0.99] = 0.99
-                s1Vec[s1Vec < -0.99] = -0.99
-            if s2 > 1:
-                s2Vec = s2Vec / s2
-                s2Vec[s2Vec > 0.99] = 0.99
-                s2Vec[s2Vec < -0.99] = -0.99
-            if (mode % 10) % 2 and q[i] == 1 and s1z[i] ==  s2z[i]:
+            if use_prec:
+                s1Vec = np.random.randn(3)
+                s1 = np.linalg.norm(s1Vec)
+                s1Vec = s1Vec * s1z[i] / s1
+
+                s2Vec = np.random.randn(3)
+                s2 = np.linalg.norm(s2Vec)
+                s2Vec = s2Vec * s2z[i] / s2
+            else:
+                s1Vec = np.array([0,0,s1z[i]])
+                s2Vec = np.array([0,0,s2z[i]])
+            if (mode % 10) % 2 and q[i] == 1 and s1Vec[0] ==  s2Vec[0] and s1Vec[1] ==  s2Vec[1] and s1Vec[2] ==  s2Vec[2]:
                 ans = 1.
             else:
                 ans = self._core_calcFF(q[i], mtotal_list, 

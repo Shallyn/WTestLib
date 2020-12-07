@@ -251,6 +251,7 @@ class Generator(object):
                                 srate = srate,
                                 f_ini = f_ini,
                                 approx = self._approx,
+                                only22 = True,
                                 **kwargs)
                 def _pretreat(t, hr, hi, r, M, **kwargs):
                     hr *= np.sqrt(4 * np.pi / 5) * dim_h(r, M)
@@ -269,7 +270,6 @@ class Generator(object):
                                 srate = srate,
                                 f_ini = f_ini,
                                 approx = self._approx,
-                                only22 = True,
                                 **kwargs)
                 def _pretreat(t, hr, hi, r, M, **kwargs):
                     hr *= np.sqrt(4 * np.pi / 5) * dim_h(r, M)

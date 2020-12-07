@@ -148,13 +148,15 @@ def CMD_SEOBNRP(exe,
                 s2x = 0,
                 s1y = 0,
                 s2y = 0,
-                **kwargs):
+                **kwargs):        
     CMD = f'{exe} --m1={m1} --m2={m2} \
             --spin1z={s1z} --spin2z={s2z} \
             --sample-rate={srate} \
             --f-min={f_ini} --inclination=0 \
             --spin1x={s1x} --spin2x={s2x} \
             --spin1y={s1y} --spin2y={s2y}'
+    if 'only22' in kwargs:
+        CMD = CMD + ' --only22'
     return CMD
 
 
@@ -249,6 +251,25 @@ class Generator(object):
                                 srate = srate,
                                 f_ini = f_ini,
                                 approx = self._approx,
+                                **kwargs)
+                def _pretreat(t, hr, hi, r, M, **kwargs):
+                    hr *= np.sqrt(4 * np.pi / 5) * dim_h(r, M)
+                    hi *= -np.sqrt(4 * np.pi / 5) * dim_h(r, M)
+                    return t, hr, hi
+                self._pretreat = _pretreat
+                self._allow_ecc = False
+                break
+            if case('SEOBNRPHM'):
+                self._CMD = lambda m1, m2, s1z, s2z, D, ecc, srate, f_ini, L, M, **kwargs : \
+                    CMD_SEOBNRP(exe = self._exe,
+                                m1 = m1,
+                                m2 = m2,
+                                s1z = s1z,
+                                s2z = s2z,
+                                srate = srate,
+                                f_ini = f_ini,
+                                approx = self._approx,
+                                only22 = True,
                                 **kwargs)
                 def _pretreat(t, hr, hi, r, M, **kwargs):
                     hr *= np.sqrt(4 * np.pi / 5) * dim_h(r, M)

@@ -1327,8 +1327,7 @@ def Compare_ecc_HM(argv = None):
                 np.savetxt(prefix2d / f'c2d.dat', FFret)
                 np.savetxt(prefix2d / 'phiXList.dat', phiXList)
                 np.savetxt(prefix2d / 'cosiotaList.dat', cosiList)
-                return 0
-            if args.num_mc > 0 and not args.save_all:
+            elif args.num_mc > 0 and not args.save_all:
                 for Mtotal in MtotalList:
                     FFlist = []
                     for i in range(args.num_mc):
@@ -1345,24 +1344,24 @@ def Compare_ecc_HM(argv = None):
                     FFlist = np.asarray(FFlist)
                     avg = np.average(FFlist)
                     add_csv(fresults, [[Mtotal, avg]])
-                return 0
-            for Mtotal in MtotalList:
-                FFlist = []
-                for phiX, kappa in product(phiXList, kappaList):
-                    phic_fit_list = None
-                    for iota in iotaList:
-                        FF, phic_ret = calculate_Max_FF_HM_fit(EOBModes_C, NRModes_C, Mtotal_input = Mtotal, iota_input = iota, phic_input = phic_fit_list, kappa = kappa, phin = phiX)
-                        sys.stderr.write(f'Mtotal = {Mtotal}, iota = {iota/np.pi} pi, kappa = {kappa/np.pi} pi, phiX = {phiX/np.pi} pi, FF = {FF}\n')
-                        if phic_fit_list is None:
-                            phic_fit_list = (phic_ret - np.pi*1.1/5, phic_ret + np.pi*1.1/5)
-                        FFlist.append(FF)
-                FFlist = np.asarray(FFlist)
-                avg = np.average(FFlist)
-                print(f'avg = {avg}')
-                if args.save_all:
-                    add_csv(fresults, [[Mtotal] + FFlist.tolist()])
-                else:
-                    add_csv(fresults, [[Mtotal, avg]])
+            else:
+                for Mtotal in MtotalList:
+                    FFlist = []
+                    for phiX, kappa in product(phiXList, kappaList):
+                        phic_fit_list = None
+                        for iota in iotaList:
+                            FF, phic_ret = calculate_Max_FF_HM_fit(EOBModes_C, NRModes_C, Mtotal_input = Mtotal, iota_input = iota, phic_input = phic_fit_list, kappa = kappa, phin = phiX)
+                            sys.stderr.write(f'Mtotal = {Mtotal}, iota = {iota/np.pi} pi, kappa = {kappa/np.pi} pi, phiX = {phiX/np.pi} pi, FF = {FF}\n')
+                            if phic_fit_list is None:
+                                phic_fit_list = (phic_ret - np.pi*1.1/5, phic_ret + np.pi*1.1/5)
+                            FFlist.append(FF)
+                    FFlist = np.asarray(FFlist)
+                    avg = np.average(FFlist)
+                    print(f'avg = {avg}')
+                    if args.save_all:
+                        add_csv(fresults, [[Mtotal] + FFlist.tolist()])
+                    else:
+                        add_csv(fresults, [[Mtotal, avg]])
         elif 0:
             for Mtotal in MtotalList:
                 FF_avg = 0

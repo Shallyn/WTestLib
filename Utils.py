@@ -342,6 +342,27 @@ def polyfit(x, y, order):
         X[:,i] = np.power(x, i)
     return np.dot(np.dot(np.linalg.inv(np.dot(X.T, X)), X.T), Y)
 
+def polyfit2d(x, y, z, xorder, yorder):
+    indtot = int((xorder + 1) * (yorder + 1)) - 1
+    def parse_index(ind):
+        indi = ind % (xorder + 1)
+        indj = int(ind / (xorder + 1))
+        return indi, indj
+    X = np.zeros([indtot, indtot])
+    Y = np.zeros(indtot)
+    for J in range(indtot):
+        indl, indm = parse_index(J)
+        for I in range(indtot):
+            indi, indj = parse_index(I)
+            X[J, I] = np.sum(np.power(x, indi+indl) * np.power(y, indj + indm))
+        Y[J] = np.sum(np.power(x, indi) * np.power(y, indm) * z)
+    Sol = np.dot(Y, np.linalg.inv(X))
+    ret = np.zeros([yorder + 1, xorder + 1])
+    for J in range(indtot):
+        indi, indj = parse_index(J)
+        ret[indj, indi] = Sol[J]
+    return ret
+
 def splfind(x, y, val, eps):
     ay = np.abs(y - val)
     sply = splrep(x, ay)

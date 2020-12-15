@@ -17,6 +17,7 @@ from optparse import OptionParser
 from .MultiGrid import MultiGrid1D, MultiGrid
 from pathlib import Path
 from itertools import product
+import multiprocessing as mp
 
 class V5Dynamics(object):
     def __init__(self, dydata):
@@ -1001,6 +1002,7 @@ def Compare_ecc_HM(argv = None):
     parser.add_option('--usemp', action = 'store_true', help = 'use multi process')
     parser.add_option('--verbose', action = 'store_true', help = 'verbose output')
     parser.add_option('--num-mc', type = 'int', default = 0, help = 'if > 0 will use Monte-Carlo sample spherical integration for phix-iota')
+    parser.add_option('--np', type = 'int', help = 'numbers of multi processes')
 
     parser.add_option('--eps', type = 'float', default = 1e-6, help = 'Thresh of div')
     parser.add_option('--mag', type = 'float', default = 10, help = 'Thresh of dx_init / dx (>1)')
@@ -1236,7 +1238,7 @@ def Compare_ecc_HM(argv = None):
                 phic_max = phic_input
             return FF_max, phic_max
 
-        def calculate_Max_FF_HM_fit(EOBModes, NRModes, Mtotal_input, iota_input, phic_input = None, XX = 0, kappa = 0, phin = 0):        
+        def calculate_Max_FF_HM_fit(EOBModes, NRModes, Mtotal_input, iota_input, phic_input = None, XX = 0, kappa = 0, phin = 0, mpQueue = None):        
             hpcNR = NRModes.construct_hpc(iota_input, phin, modelist = NRModeList, phaseFrom0 = False)
             hpcNR.apply_phic(kappa)
             def max_FF_over_phic(phic):
@@ -1267,7 +1269,10 @@ def Compare_ecc_HM(argv = None):
             else:
                 FF_max = max_FF_over_phic(phic_input)
                 phic_max = phic_input
-            return FF_max, phic_max
+            if mpQueue is None:
+                return FF_max, phic_max
+            mpQueue.put(FF_max)
+            return
 
         fresults = prefix / f'results_{SXSnum}_{jtag}.csv'
         ci_slist = []
@@ -1328,22 +1333,52 @@ def Compare_ecc_HM(argv = None):
                 np.savetxt(prefix2d / 'phiXList.dat', phiXList)
                 np.savetxt(prefix2d / 'cosiotaList.dat', cosiList)
             elif args.num_mc > 0 and not args.save_all:
-                for Mtotal in MtotalList:
-                    FFlist = []
-                    for i in range(args.num_mc):
-                        vec = np.random.randn(3)
-                        vecR = np.linalg.norm(vec)
-                        Vcosi = min(vec[2] / vecR, 1)
-                        Vcosi = max(Vcosi, -1)
-                        Viota = np.arccos(Vcosi)
-                        Vphi = np.arctan2(vec[1], vecR)
-                        kappa = 0
-                        FF, _ = calculate_Max_FF_HM_fit(EOBModes_C, NRModes_C, Mtotal_input = Mtotal, iota_input = Viota, phic_input = None, kappa = kappa, phin = Vphi)
-                        sys.stderr.write(f'Mtotal = {Mtotal}, iota = {Viota/np.pi} pi, phiX = {Vphi/np.pi} pi, FF = {FF}\n')
-                        FFlist.append(FF)
-                    FFlist = np.asarray(FFlist)
-                    avg = np.average(FFlist)
-                    add_csv(fresults, [[Mtotal, avg]])
+                # Use Monte Carlo Integration
+                if args.np is None:
+                    for Mtotal in MtotalList:
+                        FFlist = []
+                        for i in range(args.num_mc):
+                            vec = np.random.randn(3)
+                            vecR = np.linalg.norm(vec)
+                            Vcosi = min(vec[2] / vecR, 1)
+                            Vcosi = max(Vcosi, -1)
+                            Viota = np.arccos(Vcosi)
+                            Vphi = np.arctan2(vec[1], vecR)
+                            kappa = 0
+                            FF, _ = calculate_Max_FF_HM_fit(EOBModes_C, NRModes_C, Mtotal_input = Mtotal, iota_input = Viota, phic_input = None, kappa = kappa, phin = Vphi)
+                            sys.stderr.write(f'Mtotal = {Mtotal}, iota = {Viota/np.pi} pi, phiX = {Vphi/np.pi} pi, FF = {FF}\n')
+                            FFlist.append(FF)
+                        FFlist = np.asarray(FFlist)
+                        avg = np.average(FFlist)
+                        add_csv(fresults, [[Mtotal, avg]])
+                else:
+                    # Use Multi-processing
+                    mp_np = args.np
+                    num_mc_mp = int(args.num_mc / mp_np)
+                    for Mtotal in MtotalList:
+                        FFlist = []
+                        for i in range(num_mc_mp):
+                            jobs = []
+                            mp_q = mp.Queue()
+                            for j in range(mp_np):
+                                vec = np.random.randn(3)
+                                vecR = np.linalg.norm(vec)
+                                Vcosi = min(vec[2] / vecR, 1)
+                                Vcosi = max(Vcosi, -1)
+                                Viota = np.arccos(Vcosi)
+                                Vphi = np.arctan2(vec[1], vecR)
+                                proc = mp.Process(target=calculate_Max_FF_HM_fit, 
+                                    args=(EOBModes_C, NRModes_C, Mtotal, Viota, None, 0, 0, Vphi, mp_q))
+                                jobs.append(proc)
+                                proc.start()
+                            for proc in jobs:
+                                proc.join()
+                            mp_results = [mp_q.get() for job in jobs]
+                            FFlist += mp_results
+                            sys.stderr.write(f'Mtotal = {Mtotal}, mp_{i}, FF = {FFlist}\n')
+                        FFlist = np.asarray(FFlist)
+                        avg = np.average(FFlist)
+                        add_csv(fresults, [[Mtotal, avg]])
             else:
                 for Mtotal in MtotalList:
                     FFlist = []

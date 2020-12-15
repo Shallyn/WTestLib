@@ -1375,7 +1375,7 @@ def Compare_ecc_HM(argv = None):
                                 proc.join()
                             mp_results = [mp_q.get() for job in jobs]
                             FFlist += mp_results
-                            sys.stderr.write(f'Mtotal = {Mtotal}, mp_{i}, FF = {FFlist}\n')
+                            sys.stderr.write(f'Mtotal = {Mtotal}, mp_{i}, FF = {mp_results}\n')
                         FFlist = np.asarray(FFlist)
                         avg = np.average(FFlist)
                         add_csv(fresults, [[Mtotal, avg]])

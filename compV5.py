@@ -1289,8 +1289,8 @@ def Compare_ecc_HM(argv = None):
                 ind_check = np.argmin(Msub)
                 if MtotalList[ind_check] < Mtotal_final:
                     ind_check += 1
-                MtotalList = MtotalList[ind_check:]
                 sys.stderr.write(f'Check point at {MtotalList[ind_check]}\n')
+                MtotalList = MtotalList[ind_check:]
         # Setting Results savimg filename.
         elif CIRC:
             if args.save_all:

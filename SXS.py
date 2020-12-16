@@ -245,10 +245,21 @@ class SXSObject(object):
     def ecc_range(self):
         return parse_ecc(self.ecc, 0, 0.7)
 
+def find_SXSh5(srcloc, SXSnum):
+    ftmp = Path(srcloc) / f'BBH_{SXSnum}'
+    if ftmp.exists():
+        return ftmp
+    ftmp = Path(srcloc) / f'SXS_BBH_{SXSnum}' / 'rhOverM_Asymptotic_GeometricUnits_CoM.h5'
+    if ftmp.exists():
+        return ftmp
+    raise Exception(f'Could not find such waveform file in {srcloc}')
+
+
 class SXSAllMode(SXSObject):
     def __init__(self, SXSnum, table = DEFAULT_TABLE, srcloc = DEFAULT_SRCLOC_ALL, cutpct = 0):
         super(SXSAllMode, self).__init__(SXSnum, table, verbose = False)
-        self._file = Path(srcloc) / f'BBH_{SXSnum}.h5'
+        #self._file = Path(srcloc) / f'BBH_{SXSnum}.h5'
+        self._file = find_SXSh5(srcloc, SXSnum)
         self._core = waveform_mode_collector(cutpct)
         f = h5py.File(self._file,'r')
         for key in f.keys():

@@ -246,7 +246,7 @@ class SXSObject(object):
         return parse_ecc(self.ecc, 0, 0.7)
 
 def find_SXSh5(srcloc, SXSnum):
-    ftmp = Path(srcloc) / f'BBH_{SXSnum}'
+    ftmp = Path(srcloc) / f'BBH_{SXSnum}.h5'
     if ftmp.exists():
         return ftmp
     ftmp = Path(srcloc) / f'SXS_BBH_{SXSnum}' / 'rhOverM_Asymptotic_GeometricUnits_CoM.h5'

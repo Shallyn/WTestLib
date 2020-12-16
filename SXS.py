@@ -252,7 +252,7 @@ def find_SXSh5(srcloc, SXSnum):
     ftmp = Path(srcloc) / f'SXS_BBH_{SXSnum}' / 'rhOverM_Asymptotic_GeometricUnits_CoM.h5'
     if ftmp.exists():
         return ftmp
-    raise Exception(f'Could not find such waveform file in {srcloc}')
+    raise Exception(f'Could not find waveform file of SXS:BBH:{SXSnum} in {srcloc}')
 
 
 class SXSAllMode(SXSObject):

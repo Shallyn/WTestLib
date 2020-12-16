@@ -1278,8 +1278,21 @@ def Compare_ecc_HM(argv = None):
         ci_slist = []
         for ci in cosiList:
             ci_slist.append(f'#{ci}')
+        # CheckPoint
+        if fresults.exists():
+            check_data = np.loadtxt(fresults, delimiter = ',')
+            Mtotal_final = check_data[:,0][-1]
+            if Mtotal_final >= MtotalList[-1]:
+                continue
+            else:
+                Msub = np.abs(MtotalList - Mtotal_final)
+                ind_check = np.argmin(Msub)
+                if MtotalList[ind_check] < Mtotal_final:
+                    ind_check += 1
+                MtotalList = MtotalList[ind_check:]
+                sys.stderr.write(f'Check point at {MtotalList[ind_check]}\n')
         # Setting Results savimg filename.
-        if CIRC:
+        elif CIRC:
             if args.save_all:
                 save_namecol(fresults, data = [['#Mtotal'] + ci_slist])
             else:

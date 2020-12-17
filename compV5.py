@@ -1283,6 +1283,9 @@ def Compare_ecc_HM(argv = None):
             check_data = np.loadtxt(fresults, delimiter = ',')
             try:
                 Mtotal_final = check_data[:,0][-1]
+            except:
+                sys.stderr.write(f'over write {fresults}\n')
+            else:
                 if Mtotal_final >= MtotalList[-1]:
                     continue
                 else:
@@ -1292,8 +1295,6 @@ def Compare_ecc_HM(argv = None):
                         ind_check += 1
                     sys.stderr.write(f'Check point at {MtotalList[ind_check]}\n')
                     MtotalList = MtotalList[ind_check:]
-            except:
-                sys.stderr.write(f'over write {fresults}\n')
         # Setting Results savimg filename.
         elif CIRC:
             if args.save_all:

@@ -1281,16 +1281,19 @@ def Compare_ecc_HM(argv = None):
         # CheckPoint
         if fresults.exists():
             check_data = np.loadtxt(fresults, delimiter = ',')
-            Mtotal_final = check_data[:,0][-1]
-            if Mtotal_final >= MtotalList[-1]:
-                continue
-            else:
-                Msub = np.abs(MtotalList - Mtotal_final)
-                ind_check = np.argmin(Msub)
-                if MtotalList[ind_check] < Mtotal_final:
-                    ind_check += 1
-                sys.stderr.write(f'Check point at {MtotalList[ind_check]}\n')
-                MtotalList = MtotalList[ind_check:]
+            try:
+                Mtotal_final = check_data[:,0][-1]
+                if Mtotal_final >= MtotalList[-1]:
+                    continue
+                else:
+                    Msub = np.abs(MtotalList - Mtotal_final)
+                    ind_check = np.argmin(Msub)
+                    if MtotalList[ind_check] < Mtotal_final:
+                        ind_check += 1
+                    sys.stderr.write(f'Check point at {MtotalList[ind_check]}\n')
+                    MtotalList = MtotalList[ind_check:]
+            except:
+                sys.stderr.write(f'over write {fresults}\n')
         # Setting Results savimg filename.
         elif CIRC:
             if args.save_all:

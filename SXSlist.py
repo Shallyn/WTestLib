@@ -63,6 +63,7 @@ DEFAULT_SPIN_LIST = list(DEFAULT_LOWSPIN_Q1_LIST) + list(DEFAULT_HIGHSPIN_Q1_LIS
             list(DEFAULT_SPIN_Q5_LIST) + list(DEFAULT_SPIN_Q8_LIST)
 
 DEFAULT_SPIN_LIST2 = [str(x) for x in range(1419, 1510)]
+DEFAULT_SPIN_LIST3 = [str(x) for x in range(2083, 2163)]
 DEFAULT_HUGESPIN = ('0153', '0154', '0155', '0157', '0158', '0159', '0160', '0172', \
     '0176', '0177', '0178', '0211', '0212', '0213', '0230', '0233', '0234', '0257', \
     '0258', '0260', '0293', '0306')

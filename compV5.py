@@ -993,6 +993,7 @@ def Compare_ecc_HM(argv = None):
     parser.add_option('--min-mtotal', type = 'float', default = 20, help = 'Lower bound of parameter')
     parser.add_option('--iota', type = 'float', help = 'inclination 0 [pi]')
     parser.add_option('--delta-ci', type = 'float', default = 0.05, help = 'cos iota step [0.1]')
+    parser.add_option('--delta-phix', type = 'float', default = 0.125, help = 'cos iota step [0.1]')
     parser.add_option('--phix', type = 'float', help = 'phix 0 [pi]')
     parser.add_option('--kappa', type = 'float', help = 'kappa 0 [pi]')
     parser.add_option('--ecc', type = 'float', help = 'estimated ecc')
@@ -1039,7 +1040,7 @@ def Compare_ecc_HM(argv = None):
     if args.phix is not None:
         phiXList = np.array([args.phix * np.pi])
     else:
-        phiXList = np.arange(0, 2, 0.125) * np.pi
+        phiXList = np.arange(0, 2, args.delta_phix) * np.pi
         np.savetxt(prefix / 'phiXList.dat', phiXList)
     if args.iota is not None:
         iotaList = np.array([args.iota * np.pi])

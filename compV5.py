@@ -1398,7 +1398,8 @@ def Compare_ecc_HM(argv = None):
                             sys.stderr.write(f'Mtotal = {Mtotal}, mp_{i}, FF = {mp_results}\n')
                         FFlist = np.asarray(FFlist)
                         avg = np.average(FFlist)
-                        add_csv(fresults, [[Mtotal, avg]])
+                        FFmin = np.min(FFlist)
+                        add_csv(fresults, [[Mtotal, avg, FFmin]])
             else:
                 for Mtotal in MtotalList:
                     FFlist = []

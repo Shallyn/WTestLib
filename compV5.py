@@ -1319,7 +1319,7 @@ def Compare_ecc_HM(argv = None):
             EOBModes.append_mode(t, h22r, h22i, 2, 2)
             EOBModes.append_mode(t, h22r, -h22i, 2, -2)
             EOBModes.append_mode(t, h21r, h21i, 2, 1)
-            EOBModes.append_mode(t, -h21r, h21i, 2, -1)
+            EOBModes.append_mode(t, h21r, -h21i, 2, -1)
             EOBModes.append_mode(t, h33r, h33i, 3, 3)
             EOBModes.append_mode(t, -h33r, h33i, 3, -3)
             EOBModes.append_mode(t, h44r, h44i, 4, 4)

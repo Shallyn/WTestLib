@@ -1243,9 +1243,9 @@ def Compare_ecc_HM(argv = None):
             hpcNR = NRModes.construct_hpc(iota_input, phin, modelist = NRModeList, phaseFrom0 = False)
             hpcNR.apply_phic(kappa)
             def max_FF_over_phic(phic):
-                hpcEOB = EOBModes.construct_hpc(iota_input, phic, modelist = EOBModeList, phaseFrom0 = True)
+                hpcEOB = EOBModes.construct_hpc(iota_input, phic, modelist = EOBModeList, phaseFrom0 = False)
                 FF, _1, _2 = calculate_ModeFF(hpcEOB, hpcNR, Mtotal = Mtotal_input, psd = psd)
-                if args.verbose:
+                if 0:
                     sys.stderr.write(f'{phic/np.pi} pi {FF}\n')
                 return FF
             if 0:
@@ -1310,7 +1310,7 @@ def Compare_ecc_HM(argv = None):
         if 1:
             ret1 = ge(m1 = m1, m2 = m2, s1z = s1z, s2z = s2z, D = 100, 
                     ecc = ecc_fit, srate = srate, f_ini = fini, L = 2, M = 2,
-                    timeout = 3600, jobtag = jobtag, mode = 0)
+                    timeout = 3600, jobtag = jobtag, mode = -1)
             if isinstance(ret1, CEV):
                 return 0
             t, h22r, h22i, h21r, h21i, h33r, h33i, h44r, h44i = \

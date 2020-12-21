@@ -159,6 +159,27 @@ def CMD_SEOBNRP(exe,
         CMD = CMD + ' --only22'
     return CMD
 
+def CMD_SEOBNRPmode(exe,  
+                    m1,
+                    m2,
+                    s1z,
+                    s2z,
+                    srate,
+                    f_ini,
+                    approx,
+                    s1x = 0,
+                    s2x = 0,
+                    s1y = 0,
+                    s2y = 0,
+                    mode = -1,
+                    **kwargs):        
+    CMD = f'{exe} --m1={m1} --m2={m2} \
+            --spin1z={s1z} --spin2z={s2z} \
+            --sample-rate={srate} \
+            --f-min={f_ini} --inclination=0 \
+            --spin1x={s1x} --spin2x={s2x} \
+            --spin1y={s1y} --spin2y={s2y} --mode={mode}'
+    return CMD
 
 def CMD_SEOBNREv5(exe,
                   q,
@@ -274,6 +295,23 @@ class Generator(object):
                 def _pretreat(t, hr, hi, r, M, **kwargs):
                     hr *= np.sqrt(4 * np.pi / 5) * dim_h(r, M)
                     hi *= -np.sqrt(4 * np.pi / 5) * dim_h(r, M)
+                    return t, hr, hi
+                self._pretreat = _pretreat
+                self._allow_ecc = False
+                break
+            if case('SEOBNRPmode'):
+                self._CMD = lambda m1, m2, s1z, s2z, D, ecc, srate, f_ini, L, M, **kwargs : \
+                    CMD_SEOBNRPmode(exe = self._exe,
+                                    m1 = m1,
+                                    m2 = m2,
+                                    s1z = s1z,
+                                    s2z = s2z,
+                                    srate = srate,
+                                    f_ini = f_ini,
+                                    approx = self._approx,
+                                    **kwargs)
+                def _pretreat(t, hr, hi, r, M, **kwargs):
+                    # t = t / dim_t(M)
                     return t, hr, hi
                 self._pretreat = _pretreat
                 self._allow_ecc = False

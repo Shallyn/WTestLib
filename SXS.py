@@ -638,7 +638,11 @@ class SXSh22(SXSparameters, h22base):
             if t is None:
                 raise ValueError(f'Mode {modeL} {modeM} is not available.')
         else:
-            t, hr, hi = loadSXStxtdata(SXSnum, srcloc)
+            try:
+                t, hr, hi = loadSXStxtdata(SXSnum, srcloc)
+            except:
+                fh5 = find_SXSh5(srcloc_all, SXSnum)
+                t, hr, hi = loadSXSh5data(fh5, 2, 2)
         icut = int(len(t) * cutpct)
         t = t[icut:]
         hr = hr[icut:]

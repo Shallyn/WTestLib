@@ -167,6 +167,7 @@ def CMD_SEOBNRPmode(exe,
                     srate,
                     f_ini,
                     approx,
+                    ecc = 0,
                     s1x = 0,
                     s2x = 0,
                     s1y = 0,
@@ -175,7 +176,7 @@ def CMD_SEOBNRPmode(exe,
                     **kwargs):        
     CMD = f'{exe} --m1={m1} --m2={m2} \
             --spin1z={s1z} --spin2z={s2z} \
-            --sample-rate={srate} \
+            --sample-rate={srate} --eccentricity={ecc} \
             --f-min={f_ini} --inclination=0 \
             --spin1x={s1x} --spin2x={s2x} \
             --spin1y={s1y} --spin2y={s2y} --mode={mode}'
@@ -311,7 +312,7 @@ class Generator(object):
                                     approx = self._approx,
                                     **kwargs)
                 def _pretreat(t, hr, hi, r, M, **kwargs):
-                    # t = t / dim_t(M)
+                    t = t / dim_t(M)
                     return t, hr, hi
                 self._pretreat = _pretreat
                 self._allow_ecc = False

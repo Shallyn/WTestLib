@@ -176,4 +176,12 @@ DEFAULT_ECC_ORBIT_DICT_V5 = \
     '1372': (0.007342398469696525, 0.12), \
     '1373': (0.0074003276479797245, 0.12), \
     '1374': (0.009490501724885247, 0.22)}
-
+import sys
+def plot_SXSlist_toBash(name, LIST):
+    sys.stderr.write(f'{name}=(')
+    for i, SXSnum in enumerate(LIST):
+        if (i+1) % 6 == 0:
+            sys.stderr.write('\\\n\t')
+        sys.stderr.write(f'\"{SXSnum}\" ')
+    sys.stderr.write(')\n\n')
+    return

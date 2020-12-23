@@ -1336,10 +1336,10 @@ def Compare_ecc_HM(argv = None):
                 kappa = kappaList[0]
                 Mtotal = MtotalList[0]
                 prefix2d = prefix / f'{SXSnum}_c2d_{jtag}'
-                np.savetxt(prefix2d / 'phiXList.dat', phiXList)
-                np.savetxt(prefix2d / 'cosiotaList.dat', cosiList)
                 if not prefix2d.exists():
                     prefix2d.mkdir(parents = True)
+                np.savetxt(prefix2d / 'phiXList.dat', phiXList)
+                np.savetxt(prefix2d / 'cosiotaList.dat', cosiList)
                 for i, phiX in enumerate(phiXList):
                     phic_fit_list = None
                     FFsave = []
@@ -1350,7 +1350,7 @@ def Compare_ecc_HM(argv = None):
                         sys.stderr.write(f'Mtotal = {Mtotal}, iota = {iota/np.pi} pi, kappa = {kappa/np.pi} pi, phiX = {phiX/np.pi} pi, FF = {FF}\n')
                         if phic_fit_list is None:
                             phic_fit_list = (phic_ret - np.pi*1.1/5, phic_ret + np.pi*1.1/5)
-                    np.savetxt(prefix2d / f'c2d.dat', FFsave)
+                    add_csv(prefix2d / f'c2d.csv', [FFsave])
                 save_namecol(prefix2d / 'info.csv', [['#Mtotal', '#kappa'], [Mtotal, kappa]])
             elif args.num_mc > 0 and not args.save_all:
                 # Use Monte Carlo Integration

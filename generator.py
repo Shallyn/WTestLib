@@ -315,7 +315,7 @@ class Generator(object):
                     t = t / dim_t(M)
                     return t, hr, hi
                 self._pretreat = _pretreat
-                self._allow_ecc = False
+                self._allow_ecc = True
                 break
 
             if case('SEOBNREv1'):

@@ -307,6 +307,7 @@ class Generator(object):
                                     m2 = m2,
                                     s1z = s1z,
                                     s2z = s2z,
+                                    ecc = ecc,
                                     srate = srate,
                                     f_ini = f_ini,
                                     approx = self._approx,

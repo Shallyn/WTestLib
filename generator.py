@@ -657,7 +657,11 @@ class CompGenerator(object):
             sys.stderr.write(f'{LOG}:Initialize parameter...\n')
         Num = int(Num)
 
-        q = np.random.uniform(min_q, max_q, Num)
+        # q = np.random.uniform(min_q, max_q, Num)
+        max_eta = min_q / (1+min_q) / (1+min_q)
+        min_eta = max_q / (1+max_q) / (1+max_q)
+        eta = np.random.uniform(min_eta, max_eta, Num)
+        q = (1+np.sqrt(1-4*eta))/(2*eta) - 1
         if min_s1z is None or max_s1z is None:
             s1z = np.zeros(Num)
         else:

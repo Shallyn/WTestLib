@@ -2161,7 +2161,7 @@ def mode_compare_ecc(argv = None):
     Comp.comp_random_ecc(args.min_mratio, args.max_mratio, 
                         args.min_spin1z, args.max_spin1z, 
                         args.min_spin2z, args.max_spin2z, 
-                        args.min_ecc, args.max_ecc, fsave,
+                        fsave, args.min_ecc, args.max_ecc,
                         Num = args.ncompare, NumEcc = args.necc,
                         min_Mtotal = args.min_mtotal, max_Mtotal = args.max_mtotal,
                         D = D, f_ini = f_ini, 

@@ -1325,6 +1325,7 @@ def Compare_ecc_HM(argv = None):
             EOBModes.append_mode(t, h44r, h44i, 4, 4)
             EOBModes.append_mode(t, h44r, -h44i, 4, -4)
             EOBModes_C, NRModes_C = ModeC_alignment(EOBModes, NRModes)
+
             # for l,m in [(2,2), (2,-2), (2,1), (2,-1), (3,3), (3,-3), (4,4), (4,-4)]:
             #     hlm = EOBModes.get_mode(l,m)
             #     nlm = NRModes.get_mode(l,m)
@@ -2071,7 +2072,7 @@ def mode_compare(argv = None):
     fsave = savedir / fname
     # save_namecol(fsave, data = namecol)
     if args.seed is not None:
-        seed = int(pyt.time()%10000) + int(pyt.time()%args.seed)
+        seed = int(pyt.time()%10000 / args.seed) + int(pyt.time()%args.seed)
     else:
         seed = int(pyt.time()%10000)
     np.random.seed(seed)

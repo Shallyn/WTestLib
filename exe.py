@@ -6,7 +6,7 @@ Created on Sun Jun 23 17:06:37 2019
 @author: drizl
 """
 import matplotlib as mlb
-mlb.use('Agg')
+# mlb.use('Agg')
 
 import numpy as np
 from .SXS import SXSh22, save_namecol, DEFAULT_NOSPIN_SXS_LIST, DEFAULT_LOWSPIN_SXS_LIST, DEFAULT_HIGHSPIN_SXS_LIST

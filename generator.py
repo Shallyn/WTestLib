@@ -731,8 +731,6 @@ class CompGenerator(object):
                                             s1x = s1Vec[0], s2x = s2Vec[0],
                                             s1y = s1Vec[1], s2y = s2Vec[1])
             sys.stderr.write(f'PMS: q = {q[i]}, s1z = {s1z[i]}, s2z = {s2z[i]}\n\t FF = {np.min(ans)}\n\n')
-            if ans < 0:
-                continue
             data = [[q[i], s1Vec[0], s1Vec[1], s1Vec[2], s2Vec[0], s2Vec[1], s2Vec[2], ecc[i]] + ans.tolist()]
             add_csv(fsave, data)
         return

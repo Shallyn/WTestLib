@@ -756,7 +756,8 @@ class CompGenerator(object):
                        timeout = 60,
                        jobtag = '_CompareRandom',
                        mode = 22,
-                       use_prec = False):
+                       use_prec = False,
+                       use_fcut = None):
         if self._verbose:
             sys.stderr.write(f'{LOG}:Initialize parameter...\n')
         Num = int(Num)
@@ -809,7 +810,8 @@ class CompGenerator(object):
                                         D, f_ini, 
                                         srate, timeout, jobtag, mode = mode, 
                                         s1x = s1Vec[0], s2x = s2Vec[0],
-                                        s1y = s1Vec[1], s2y = s2Vec[1])
+                                        s1y = s1Vec[1], s2y = s2Vec[1],
+                                        use_fcut = use_fcut)
             sys.stderr.write(f'PMS: q = {q[i]}, s1z = {s1z[i]}, s2z = {s2z[i]} ecc = {ecc[i]}\n\t FF = {ans}\n\n')
             if ans < 0:
                 continue
@@ -819,12 +821,15 @@ class CompGenerator(object):
         
     
     def _core_calcFF(self, q, mtotal_list, s1z, s2z, ecc,
-                     D, f_ini, srate, timeout, jobtag, **kwargs):
+                     D, f_ini, srate, timeout, jobtag, use_fcut = None, 
+                     **kwargs):
         mtotal_base = 40
         mtotal_max = np.max(mtotal_list)
         m1 = mtotal_base * q / (1 + q)
         m2 = mtotal_base / (1 + q)
         f_ini_dim = f_ini * dim_t(mtotal_max)
+        if use_fcut is not None:
+            f_ini_dim = use_fcut
         # f_ini_dim = 25
         data = self._get_wf1(m1 = m1, m2 = m2, s1z = s1z, s2z = s2z, 
                              D = D, ecc = ecc, srate = srate, f_ini = f_ini_dim, 

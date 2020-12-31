@@ -2015,6 +2015,7 @@ def mode_compare(argv = None):
     parser.add_option('--timeout', type = 'int', default = 60, help = 'Time limit for waveform generation')
     parser.add_option('--psd', type = 'str', help = 'Detector psd.')
     parser.add_option('--flow', type = 'float', default = 0, help = 'Lower frequency cut off for psd.')
+    parser.add_option('--f-cut', type = 'float', help = 'Lower frequency cut off for psd.')
     parser.add_option('--ymode', type = 'int', default = 22, help = 'Spherical mode, in (22, 21, 33, 44)')
     # Random mode
     parser.add_option('--random', action = 'store_true', help = 'If added, will use random parameters.')
@@ -2087,7 +2088,7 @@ def mode_compare(argv = None):
                         D = D, f_ini = f_ini, 
                         srate = srate, jobtag = jobtag, timeout = timeout,
                         mode = args.ymode, 
-                        use_prec = args.prec)     
+                        use_prec = args.prec, use_fcut = args.f_cut)     
     return 0
 
 def mode_compare_ecc(argv = None):

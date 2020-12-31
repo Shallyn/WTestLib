@@ -2090,7 +2090,7 @@ def mode_compare(argv = None):
                         use_prec = args.prec)     
     return 0
 
-def mode_compare(argv = None):
+def mode_compare_ecc(argv = None):
     from .SXS import save_namecol, add_csv
     import time as pyt
     parser = OptionParser(description='General model compare.')

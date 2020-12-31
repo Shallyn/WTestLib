@@ -651,6 +651,74 @@ class CompGenerator(object):
         
         return ret
 
+    def comp_random_ecc(self,
+                       min_q, 
+                       max_q, 
+                       min_s1z, 
+                       max_s1z, 
+                       min_s2z, 
+                       max_s2z, 
+                       fsave,
+                       min_ecc = 0,
+                       max_ecc = 0.6,
+                       Num = 10,
+                       NumEcc = 60,
+                       min_Mtotal = None,
+                       max_Mtotal = None,
+                       D = 100,
+                       f_ini = 0.002,
+                       srate = 16384,
+                       timeout = 60,
+                       jobtag = '_CompareRandom',
+                       mode = 22):
+        if self._verbose:
+            sys.stderr.write(f'{LOG}:Initialize parameter...\n')
+        Num = int(Num)
+        # q = np.random.uniform(min_q, max_q, Num)
+        max_eta = min_q / (1+min_q) / (1+min_q)
+        min_eta = max_q / (1+max_q) / (1+max_q)
+        eta = np.random.uniform(min_eta, max_eta, Num)
+        q = (1+np.sqrt(1-4*eta))/(2*eta) - 1
+        if min_s1z is None or max_s1z is None:
+            s1z = np.zeros(Num)
+        else:
+            s1z = np.random.uniform(min_s1z, max_s1z, Num)
+
+        if min_s2z is None or max_s2z is None:
+            s2z = np.zeros(Num)
+        else:
+            s2z = np.random.uniform(min_s2z, max_s2z, Num)
+
+        ecc = np.linspace(min_ecc, max_ecc, NumEcc)
+        
+        if min_Mtotal is None or max_Mtotal is None:
+            mtotal_list = np.linspace(10, 200, 30)
+        else:
+            mtotal_list = np.linspace(min_Mtotal, max_Mtotal, 30)
+
+        # spin normalization
+        for i in range(Num):
+            s1Vec = np.array([0,0,s1z[i]])
+            s2Vec = np.array([0,0,s2z[i]])
+            ans = np.zeros(len(ecc))
+            if (mode % 10) % 2 and q[i] == 1 and s1Vec[0] ==  s2Vec[0] and s1Vec[1] ==  s2Vec[1] and s1Vec[2] ==  s2Vec[2]:
+                ans = np.ones(len(ecc))
+            else:
+                for j, e0 in enumerate(ecc):
+                    ans[j] = self._core_calcFF(q[i], mtotal_list, 
+                                            s1Vec[2], s2Vec[2], e0,
+                                            D, f_ini, 
+                                            srate, timeout, jobtag, mode = mode, 
+                                            s1x = s1Vec[0], s2x = s2Vec[0],
+                                            s1y = s1Vec[1], s2y = s2Vec[1])
+            sys.stderr.write(f'PMS: q = {q[i]}, s1z = {s1z[i]}, s2z = {s2z[i]}\n\t FF = {np.min(ans)}\n\n')
+            if ans < 0:
+                continue
+            data = [[q[i], s1Vec[0], s1Vec[1], s1Vec[2], s2Vec[0], s2Vec[1], s2Vec[2], ecc[i]] + ans.tolist()]
+            add_csv(fsave, data)
+        return
+
+
     def compare_random(self,
                        min_q, 
                        max_q, 

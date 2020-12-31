@@ -2090,3 +2090,82 @@ def mode_compare(argv = None):
                         use_prec = args.prec)     
     return 0
 
+def mode_compare(argv = None):
+    from .SXS import save_namecol, add_csv
+    import time as pyt
+    parser = OptionParser(description='General model compare.')
+    parser.add_option('--approx1', type = 'str', default = 'SEOBNRv1', help = 'approx1 for compare')
+    parser.add_option('--approx2', type = 'str', default = 'SEOBNRv4', help = 'approx2 for compare')
+    parser.add_option('--executable1', type = 'str', default = 'lalsim-inspiral', help = 'command for waveform generation')
+    parser.add_option('--executable2', type = 'str', default = 'lalsim-inspiral', help = 'command for waveform generation')
+    parser.add_option('--prefix', type = 'str', default = '.', help = 'prefix for data save')
+    parser.add_option('--verbose', action = 'store_true', help = 'If added, will print verbose message.')
+
+    parser.add_option('--fini', type = 'float', default = 0.002, help = 'Initial orbit frequency')
+    parser.add_option('--natural', action = 'store_true', help = 'If added, will use natural dimension for fini.')
+    parser.add_option('--distance', type = 'float', default = 100, help = 'BBH distance in Mpc')
+    parser.add_option('--srate', type = 'float', default = 16384, help = 'Sample rate')
+    parser.add_option('--jobtag', type = 'str', default = '_wfcomp', help = 'Tag for this run')
+    parser.add_option('--timeout', type = 'int', default = 60, help = 'Time limit for waveform generation')
+    parser.add_option('--psd', type = 'str', help = 'Detector psd.')
+    parser.add_option('--flow', type = 'float', default = 0, help = 'Lower frequency cut off for psd.')
+    parser.add_option('--ymode', type = 'int', default = 22, help = 'Spherical mode, in (22, 21, 33, 44)')
+    # Random mode
+    parser.add_option('--min-mratio', type = 'float', default = 1, help = 'Used in random mode [1]')
+    parser.add_option('--max-mratio', type = 'float', default = 9, help = 'Used in random mode [9]')
+    parser.add_option('--min-spin1z', type = 'float',  help = 'Used in random mode')
+    parser.add_option('--max-spin1z', type = 'float',  help = 'Used in random mode')
+    parser.add_option('--min-spin2z', type = 'float',  help = 'Used in random mode')
+    parser.add_option('--max-spin2z', type = 'float',  help = 'Used in random mode')
+    parser.add_option('--min-ecc', type = 'float', default = 0.0, help = 'Used in random mode')
+    parser.add_option('--max-ecc', type = 'float', default = 0.6, help = 'Used in random mode')
+    parser.add_option('--necc', type = 'int', default = 10, help = 'Used in random mode [10]')
+    parser.add_option('--min-mtotal', type = 'float', help = 'Min total mass of the binary system')
+    parser.add_option('--max-mtotal', type = 'float', help = 'Max total mass of the binary system')
+    parser.add_option('--seed', type = 'int', help = 'random seed')
+    parser.add_option('--ncompare', type = 'int', default = 10, help = 'Used in random mode [10]')
+
+    args, _empty = parser.parse_args(argv)
+    approx1 = args.approx1
+    approx2 = args.approx2
+    exe1 = args.executable1
+    exe2 = args.executable2
+    verbose = args.verbose
+        
+    D = args.distance
+    f_ini = args.fini
+    srate = args.srate
+    timeout = args.timeout
+    jobtag = args.jobtag
+    psd = DetectorPSD(args.psd, flow = args.flow)
+    prefix = Path(args.prefix)
+    if len(prefix.parts) <= 1:
+        fname = 'all.csv'
+        savedir = prefix
+    else:
+        savedir = prefix.parent
+        fname = f'{prefix.parts[-1]}.csv'
+
+    if not savedir.exists():
+        savedir.mkdir(parents = True)
+    eccList = np.linspace(args.min_ecc, args.max_ecc, args.necc)
+    fsave = savedir / fname
+    np.savetxt(savedir / 'eccList.dat', eccList)
+
+    if args.seed is not None:
+        seed = int(pyt.time()%10000 / args.seed) + int(pyt.time()%args.seed) + args.seed
+    else:
+        seed = int(pyt.time()%10000)
+    np.random.seed(seed)
+    Comp = CompGenerator(approx1, exe1, approx2, exe2, psd = psd, verbose = verbose)
+    Comp.comp_random_ecc(args.min_mratio, args.max_mratio, 
+                        args.min_spin1z, args.max_spin1z, 
+                        args.min_spin2z, args.max_spin2z, 
+                        args.min_ecc, args.max_ecc, fsave,
+                        Num = args.ncompare, NumEcc = args.necc,
+                        min_Mtotal = args.min_mtotal, max_Mtotal = args.max_mtotal,
+                        D = D, f_ini = f_ini, 
+                        srate = srate, jobtag = jobtag, timeout = timeout,
+                        mode = args.ymode)     
+    return
+

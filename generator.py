@@ -781,7 +781,7 @@ class CompGenerator(object):
             idx = np.where(Oxt_abs == max(Oxt_abs))[0][0]
             FF = Oxt_abs[idx]
             FF_list.append(FF)
-        return np.min(FF)
+        return np.min(FF_list)
 
 
         

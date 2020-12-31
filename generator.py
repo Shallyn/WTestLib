@@ -821,7 +821,7 @@ class CompGenerator(object):
     def _core_calcFF(self, q, mtotal_list, s1z, s2z, ecc,
                      D, f_ini, srate, timeout, jobtag, **kwargs):
         mtotal_base = 40
-        mtotal_max = np.min(mtotal_list)
+        mtotal_max = np.max(mtotal_list)
         m1 = mtotal_base * q / (1 + q)
         m2 = mtotal_base / (1 + q)
         f_ini_dim = f_ini * dim_t(mtotal_max)

@@ -2226,7 +2226,7 @@ def calculate_energyflux_HMparts(argv = None):
         srate = 16384
 
         fini = args.fini * dim_t(m1 + m2)
-        fsave = prefix / f'results.h5'
+        fsave = prefix / f'results_{i}.h5'
 
         #===========================================================================
         # Create a HDF5 file.

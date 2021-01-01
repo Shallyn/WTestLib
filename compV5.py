@@ -2221,7 +2221,9 @@ def calculate_energyflux_HMparts(argv = None):
     eccList = np.linspace(args.min_ecc, args.max_ecc, args.num_ecc)
     np.savetxt(prefix / 'ecc.dat', eccList)
     ge = Generator(approx = approx, executable = exe, verbose = args.verbose)
+    ind = 0
     for s1z, s2z in product(s1zList, s2zList):
+        ind += 1
         q = max(1, args.mratio)
         # s1z = s1zList[i]
         # s2z = s2zList[i]
@@ -2230,7 +2232,7 @@ def calculate_energyflux_HMparts(argv = None):
         srate = 16384
 
         fini = args.fini * dim_t(m1 + m2)
-        fsave = prefix / f'results_q{q}.h5'
+        fsave = prefix / f'results_id_{ind}.h5'
 
         #===========================================================================
         # Create a HDF5 file.

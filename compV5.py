@@ -2201,6 +2201,8 @@ def calculate_energyflux_HMparts(argv = None):
     parser.add_option('--seed', type = 'int', help = 'random seed')
     parser.add_option('--ncompare', type = 'int', default = 10, help = 'Used in random mode [10]')
 
+    parser.add_option('--mratio', type = 'float', default = 1, help = 'use grid search')
+
     args, _ = parser.parse_args(argv)
 
     exe = args.executable
@@ -2211,22 +2213,24 @@ def calculate_energyflux_HMparts(argv = None):
     if not prefix.exists():
         prefix.mkdir(parents = True)
     mtotal_base = 40
-    s1zList = np.random.uniform(args.min_spin1z, args.max_spin1z, args.ncompare)
-    s2zList = np.random.uniform(args.min_spin2z, args.max_spin2z, args.ncompare)
-    qList = np.random.uniform(args.min_mratio, args.max_mratio, args.ncompare)
+    # s1zList = np.random.uniform(args.min_spin1z, args.max_spin1z, args.ncompare)
+    # s2zList = np.random.uniform(args.min_spin2z, args.max_spin2z, args.ncompare)
+    # qList = np.random.uniform(args.min_mratio, args.max_mratio, args.ncompare)
+    s1zList = np.array([-0.9, -0.4, 0.0, 0.4, 0.9])
+    s2zList = s1zList.copy()
     eccList = np.linspace(args.min_ecc, args.max_ecc, args.num_ecc)
     np.savetxt(prefix / 'ecc.dat', eccList)
     ge = Generator(approx = approx, executable = exe, verbose = args.verbose)
-    for i in range(args.ncompare):
-        q = qList[i]
-        s1z = s1zList[i]
-        s2z = s2zList[i]
+    for s1z, s2z in product(s1zList, s2zList):
+        q = max(1, args.mratio)
+        # s1z = s1zList[i]
+        # s2z = s2zList[i]
         m1 = mtotal_base * q / (1+q)
         m2 = mtotal_base / (1+q)
         srate = 16384
 
         fini = args.fini * dim_t(m1 + m2)
-        fsave = prefix / f'results_{i}.h5'
+        fsave = prefix / f'results_q{q}.h5'
 
         #===========================================================================
         # Create a HDF5 file.

@@ -2170,3 +2170,117 @@ def mode_compare_ecc(argv = None):
                         mode = args.ymode)     
     return
 
+def calculate_energyflux_HMparts(argv = None):
+    from .SXS import save_namecol, add_csv, ModeC_alignment
+    from .generator import self_adaptivor
+    import h5py
+
+    parser = OptionParser(description='Waveform Comparation With SXS')
+
+    parser.add_option('--executable', type = 'str', default = DEFAULT_EXEV5, help = 'Exe command')
+    parser.add_option('--approx', type = 'str', default = 'SEOBNREv5', help = 'Version of the code')
+ 
+    parser.add_option('--prefix', type = 'str', default = '.', help = 'dir for results saving.')
+    parser.add_option('--jobtag', type = 'str', default = '_lnprob', help = 'jobtag.')
+    parser.add_option('--fini', type = 'float', default = 0.002, help = 'Initial orbit frequency')
+
+    parser.add_option('--timeout', type = 'int', default = 3600, help = 'Time limit for waveform generation')
+
+    parser.add_option('--num-ecc', type = 'int', default = 30, help = 'numbers for grid search')
+    parser.add_option('--max-ecc', type = 'float', default = 0.0, help = 'Upper bound of parameter')
+    parser.add_option('--min-ecc', type = 'float', default = 0.8, help = 'Lower bound of parameter')
+
+    parser.add_option('--min-mratio', type = 'float', default = 1, help = 'Used in random mode [1]')
+    parser.add_option('--max-mratio', type = 'float', default = 9, help = 'Used in random mode [9]')
+    parser.add_option('--min-spin1z', type = 'float', default = -0.99,  help = 'Used in random mode')
+    parser.add_option('--max-spin1z', type = 'float', default = 0.99, help = 'Used in random mode')
+    parser.add_option('--min-spin2z', type = 'float', default = -0.99, help = 'Used in random mode')
+    parser.add_option('--max-spin2z', type = 'float', default = 0.99, help = 'Used in random mode')
+
+    parser.add_option('--seed', type = 'int', help = 'random seed')
+    parser.add_option('--ncompare', type = 'int', default = 10, help = 'Used in random mode [10]')
+
+    args, _ = parser.parse_args(argv)
+
+    exe = args.executable
+    approx = args.approx
+    jobtag = args.jobtag
+
+    prefix = Path(args.prefix)
+    if not prefix.exists():
+        prefix.mkdir(parents = True)
+    mtotal_base = 40
+    s1zList = np.random.uniform(args.min_spin1z, args.max_spin1z, args.ncompare)
+    s2zList = np.random.uniform(args.min_spin2z, args.max_spin2z, args.ncompare)
+    qList = np.random.uniform(args.min_mratio, args.max_mratio, args.ncompare)
+    eccList = np.linspace(args.min_ecc, args.max_ecc, args.num_ecc)
+    np.savetxt(prefix / 'ecc.dat', eccList)
+    ge = Generator(approx = approx, executable = exe, verbose = args.verbose)
+    for i in range(args.ncompare):
+        q = qList[i]
+        s1z = s1zList[i]
+        s2z = s2zList[i]
+        m1 = mtotal_base * q / (1+q)
+        m2 = mtotal_base / (1+q)
+        srate = 16384
+
+        fini = args.fini * dim_t(m1 + m2)
+        fsave = prefix / f'results.h5'
+
+        #===========================================================================
+        # Create a HDF5 file.
+        f = h5py.File(str(fsave), "w")    # mode = {'w', 'r', 'a'}
+        h5g_params = f.create_group("params")
+        h5g_params['m1'] = m1
+        h5g_params['m2'] = m2
+        h5g_params['spin1z'] = s1z
+        h5g_params['spin2z'] = s2z
+        h5g_params['fini'] = fini
+        h5g_params['srate'] = srate
+        f.close()
+        for j, ecc in enumerate(eccList):
+            ret1 = ge(m1 = m1, m2 = m2, s1z = s1z, s2z = s2z, D = 100, 
+                    ecc = ecc, srate = srate, f_ini = fini, L = 2, M = 2,
+                    timeout = 3600, jobtag = jobtag, mode = -1)
+            if isinstance(ret1, CEV):
+                continue
+            t, h22r, h22i, h21r, h21i, h33r, h33i, h44r, h44i = \
+                ret1[:,0], ret1[:,1], ret1[:,2], ret1[:,3], ret1[:,4], ret1[:,5], ret1[:,6], ret1[:,7], ret1[:,8]
+            EOBModes = waveform_mode_collector(0)
+            EOBModes.append_mode(t, h22r, h22i, 2, 2)
+            EOBModes.append_mode(t, h22r, -h22i, 2, -2)
+            EOBModes.append_mode(t, h21r, h21i, 2, 1)
+            EOBModes.append_mode(t, h21r, -h21i, 2, -1)
+            EOBModes.append_mode(t, h33r, h33i, 3, 3)
+            EOBModes.append_mode(t, -h33r, h33i, 3, -3)
+            EOBModes.append_mode(t, h44r, h44i, 4, 4)
+            lenData = len(EOBModes.time)
+            f = h5py.File(str(fsave), "a")    # mode = {'w', 'r', 'a'}
+            h5g_ej = f.create_group(f"ecc_{j}")
+            h5g_ej['ecc'] = ecc
+            dTime = h5g_ej.create_dataset("time", (lenData,), 'float')
+            dTime[...] = EOBModes.time
+
+            gradt = np.gradient(EOBModes.time)
+            h22 = EOBModes.get_mode(2,2)
+            h21 = EOBModes.get_mode(2,1)
+            h33 = EOBModes.get_mode(3,3)
+            h44 = EOBModes.get_mode(4,4)
+
+            h22_absCum = np.cumsum(np.power(np.abs(h22.dot), 2) * gradt) / 8 / np.pi
+            h21_absCum = np.cumsum(np.power(np.abs(h21.dot), 2) * gradt) / 8 / np.pi
+            h33_absCum = np.cumsum(np.power(np.abs(h33.dot), 2) * gradt) / 8 / np.pi
+            h44_absCum = np.cumsum(np.power(np.abs(h44.dot), 2) * gradt) / 8 / np.pi
+            EnergyFluxCum = h22_absCum + h21_absCum + h33_absCum + h44_absCum
+
+            dh21FluxCum = h5g_ej.create_dataset("h21FluxCum", (lenData,), 'float')
+            dh21FluxCum[...] = h21_absCum
+            dh22FluxCum = h5g_ej.create_dataset("h21FluxCum", (lenData,), 'float')
+            dh22FluxCum[...] = h22_absCum
+            dh33FluxCum = h5g_ej.create_dataset("h21FluxCum", (lenData,), 'float')
+            dh33FluxCum[...] = h33_absCum
+            dh44FluxCum = h5g_ej.create_dataset("h21FluxCum", (lenData,), 'float')
+            dh44FluxCum[...] = h44_absCum
+            dEnergyFluxCum = h5g_ej.create_dataset("EnergyFluxCum", (lenData,), 'float')
+            dEnergyFluxCum[...] = EnergyFluxCum
+            f.close()

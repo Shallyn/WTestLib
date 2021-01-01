@@ -2280,11 +2280,11 @@ def calculate_energyflux_HMparts(argv = None):
 
             dh21FluxCum = h5g_ej.create_dataset("h21FluxCum", (lenData,), 'float')
             dh21FluxCum[...] = h21_absCum
-            dh22FluxCum = h5g_ej.create_dataset("h21FluxCum", (lenData,), 'float')
+            dh22FluxCum = h5g_ej.create_dataset("h22FluxCum", (lenData,), 'float')
             dh22FluxCum[...] = h22_absCum
-            dh33FluxCum = h5g_ej.create_dataset("h21FluxCum", (lenData,), 'float')
+            dh33FluxCum = h5g_ej.create_dataset("h33FluxCum", (lenData,), 'float')
             dh33FluxCum[...] = h33_absCum
-            dh44FluxCum = h5g_ej.create_dataset("h21FluxCum", (lenData,), 'float')
+            dh44FluxCum = h5g_ej.create_dataset("h44FluxCum", (lenData,), 'float')
             dh44FluxCum[...] = h44_absCum
             dEnergyFluxCum = h5g_ej.create_dataset("EnergyFluxCum", (lenData,), 'float')
             dEnergyFluxCum[...] = EnergyFluxCum

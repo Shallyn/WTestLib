@@ -2188,8 +2188,8 @@ def calculate_energyflux_HMparts(argv = None):
     parser.add_option('--timeout', type = 'int', default = 3600, help = 'Time limit for waveform generation')
 
     parser.add_option('--num-ecc', type = 'int', default = 30, help = 'numbers for grid search')
-    parser.add_option('--max-ecc', type = 'float', default = 0.0, help = 'Upper bound of parameter')
-    parser.add_option('--min-ecc', type = 'float', default = 0.8, help = 'Lower bound of parameter')
+    parser.add_option('--max-ecc', type = 'float', default = 0.7, help = 'Upper bound of parameter')
+    parser.add_option('--min-ecc', type = 'float', default = 0.0, help = 'Lower bound of parameter')
 
     parser.add_option('--min-mratio', type = 'float', default = 1, help = 'Used in random mode [1]')
     parser.add_option('--max-mratio', type = 'float', default = 9, help = 'Used in random mode [9]')

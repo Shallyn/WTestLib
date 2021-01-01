@@ -2179,7 +2179,8 @@ def calculate_energyflux_HMparts(argv = None):
 
     parser.add_option('--executable', type = 'str', default = DEFAULT_EXEV5, help = 'Exe command')
     parser.add_option('--approx', type = 'str', default = 'SEOBNREv5', help = 'Version of the code')
- 
+    parser.add_option('--verbose', action = 'store_true', help = 'If added, will print verbose message.')
+
     parser.add_option('--prefix', type = 'str', default = '.', help = 'dir for results saving.')
     parser.add_option('--jobtag', type = 'str', default = '_lnprob', help = 'jobtag.')
     parser.add_option('--fini', type = 'float', default = 0.002, help = 'Initial orbit frequency')

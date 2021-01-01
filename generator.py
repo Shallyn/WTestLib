@@ -827,9 +827,9 @@ class CompGenerator(object):
         mtotal_max = np.max(mtotal_list)
         m1 = mtotal_base * q / (1 + q)
         m2 = mtotal_base / (1 + q)
-        f_ini_dim = f_ini * dim_t(mtotal_max)
+        f_ini_dim = f_ini * dim_t(mtotal_base)
         if use_fcut is not None:
-            f_ini_dim = use_fcut
+            f_ini_dim = use_fcut * dim_t(mtotal_base)
         # f_ini_dim = 25
         data = self._get_wf1(m1 = m1, m2 = m2, s1z = s1z, s2z = s2z, 
                              D = D, ecc = ecc, srate = srate, f_ini = f_ini_dim, 

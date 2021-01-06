@@ -744,7 +744,7 @@ class CompGenerator(object):
                 ans = np.ones(len(ecc))
             else:
                 for j, e0 in enumerate(ecc):
-                    ans[j] = self._core_calcFF(q[i], mtotal_list, 
+                    ans[j] = self.core_calcFF(q[i], mtotal_list, 
                                             s1Vec[2], s2Vec[2], e0,
                                             D, f_ini, 
                                             srate, timeout, jobtag, mode = mode, 
@@ -825,7 +825,7 @@ class CompGenerator(object):
             if (mode % 10) % 2 and q[i] == 1 and s1Vec[0] ==  s2Vec[0] and s1Vec[1] ==  s2Vec[1] and s1Vec[2] ==  s2Vec[2]:
                 ans = 1.
             else:
-                ans = self._core_calcFF(q[i], mtotal_list, 
+                ans = self.core_calcFF(q[i], mtotal_list, 
                                         s1Vec[2], s2Vec[2], ecc[i],
                                         D, f_ini, 
                                         srate, timeout, jobtag, mode = mode, 
@@ -840,7 +840,7 @@ class CompGenerator(object):
         return
         
     
-    def _core_calcFF(self, q, mtotal_list, s1z, s2z, ecc,
+    def core_calcFF(self, q, mtotal_list, s1z, s2z, ecc,
                      D, f_ini, srate, timeout, jobtag, use_fcut = None, 
                      **kwargs):
         mtotal_base = 40

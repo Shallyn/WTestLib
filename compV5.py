@@ -2033,6 +2033,9 @@ def mode_compare(argv = None):
     parser.add_option('--seed', type = 'int', help = 'random seed')
     parser.add_option('--ncompare', type = 'int', default = 10, help = 'Used in random mode [10]')
 
+    parser.add_option('--mratio', type = 'float', default = 1.0, help = 'specific pms')
+    parser.add_option('--spin1z', type = 'float', default = 0.0, help = 'specific pms')
+    parser.add_option('--spin2z', type = 'float', default = 0.0, help = 'specific pms')
 
     args, _empty = parser.parse_args(argv)
     approx1 = args.approx1
@@ -2078,17 +2081,28 @@ def mode_compare(argv = None):
         seed = int(pyt.time()%10000)
     np.random.seed(seed)
     Comp = CompGenerator(approx1, exe1, approx2, exe2, psd = psd, verbose = verbose)
-    Comp.compare_random(args.min_mratio, args.max_mratio, 
-                        args.min_spin1z, args.max_spin1z, 
-                        args.min_spin2z, args.max_spin2z, 
-                        args.min_ecc, args.max_ecc, fsave,
-                        Num = args.ncompare, 
-                        Mtotal = Mtotal, 
-                        min_Mtotal = args.min_mtotal, max_Mtotal = args.max_mtotal,
-                        D = D, f_ini = f_ini, 
-                        srate = srate, jobtag = jobtag, timeout = timeout,
-                        mode = args.ymode, 
-                        use_prec = args.prec, use_fcut = args.f_cut)     
+    if args.ncompare > 1:
+        Comp.compare_random(args.min_mratio, args.max_mratio, 
+                            args.min_spin1z, args.max_spin1z, 
+                            args.min_spin2z, args.max_spin2z, 
+                            args.min_ecc, args.max_ecc, fsave,
+                            Num = args.ncompare, 
+                            Mtotal = Mtotal, 
+                            min_Mtotal = args.min_mtotal, max_Mtotal = args.max_mtotal,
+                            D = D, f_ini = f_ini, 
+                            srate = srate, jobtag = jobtag, timeout = timeout,
+                            mode = args.ymode, 
+                            use_prec = args.prec, use_fcut = args.f_cut)     
+    else:
+        eccList = args.ecc
+        if len(eccList) == 0:
+            eccList = [0.0]
+        mtotal_list = np.linspace(min_Mtotal, max_Mtotal, 30)
+        for ecc in eccList:
+            ret = Comp.core_calcFF(args.mratio, mtotal_list, 
+                        args.spin1z, args.spin2z, ecc,
+                        D, f_ini, srate, timeout, jobtag, use_fcut = None)
+            sys.stderr.write(f'PMS: q = {args.mratio}, s1z = {args.spin1z}, s2z = {args.spin2z} ecc = {ecc}\n\t FF = {ret}\n\n')
     return 0
 
 def mode_compare_ecc(argv = None):
@@ -2125,7 +2139,7 @@ def mode_compare_ecc(argv = None):
     parser.add_option('--max-mtotal', type = 'float', help = 'Max total mass of the binary system')
     parser.add_option('--seed', type = 'int', help = 'random seed')
     parser.add_option('--ncompare', type = 'int', default = 10, help = 'Used in random mode [10]')
-
+    
     args, _empty = parser.parse_args(argv)
     approx1 = args.approx1
     approx2 = args.approx2

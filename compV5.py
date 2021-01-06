@@ -2097,7 +2097,7 @@ def mode_compare(argv = None):
         eccList = args.ecc
         if len(eccList) == 0:
             eccList = [0.0]
-        mtotal_list = np.linspace(min_Mtotal, max_Mtotal, 30)
+        mtotal_list = np.linspace(args.min_mtotal, args.max_mtotal, 30)
         for ecc in eccList:
             ret = Comp.core_calcFF(args.mratio, mtotal_list, 
                         args.spin1z, args.spin2z, ecc,

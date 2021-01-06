@@ -155,7 +155,7 @@ def CMD_SEOBNRP(exe,
             --sample-rate={srate} \
             --f-min={f_ini} --inclination=0 \
             --spin1x={s1x} --spin2x={s2x} \
-            --spin1y={s1y} --spin2y={s2y} version={version}'
+            --spin1y={s1y} --spin2y={s2y} --version={version}'
     if 'only22' in kwargs:
         CMD = CMD + ' --only22'
     return CMD

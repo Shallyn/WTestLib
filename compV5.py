@@ -1364,7 +1364,7 @@ def Compare_ecc_HM(argv = None):
                             Vcosi = min(vec[2] / vecR, 1)
                             Vcosi = max(Vcosi, -1)
                             Viota = np.arccos(Vcosi)
-                            Vphi = np.arctan2(vec[1], vecR)
+                            Vphi = np.arctan2(vec[1], vec[0])
                             kappa = 0
                             FF, _ = calculate_Max_FF_HM_fit(EOBModes_C, NRModes_C, Mtotal_input = Mtotal, iota_input = Viota, phic_input = None, kappa = kappa, phin = Vphi)
                             sys.stderr.write(f'Mtotal = {Mtotal}, iota = {Viota/np.pi} pi, phiX = {Vphi/np.pi} pi, FF = {FF}\n')
@@ -1387,7 +1387,7 @@ def Compare_ecc_HM(argv = None):
                                 Vcosi = min(vec[2] / vecR, 1)
                                 Vcosi = max(Vcosi, -1)
                                 Viota = np.arccos(Vcosi)
-                                Vphi = np.arctan2(vec[1], vecR)
+                                Vphi = np.arctan2(vec[1], vec[0])
                                 proc = mp.Process(target=calculate_Max_FF_HM_fit, 
                                     args=(EOBModes_C, NRModes_C, Mtotal, Viota, None, 0, 0, Vphi, mp_q))
                                 jobs.append(proc)
@@ -2219,7 +2219,6 @@ def calculate_energyflux_HMparts(argv = None):
     s1zList = np.array([-0.9, -0.4, 0.0, 0.4, 0.9])
     s2zList = s1zList.copy()
     eccList = np.linspace(args.min_ecc, args.max_ecc, args.num_ecc)
-    np.savetxt(prefix / 'ecc.dat', eccList)
     ge = Generator(approx = approx, executable = exe, verbose = args.verbose)
     ind = 0
     for s1z, s2z in product(s1zList, s2zList):
@@ -2232,7 +2231,7 @@ def calculate_energyflux_HMparts(argv = None):
         srate = 16384
 
         fini = args.fini * dim_t(m1 + m2)
-        fsave = prefix / f'results_id_{ind}.h5'
+        fsave = prefix / f'results_{jobtag}_{ind}.h5'
 
         #===========================================================================
         # Create a HDF5 file.
@@ -2244,6 +2243,8 @@ def calculate_energyflux_HMparts(argv = None):
         h5g_params['spin2z'] = s2z
         h5g_params['fini'] = fini
         h5g_params['srate'] = srate
+        dEccList = h5g_params.create_dataset("eccentricities", (len(eccList), ), 'float')
+        dEccList[...] = eccList
         f.close()
         for j, ecc in enumerate(eccList):
             ret1 = ge(m1 = m1, m2 = m2, s1z = s1z, s2z = s2z, D = 100, 

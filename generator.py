@@ -225,20 +225,27 @@ def CMD_SEOBNREv5(exe,
 
 # Classifier
 class Generator(object):
-    def __init__(self, approx, executable, verbose = False):
+    def __init__(self, approx, executable, verbose = False, diy = None):
         self._approx = approx
         self._exe = executable
         # Get self._CMD i.e. waveform generator
         if verbose:
             sys.stderr.write(f'{LOG}:Parsing approx...')
-        self._choose_CMD()
+        self._choose_CMD(diy)
         if verbose:
             sys.stderr.write('Done\n')
         self._verbose = verbose
     
-    def _choose_CMD(self):
+    def _choose_CMD(self, diy = None):
         self._HM = False
         for case in switch(self._approx):
+            if case('diy'):
+                if diy is None:
+                    raise Exception('no diy dict')
+                self._CMD = diy['CMD']
+                self._pretreat = diy['pretreat']
+                self._allow_ecc = diy['allow_ecc']
+                break
             if case('EOBNRv1') or \
                 case('EOBNRv4') or \
                 case('SEOBNRv1') or \

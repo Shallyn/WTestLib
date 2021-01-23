@@ -1791,7 +1791,7 @@ def SEOBHyperCoefficients_v4(eta, a):
 
 from .h22datatype import G_SI, c_SI, MRSUN_SI, MTSUN_SI, M_Sun_SI
 def T2Timing_0PNCoeff(M, eta):
-    return -5 * M * G_SI / np.power(c_SI, 3) / 256 / eta
+    return -5 /dim_t(M/M_Sun_SI)/ 256 / eta
 
 def T2Timing_2PNCoeff(eta):
     return 7.43/2.52 + 11./3. * eta
@@ -1800,15 +1800,19 @@ def T2Timing_4PNCoeff(eta):
     return 30.58673/5.08032 + 54.29/5.04*eta + 61.7/7.2*eta*eta
 
 def getChirpTimeBound(fmin, m1SI, m2SI, chi1, chi2):
+    m1 = m1SI / M_Sun_SI
+    m2 = m2SI / M_Sun_SI
     M = m1SI + m2SI
-    mu = m1SI*m2SI/M
-    eta = mu / M
+    mu = m1*m2/(m1+m2)
+    eta = mu / (m1 + m2)
     chi = np.abs(chi1) if np.abs(chi1) > np.abs(chi2) else np.abs(chi2)
     c0 = np.abs(T2Timing_0PNCoeff(M, eta))
     c2 = T2Timing_2PNCoeff(eta)
     c3 = (226/15) * chi
     c4 = T2Timing_4PNCoeff(eta)
     v = np.cbrt(np.pi * G_SI * M * fmin) / c_SI
+    print(c0)
+    print(v)
     return c0 * np.power(v,-8) * (1 + (c2 + (c3+c4*v)*v)*v*v)
 
 def getFinalBlackHoleSpinBound(chi1, chi2):

@@ -26,7 +26,8 @@ det_GP_SI = 27.12825 * np.pi / 180 # Direction Of Galactic Polar
 l_CP_SI = 122.932
 G_SI = 6.672e-11 # Gravitational Constant [m^3 s^-2 kg^-1]
 h_0_SI = 0.678 # Hubble Constant
-
+MRSUN_SI = 1.47662504e3 
+MTSUN_SI = 4.92549095e-6 
 #---------Comm--------#
 def dim_t(M):
     return c_SI**3 / ( M * M_Sun_SI * G_SI)

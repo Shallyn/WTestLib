@@ -1788,3 +1788,61 @@ def SEOBHyperCoefficients_v4(eta, a):
         coeff31DT * eta3 * chi + coeff32DT * eta3 * chi2 + coeff33DT * eta3 * chi3
     return KK, dSO, dSS, dtPeak
 
+
+from .h22datatype import G_SI, c_SI, MRSUN_SI, MTSUN_SI, M_Sun_SI
+def T2Timing_0PNCoeff(M, eta):
+    return -5 * M * G_SI / np.power(c_SI, 3) / 256 / eta
+
+def T2Timing_2PNCoeff(eta):
+    return 7.43/2.52 + 11./3. * eta
+
+def T2Timing_4PNCoeff(eta):
+    return 30.58673/5.08032 + 54.29/5.04*eta + 61.7/7.2*eta*eta
+
+def getChirpTimeBound(fmin, m1SI, m2SI, chi1, chi2):
+    M = m1SI + m2SI
+    mu = m1SI*m2SI/M
+    eta = mu / M
+    chi = np.abs(chi1) if np.abs(chi1) > np.abs(chi2) else np.abs(chi2)
+    c0 = np.abs(T2Timing_0PNCoeff(M, eta))
+    c2 = T2Timing_2PNCoeff(eta)
+    c3 = (226/15) * chi
+    c4 = T2Timing_4PNCoeff(eta)
+    v = np.cbrt(np.pi * G_SI * M * fmin) / c_SI
+    return c0 * np.power(v,-8) * (1 + (c2 + (c3+c4*v)*v)*v*v)
+
+def getFinalBlackHoleSpinBound(chi1, chi2):
+    s = 0.686 + 0.15 * (chi1 + chi2)
+    if s < abs(chi1):
+        s = abs(chi1)
+    if s < abs(chi2):
+        s = abs(chi2)
+    if (s > 0.998):
+        s = 0.998
+    return s
+
+def getMergeTimeBound(m1SI, m2SI):
+    norbits = 1
+    M = m1SI + m2SI
+    r = 9.0 * M * MRSUN_SI / M_Sun_SI
+    v = c_SI / 3.0
+    return norbits*(2.*np.pi*r/v)
+
+def getRingdownTimeBound(M, s):
+    nefolds = 11
+    f1 = +1.5251
+    f2 = -1.1568
+    f3 = +0.1292
+    q1 = +0.7000
+    q2 = +1.4187
+    q3 = -0.4990
+    omega = (f1 + f2 * np.power(1.0 - s, f3)) / (M * MTSUN_SI / M_Sun_SI)
+    Q = q1 + q2 * np.power(1.0 - s, q3)
+    tau = 2.0 * Q/omega
+    return nefolds * tau
+
+def EstimateChirpLen(m1SI, m2SI, chi1, chi2, fmin, extra_cycles=3):
+    tchirp = getChirpTimeBound(fmin, m1SI, m2SI, chi1, chi2)
+    s = getFinalBlackHoleSpinBound(chi1, chi2)
+    tmerge = getMergeTimeBound(m1SI, m2SI) + getRingdownTimeBound(m1SI + m2SI, s)
+    return tchirp + tmerge

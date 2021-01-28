@@ -1811,8 +1811,6 @@ def getChirpTimeBound(fmin, m1SI, m2SI, chi1, chi2):
     c3 = (226/15) * chi
     c4 = T2Timing_4PNCoeff(eta)
     v = np.cbrt(np.pi * G_SI * M * fmin) / c_SI
-    print(c0)
-    print(v)
     return c0 * np.power(v,-8) * (1 + (c2 + (c3+c4*v)*v)*v*v)
 
 def getFinalBlackHoleSpinBound(chi1, chi2):

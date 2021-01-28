@@ -987,7 +987,7 @@ def Compare_ecc_HM(argv = None):
     parser.add_option('--num-ecc', type = 'int', default = 50, help = 'numbers for grid search')
     parser.add_option('--max-ecc', type = 'float', help = 'Upper bound of parameter')
     parser.add_option('--min-ecc', type = 'float', help = 'Lower bound of parameter')
-
+    parser.add_option('--mtotal-base', type = 'float', default = 1, help = 'base mtotal for wf generation')
     parser.add_option('--num-mtotal', type = 'int', default = 10, help = 'numbers for grid search')
     parser.add_option('--max-mtotal', type = 'float', default = 200, help = 'Upper bound of parameter')
     parser.add_option('--min-mtotal', type = 'float', default = 20, help = 'Lower bound of parameter')
@@ -1066,8 +1066,8 @@ def Compare_ecc_HM(argv = None):
         NRModetime = np.arange(h22.time[0], h22.time[-1], deltaT)
         NRModes = NR.mode_resample(NRModetime)
 
-        m1 = NR.mQ1
-        m2 = NR.mQ2
+        m1 = NR.mQ1 * args.mtotal_base
+        m2 = NR.mQ2 * args.mtotal_base
         s1z = NR.s1z
         s2z = NR.s2z
         sys.stderr.write(f'q = {m1/m2}, chiA = {(s1z-s2z)/2}\n')

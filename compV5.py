@@ -1140,8 +1140,36 @@ def Compare_ecc_HM(argv = None):
             if np.isnan(best):
                 return -np.inf
             return best
+        
+        def estimate_fini(fini_input, Mtotal = None):
+            ret = ge(m1 = m1, m2 = m2, s1z = s1z, s2z = s2z, D = 100, 
+                    ecc = 0.0, srate = srate, f_ini = fini_input, L = 2, M = 2,
+                    timeout = 3600, jobtag = jobtag, mode = 22)
+            if isinstance(ret, CEV):
+                return -np.inf
+            t, h22r, h22i = ret[:,0], ret[:,1], ret[:,2]
+            h22EOB = ModeBase(t, h22r, h22i)
+            h22NR = NRModes.get_mode(2, 2)
+            MtotalList_ini = (20, 40, 70, 100, 130, 160, 190)
+            if Mtotal is not None:
+                MtotalList_ini = Mtotal
+            FFL, _, tcL = calculate_ModeFF(h22EOB, h22NR, Mtotal = MtotalList_ini, psd = psd)
+            lnp = -np.power((1-FFL)/0.01, 2) - np.power(tcL/5, 2)
+            if args.verbose:
+                sys.stderr.write(f'fini = {fini_input}: lnp = {lnp}\n')
+            best = np.min(lnp)
+            if np.isnan(best):
+                return -np.inf
+            return best
+
         if CIRC:
             ecc_fit = 0.0
+            if NR.is_prec:
+                fini_range = (fini*0.75, fini*1.25)
+                MG = MultiGrid1D(estimate_fini, fini_range, 20)
+                data = MG.run(None, eps = eps, magnification = mag, filter_thresh = filter_thresh, maxiter = max_step)
+                fini_grid, lnp_grid = data[:,0], data[:,1]
+                fini = fini_grid[np.argmax(lnp_grid)]
         elif args.ecc is None:
             MG = MultiGrid1D(estimate_ecc, ecc_range, num_ecc)
             data = MG.run(fsave = None, eps = eps, magnification = mag, filter_thresh = filter_thresh, maxiter = max_step)

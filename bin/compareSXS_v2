@@ -1,0 +1,21 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""
+Created on Sun, 28 Feb 2021 07:23:01 +0000
+
+@author: Shallyn
+"""
+import numpy as np
+import matplotlib.pyplot as plt
+import sys, os
+from pathlib import Path
+pwd = Path(__file__).absolute().parent
+
+sys.path.append(str(pwd.parent.parent))
+
+import re
+from WTestLib.compV5 import GridSearch_ecc
+
+if __name__ == '__main__':
+    sys.argv[0] = re.sub(r'(-script\.pyw?|\.exe)?$', '', sys.argv[0])
+    sys.exit(GridSearch_ecc())

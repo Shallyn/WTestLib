@@ -365,6 +365,25 @@ class Generator(object):
                 self._pretreat = _pretreat
                 self._allow_ecc = True
                 break
+            if case('SEOBNRPmodeV3'):
+                self._CMD = lambda m1, m2, s1z, s2z, D, ecc, srate, f_ini, L, M, **kwargs : \
+                    CMD_SEOBNRPmode(exe = self._exe,
+                                    m1 = m1,
+                                    m2 = m2,
+                                    s1z = s1z,
+                                    s2z = s2z,
+                                    ecc = ecc,
+                                    srate = srate,
+                                    f_ini = f_ini,
+                                    approx = self._approx,
+                                    version = 3,
+                                    **kwargs)
+                def _pretreat(t, hr, hi, r, M, **kwargs):
+                    t = t / dim_t(M)
+                    return t, hr, hi
+                self._pretreat = _pretreat
+                self._allow_ecc = True
+                break
             if case('SEOBNRPE'):
                 self._CMD = lambda m1, m2, s1z, s2z, D, ecc, srate, f_ini, L, M, **kwargs : \
                     CMD_SEOBNRPmode(exe = self._exe,

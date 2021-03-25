@@ -706,7 +706,7 @@ def GridSearch_ecc(argv = None):
                  21: (srcloc21, prefix_all / 'collect_21.csv', prefix_all / 'MtotalFF_21'),
                  33: (srcloc33, prefix_all / 'collect_33.csv', prefix_all / 'MtotalFF_33'),
                  44: (srcloc44, prefix_all / 'collect_44.csv', prefix_all / 'MtotalFF_44')}
-    collect_title = [['#SXSid', '#q', '#chi1', '#chi2', '#chiX', '#ecc', '#FF', '#lnp']]
+    collect_title = [['#SXSid', '#q', '#chi1x', '#chi1y', '#chi1z', '#chi2x', '#chi2y', '#chi2z', '#chiX', '#ecc', '#fini', '#FF', '#lnp']]
     for ymode in ymodeDict:
         _, fname_collect, prefixM = ymodeDict[ymode]
         if not fname_collect.exists():
@@ -990,7 +990,7 @@ def GridSearch_ecc(argv = None):
             Mtotal_list_out = Mtotal_list.reshape(1, length)
             data = np.concatenate((q_list, s1z_list, s2z_list, Mtotal_list_out, FF_list), axis = 0)
             add_csv(fresults, data.T.tolist())
-            add_csv(fname_collect, [[SXSnum, NR.q, NR.s1z, NR.s2z, NR.chiX, ecc, FF, lnp]])
+            add_csv(fname_collect, [[SXSnum, NR.q, NR.s1x, NR.s1y, NR.s1z, NR.s2x, NR.s2y, NR.s2z, NR.chiX, ecc, fini_use, FF, lnp]])
             with open(prefixM / 'mdebug.txt', 'a') as f:
                 f.write(mDebug)
     return 0

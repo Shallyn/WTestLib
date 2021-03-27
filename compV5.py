@@ -794,6 +794,10 @@ def GridSearch_ecc(argv = None):
                 ecc = oldecc
             else:
                 if ge.SXS.is_prec and fini_use is None:
+                    prefix = prefixSXS / f'mode_{ymode}'
+                    if not prefix.exists():
+                        prefix.mkdir(parents=True)
+                    fsave = str(prefix / f'grid_{SXSnum}.txt')
                     fini_range = (ge.SXS.f_ini*0.75, ge.SXS.f_ini*1.25)
                     MG = MultiGrid(get_lnprob_ecc_fini, ecc_range, fini_range, num_ecc, 20)
                     MG.run(fsave, eps = eps, magnification = mag, filter_thresh = filter_thresh, maxiter = max_step)

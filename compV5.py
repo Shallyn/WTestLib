@@ -713,13 +713,15 @@ def GridSearch_ecc(argv = None):
             save_namecol(fname_collect, collect_title)
         if not prefixM.exists():
             prefixM.mkdir(parents = True)
-    with open(prefixM / 'mdebug.txt', 'w') as f:
-        f.write('DEBUG MESSAGE\n')
     for SXSnum in SXSnum_list:
         sys.stderr.write(f'NOW SXS:BBH:{SXSnum}:\n\n')
         oldecc = None
         fini_use = None
         prefixSXS = prefix_all / SXSnum
+        if not prefixSXS.exists():
+            prefixSXS.mkdir(parents = True)
+        with open(prefixSXS / 'mdebug.txt', 'w') as f:
+            f.write('DEBUG MESSAGE\n')
         # if not prefixSXS.exists():
         #     prefixSXS.mkdir(parents=True)
         mDebug = f'SXS_BBH_{SXSnum}:\n'
@@ -801,6 +803,9 @@ def GridSearch_ecc(argv = None):
                     fini_use = fini_grid[np.argmax(lnp_grid)]
                     oldecc = ecc
                 elif not ge.SXS.is_prec:
+                    prefix = prefixSXS / f'mode_{ymode}'
+                    if not prefix.exists():
+                        prefix.mkdir(parents=True)
                     fsave = str(prefix / f'grid_{SXSnum}.txt')
                     if not prefix.exists():
                         prefix.mkdir(parents = True)
@@ -991,7 +996,7 @@ def GridSearch_ecc(argv = None):
             data = np.concatenate((q_list, s1z_list, s2z_list, Mtotal_list_out, FF_list), axis = 0)
             add_csv(fresults, data.T.tolist())
             add_csv(fname_collect, [[SXSnum, NR.q, NR.s1x, NR.s1y, NR.s1z, NR.s2x, NR.s2y, NR.s2z, NR.chiX, ecc, fini_use, FF, lnp]])
-            with open(prefixM / 'mdebug.txt', 'a') as f:
+            with open(prefixSXS / 'mdebug.txt', 'a') as f:
                 f.write(mDebug)
     return 0
 

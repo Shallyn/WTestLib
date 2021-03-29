@@ -630,6 +630,7 @@ def GridSearch_dt_noecc(argv = None):
     return 0
 
 #-----Recover EOB vs SXS-----#
+
 def GridSearch_ecc(argv = None):
     from .SXS import DEFAULT_TABLE
     from .SXS import DEFAULT_SRCLOC
@@ -1003,6 +1004,314 @@ def GridSearch_ecc(argv = None):
             with open(prefixSXS / 'mdebug.txt', 'a') as f:
                 f.write(mDebug)
     return 0
+
+def Fitting_EOB_vs_NR_HM(argv = None):
+    from .SXS import DEFAULT_TABLE
+    from .SXS import DEFAULT_SRCLOC
+    from .SXS import DEFAULT_SRCLOC_ALL
+    from .SXS import save_namecol, add_csv, ModeC_alignment
+    from .generator import self_adaptivor
+
+    parser = OptionParser(description='Waveform Comparation With SXS')
+
+    parser.add_option('--executable', type = 'str', default = DEFAULT_EXEV5, help = 'Exe command')
+    parser.add_option('--approx', type = 'str', default = 'SEOBNREv5', help = 'Version of the code')
+    parser.add_option('--fini', type = 'float', default = 0, help = 'Initial orbital frequency')
+    parser.add_option('--SXS', type = 'str', action = 'append', default = [], help = 'SXS template for comparision')
+    parser.add_option('--mtotal-base', type = 'float', default = 1, help = 'Total mass')
+    parser.add_option('--srate', type = 'float', default = 16384, help = 'Sample rate')
+ 
+    parser.add_option('--prefix', type = 'str', default = '.', help = 'dir for results saving.')
+    parser.add_option('--jobtag', type = 'str', default = '_lnprob', help = 'jobtag.')
+
+    parser.add_option('--psd', type = 'str', help = 'Detector psd.')
+    parser.add_option('--flow', type = 'float', default = 0, help = 'Lower frequency cut off for psd.')
+    parser.add_option('--timeout', type = 'int', default = 60, help = 'Time limit for waveform generation')
+
+    parser.add_option('--table', type = 'str', default = str(DEFAULT_TABLE), help = 'Path of SXS table.')
+    parser.add_option('--srcloc-all', type = 'str', default = str(DEFAULT_SRCLOC_ALL), help = 'Path of SXS waveform data all modes')
+
+    parser.add_option('--num-ecc', type = 'int', default = 50, help = 'numbers for grid search')
+    parser.add_option('--max-ecc', type = 'float', help = 'Upper bound of parameter')
+    parser.add_option('--min-ecc', type = 'float', help = 'Lower bound of parameter')
+    parser.add_option('--modeest-forecc', type = 'int', default = 22, help = 'mode for ecc estimation')
+
+    parser.add_option('--num-fini', type = 'int', default = 20, help = 'numbers for grid search')
+    parser.add_option('--max-finifac', type = 'float', default = 1.05, help = 'Upper bound of parameter')
+    parser.add_option('--min-finifac', type = 'float', default = 0.95, help = 'Lower bound of parameter')
+    parser.add_option('--modeest-forfini', type = 'int', default = 22, help = 'mode for fini estimation')
+
+    parser.add_option('--eps', type = 'float', default = 1e-6, help = 'Thresh of div')
+    parser.add_option('--mag', type = 'float', default = 10, help = 'Thresh of dx_init / dx (>1)')
+    parser.add_option('--filter-thresh', type = 'float', default = 0.4, help = 'Thresh of grid search (<1)')
+    parser.add_option('--max-step', type = 'int', default = 100, help = 'Max iter depth')
+    parser.add_option('--version', type = 'str', default = 'default', help = 'code version')
+    parser.add_option('--cutpct', type = 'float', default = 1.5, help = 'cut the NR waveform')
+    parser.add_option('--plot', action = 'store_true', help = 'code version')
+    parser.add_option('--plot-thresh', type = 'float', default = 1, help = 'plot when FF < ..')
+    args, _ = parser.parse_args(argv)
+
+    exe = args.executable
+    approx = args.approx
+    SXSnum_list = args.SXS
+    if len(SXSnum_list) == 0:
+        SXSnum_list.append('0001')
+    fini = args.fini
+    srate = args.srate
+    table = args.table
+    srcloc_all = args.srcloc_all
+    psd = DetectorPSD(args.psd, flow = args.flow)
+    eps = args.eps
+    mag = args.mag
+    filter_thresh = args.filter_thresh
+    max_step = args.max_step
+    cutpct = args.cutpct
+    jobtag = args.jobtag
+
+    prefix_all = Path(args.prefix)
+    mode_list = ((2,2), (2,1), (3,3), (4,4))
+    if not prefix_all.exists():
+        prefix_all.mkdir(parents=True)
+    collect_title = [['#SXSid', '#q', '#chi1x', '#chi1y', '#chi1z', '#chi2x', '#chi2y', '#chi2z', '#ecc', '#fini', '#minFF', '#maxFF', '#minlnp', '#maxlnp']]
+    for (modeL, modeM) in mode_list:
+        ymodeTag = int(10*modeL + modeM)
+        fname_collect = prefix_all / f'collect_{ymodeTag}'
+        save_namecol(fname_collect, collect_title)
+        prefixM = prefix_all / f'MtotalFF_{ymodeTag}'
+        if not prefixM.exists():
+            prefixM.mkdir(parents = True)
+
+    for ind, SXSnum in enumerate(SXSnum_list):
+        debugMessage = f'SXS:BBH:{SXSnum}\n'
+        prefix_SXS = prefix_all / SXSnum
+        NR = SXSAllMode(SXSnum, table = table, srcloc = srcloc_all, cutpct = cutpct)
+        h22 = NR.get_mode(2,2)
+        h21 = NR.get_mode(2,1)
+        h33 = NR.get_mode(3,3)
+        h44 = NR.get_mode(4,4)
+        # step 1 Estimate Ecc & fini
+        max_freq = max(h22.frequency.max(), h21.frequency.max(), h33.frequency.max(), h44.frequency.max())
+        deltaT = np.pi / max_freq
+        debugMessage += f'max_freq :\t{max_freq}'
+        NRModetime = np.arange(h22.time[0], h22.time[-1], deltaT)
+        NRModes = NR.mode_resample(NRModetime)
+        debugMessage += f'NRModeTime :\t{NRModetime}'
+        m1 = NR.mQ1 * args.mtotal_base
+        m2 = NR.mQ2 * args.mtotal_base
+        s1x = NR.s1x
+        s1y = NR.s1y
+        s1z = NR.s1z
+        s2x = NR.s2x
+        s2y = NR.s2y
+        s2z = NR.s2z
+        debugMessage += f'm1 :\t{m1}\nm2 :\t{m2}\nchi1 :\t({s1x},{s1y},{s1z})\nchi2 :\t({s2x},{s2y},{s2z})\n'
+        srate = dim_t(m1 + m2) / deltaT
+        debugMessage += f'fs :\t{srate}\n'
+        ge = Generator(approx = approx, executable = exe, verbose = args.verbose)
+        IS_CIRC = False
+        IS_PREC = NR.is_prec
+        f0, min_e, max_e = get_ecc_range(SXSnum, args.min_ecc, args.max_ecc)
+        if f0 is None:
+            f0 = NR.Sf_ini
+            IS_CIRC = True
+        debugMessage += f'IS_CIRC :\t{IS_CIRC}\nIS_PREC :\t{IS_PREC}\n'
+        fini = f0 * dim_t(m1 + m2)
+        debugMessage += f'preFreq[M] :\t{f0}\npreFreq[Hz] :\t{fini}\n'
+        max_ecc = max_e
+        min_ecc = min_e
+        ecc_range = (min_ecc, max_ecc)
+        num_ecc = args.num_ecc
+        num_fini = args.num_fini
+        mode_ecc_est = args.modeest_forecc
+        modeL_ecc_est = int(mode_ecc_est/10)
+        modeM_ecc_est = mode_ecc_est%10
+        max_finifac = args.max_finifac
+        min_finifac = args.min_finifac
+        mode_fini_est = args.modeest_forfini
+        modeL_fini_est = int(mode_fini_est/10)
+        modeM_fini_est = mode_fini_est%10
+
+        # Functions to Estimate initial eccentricity and frequency
+        def estimate_ecc(ecc, Mtotal = None):
+            ret = ge(m1 = m1, m2 = m2, s1x = s1x, s1y = s1y, s1z = s1z, 
+                    s2x = s2x, s2y = s2y, s2z = s2z, D = 100, 
+                    ecc = ecc, srate = srate, f_ini = fini, L = 2, M = 2,
+                    timeout = 3600, jobtag = jobtag, mode = mode_ecc_est)
+            if isinstance(ret, CEV):
+                return -np.inf
+            t, hr, hi = ret[:,0], ret[:,1], ret[:,2]
+            hEOB = ModeBase(t, hr, hi)
+            hNR = NRModes.get_mode(modeL_ecc_est, modeM_ecc_est)
+            MtotalList_ecc = (20, 40, 70, 100, 130, 160, 190)
+            if Mtotal is not None:
+                MtotalList_ecc = Mtotal
+            FFL, _, tcL = calculate_ModeFF(hEOB, hNR, Mtotal = MtotalList_ecc, psd = psd)
+            lnp = -np.power((1-FFL)/0.01, 2) - np.power(tcL/5, 2)
+            if args.verbose:
+                sys.stderr.write(f'ecc = {ecc}: lnp = {lnp}\n')
+            best = np.min(lnp)
+            if np.isnan(best):
+                return -np.inf
+            return best
+        
+        def estimate_fini(fini_input, Mtotal = None):
+            ret = ge(m1 = m1, m2 = m2, s1x = s1x, s1y = s1y, s1z = s1z, 
+                    s2x = s2x, s2y = s2y, s2z = s2z, D = 100, 
+                    ecc = 0.0, srate = srate, f_ini = fini_input, L = 2, M = 2,
+                    timeout = 3600, jobtag = jobtag, mode = mode_fini_est)
+            if isinstance(ret, CEV):
+                return -np.inf
+            t, hr, hi = ret[:,0], ret[:,1], ret[:,2]
+            hEOB = ModeBase(t, hr, hi)
+            hNR = NRModes.get_mode(modeL_fini_est, modeM_fini_est)
+            MtotalList_ini = (20, 40, 70, 100, 130, 160, 190)
+            if Mtotal is not None:
+                MtotalList_ini = Mtotal
+            FFL, _, tcL = calculate_ModeFF(hEOB, hNR, Mtotal = MtotalList_ini, psd = psd)
+            lnp = -np.power((1-FFL)/0.01, 2) - np.power(tcL/5, 2)
+            if args.verbose:
+                sys.stderr.write(f'fini = {fini_input}: lnp = {lnp}\n')
+            best = np.min(lnp)
+            if np.isnan(best):
+                return -np.inf
+            return best
+        
+        def estimate_ecc_fini(ecc, fini_input, Mtotal = None):
+            ret = ge(m1 = m1, m2 = m2, s1x = s1x, s1y = s1y, s1z = s1z, 
+                    s2x = s2x, s2y = s2y, s2z = s2z, D = 100, 
+                    ecc = ecc, srate = srate, f_ini = fini_input, L = 2, M = 2,
+                    timeout = 3600, jobtag = jobtag, mode = 22)
+            if isinstance(ret, CEV):
+                return -np.inf
+            t, hr, hi = ret[:,0], ret[:,1], ret[:,2]
+            hEOB = ModeBase(t, hr, hi)
+            hNR = NRModes.get_mode(2, 2)
+            MtotalList_ini = (20, 40, 70, 100, 130, 160, 190)
+            if Mtotal is not None:
+                MtotalList_ini = Mtotal
+            FFL, _, tcL = calculate_ModeFF(hEOB, hNR, Mtotal = MtotalList_ini, psd = psd)
+            lnp = -np.power((1-FFL)/0.01, 2) - np.power(tcL/5, 2)
+            if args.verbose:
+                sys.stderr.write(f'fini = {fini_input}: lnp = {lnp}\n')
+            best = np.min(lnp)
+            if np.isnan(best):
+                return -np.inf
+            return best
+
+        fini_use = fini
+        ecc_use = 0
+        if IS_CIRC and IS_PREC:
+            # precession circular orbits
+            fini_range = (fini*min_finifac, fini*max_finifac)
+            debugMessage += f'finiSearchRange :\t{fini_range}, {num_fini}\n'
+            MG = MultiGrid1D(estimate_fini, fini_range, num_fini)
+            data = MG.run(None, eps = eps, magnification = mag, filter_thresh = filter_thresh, maxiter = max_step)
+            fini_grid, lnp_grid = data[:,0], data[:,1]
+            fini_use = fini_grid[np.argmax(lnp_grid)]
+        elif not IS_CIRC and not IS_PREC:
+            # spin-aligned elliptical orbits
+            debugMessage += f'eccSearchRange :\t{ecc_range}, {num_ecc}\n'
+            MG = MultiGrid1D(estimate_ecc, ecc_range, num_ecc)
+            data = MG.run(None, eps = eps, magnification = mag, filter_thresh = filter_thresh, maxiter = max_step)
+            ecc_grid, lnp_grid = data[:,0], data[:,1]
+            ecc_use = ecc_grid[np.argmax(lnp_grid)]
+        elif not IS_CIRC and IS_PREC:
+            # precession elliptical orbits
+            fini_range = (fini*min_finifac, fini*max_finifac)
+            debugMessage += f'eccSearchRange :\t{ecc_range}, {num_ecc}\n'
+            debugMessage += f'finiSearchRange :\t{fini_range}, {num_fini}\n'
+            MG = MultiGrid(estimate_ecc_fini, ecc_range, fini_range, num_ecc, num_fini)
+            data = MG.run(None, eps = eps, magnification = mag, filter_thresh = filter_thresh, maxiter = max_step)
+            ecc_grid, fini_grid, lnp_grid = data[:,0], data[:,1], data[:,2]
+            ecc_use = ecc_grid[np.argmax(lnp_grid)]
+            fini_use = fini_grid[np.argmax(lnp_grid)]
+        CMD = ge.get_CMD(m1 = m1, m2 = m2, s1x = s1x, s1y = s1y, s1z = s1z, 
+                    s2x = s2x, s2y = s2y, s2z = s2z, D = 100, 
+                ecc = ecc_use, srate = srate, f_ini = fini_use, L = 2, M = 2,
+                timeout = 3600, jobtag = jobtag, mode = -1)
+        debugMessage += f'CM :\n\t{CMD}\n'
+        ret_f = ge(m1 = m1, m2 = m2, s1x = s1x, s1y = s1y, s1z = s1z, 
+                    s2x = s2x, s2y = s2y, s2z = s2z, D = 100, 
+                ecc = ecc_use, srate = srate, f_ini = fini_use, L = 2, M = 2,
+                timeout = 3600, jobtag = jobtag, mode = -1)
+        if isinstance(ret_f, CEV):
+            continue
+        t, h22r, h22i, h21r, h21i, h33r, h33i, h44r, h44i = \
+            ret_f[:,0], ret_f[:,1], ret_f[:,2], ret_f[:,3], ret_f[:,4], ret_f[:,5], ret_f[:,6], ret_f[:,7], ret_f[:,8]
+        EOBModes = waveform_mode_collector(0)
+        EOBModes.append_mode(t, h22r, h22i, 2, 2)
+        EOBModes.append_mode(t, h22r, -h22i, 2, -2)
+        EOBModes.append_mode(t, h21r, h21i, 2, 1)
+        EOBModes.append_mode(t, h21r, -h21i, 2, -1)
+        EOBModes.append_mode(t, h33r, h33i, 3, 3)
+        EOBModes.append_mode(t, -h33r, h33i, 3, -3)
+        EOBModes.append_mode(t, h44r, h44i, 4, 4)
+        EOBModes.append_mode(t, h44r, -h44i, 4, -4)
+        EOBModes_C, NRModes_C = ModeC_alignment(EOBModes, NRModes)
+        MtotalList = np.arange(20, 201, 1)
+        for (modeL, modeM) in mode_list:
+            if modeM % 2 and NR.zero_odd_mode:
+                continue
+            ymodeTag = int(10*modeL + modeM)
+            debugMessage += f'Mode {ymodeTag}\n'
+            hEOB = EOBModes_C.get_mode(modeL, modeM)
+            hNR = NRModes_C.get_mode(modeL, modeM)
+            FFlm, dflm, tclm = calculate_ModeFF(hEOB, hNR, Mtotal = MtotalList, psd = psd)
+            lnp = -np.power((1-FFlm)/0.01, 2) - np.power(tclm/5, 2)
+            maxFF = np.max(FFlm)
+            minFF = np.min(FFlm)
+            maxlnp = np.max(lnp)
+            minlnp = np.min(lnp)
+            tc_best = tclm[np.argmax(FFlm)]
+            phic_best = dflm[np.argmax(FFlm)]
+            debugMessage += f'\tFF :\t({minFF}, {maxFF})\nlnp :\t({minlnp}, {maxlnp})\n'
+            length = len(MtotalList)
+            data = np.concatenate((MtotalList.reshape(1, length), FFlm.reshape(1, length), lnp.reshape(1, length)), axis = 0)
+            fresults = prefix_all / f'MtotalFF_{ymodeTag}' / f'results_{SXSnum}.csv'
+            fname_collect = prefix_all / f'collect_{ymodeTag}.csv'
+            add_csv(fresults, data.T.tolist())
+            add_csv(fname_collect, [[SXSnum, NR.q, NR.s1x, NR.s1y, NR.s1z, NR.s2x, NR.s2y, NR.s2z, ecc_use, fini_use, minFF, maxFF, minlnp, maxlnp]])
+            if args.plot and minFF < args.plot_thresh:
+                fig = plt.figure(figsize = (14, 7))
+                ax1 = fig.add_subplot(211)
+                ax1.set_title(f'lnp={maxlnp},FF={maxFF}')
+                ax1.plot(hEOB.time, hEOB.amp, label = f'EOB_{ymodeTag}')
+                ax1.plot(hNR.time, hNR.amp, label = f'NR_{ymodeTag}')
+                ax1.legend()
+                ax1.grid()
+
+                ax3 = fig.add_subplot(212)
+                ax3.plot(hEOB.time, hEOB.phaseFrom0, label = f'EOB_{ymodeTag}')
+                ax3.plot(hNR.time, hNR.phaseFrom0, label = f'NR_{ymodeTag}')
+                ax3.legend()
+                ax3.grid()
+                plt.savefig(prefix_SXS / f'AmpPhase_{ymodeTag}.png', dpi = 200)
+                plt.close()
+
+                ipeak = hEOB.argpeak
+                h1 = hEOB.amp * np.exp(-1.j*(hEOB.phaseFrom0 - hEOB.phaseFrom0[ipeak]))
+                h2 = hNR.amp * np.exp(-1.j*(hNR.phaseFrom0 - hNR.phaseFrom0[ipeak]))
+                plt.figure(figsize = (14, 7))
+                plt.subplot(211)
+                plt.title(f'eta={NR.eta}, chi={NR.chiX}')
+                plt.plot(hEOB.time, h1.real, label = f'EOB_{ymodeTag}')
+                plt.plot(hNR.time, h2.real, label = f'NR_{ymodeTag}')
+                plt.legend()
+                plt.grid()
+                plt.subplot(212)
+                plt.title(f'chi1={NR.s1z}, chi2={NR.s2z}')
+                plt.plot(hEOB.time, h1.imag, label = f'EOB_{ymodeTag}')
+                plt.plot(hNR.time, h2.imag, label = f'NR_{ymodeTag}')
+                plt.legend()
+                plt.grid()
+                plt.savefig(prefix_SXS / f'RealImag_{ymodeTag}.png', dpi = 200)
+                plt.close()
+        with open(prefix_SXS / 'mdebug.txt', 'a') as f:
+            f.write(debugMessage)
+    return 0
+
+
+
 
 import scipy.optimize as op
 def Compare_ecc_HM(argv = None):

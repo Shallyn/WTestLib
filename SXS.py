@@ -104,6 +104,7 @@ def GET_PARAMS_FROM_TABLE(SXSnum, table):
 
 
 #------------------CLASS----------------#
+
 class SXSObject(object):
     def __init__(self, SXSnum, table, verbose = False):
         self._SXSnum = SXSnum
@@ -185,7 +186,17 @@ class SXSObject(object):
         if s1[0] != 0 or s1[1] != 0 or s2[0] !=0 or s2[1] != 0:
             return True
         return False
-
+    
+    @property
+    def zero_odd_mode(self):
+        q = self.q
+        s1 = self.chi1Vec
+        s2 = self.chi2Vec
+        J = s1+s2
+        if q==1 and s1[2] == s2[2] and J[0] == 0 and J[1] == 0:
+            return True
+        return False
+    
     @property
     def chiSVec(self):
         return 0.5*(self.chi1Vec + self.chi2Vec)

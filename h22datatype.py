@@ -295,7 +295,7 @@ def Mode_alignment(modeA, modeB, deltaT = None):
         wfA.pad((0,lpad), 'constant', dt_final)
     return wfA, wfB        
 
-def calculate_ModeFF(modeA, modeB, psd, Mtotal = 20, deltaT = None, retall = False):
+def calculate_ModeFF(modeA, modeB, psd, Mtotal = 20, deltaT = None, retall = False, retfull = False):
     modeA, modeB = Mode_alignment(modeA, modeB, deltaT = deltaT)
     Atilde = np.fft.fft(modeA.value)
     Btilde = np.fft.fft(modeB.value)
@@ -311,6 +311,8 @@ def calculate_ModeFF(modeA, modeB, psd, Mtotal = 20, deltaT = None, retall = Fal
         Ox = Atilde * Btilde.conjugate() / power_vec
         Oxt = np.fft.ifft(Ox) * NFFT * df
         Oxt_abs = np.abs(Oxt) / np.sqrt(O11 * O22)
+        if retfull:
+            return Oxt_abs
         idx = np.argmax(Oxt_abs)
         # should apply to ModeA by ModeA * np.exp(1.j*delta_phase)
         delta_phase = -np.angle(Oxt[idx])
@@ -325,6 +327,7 @@ def calculate_ModeFF(modeA, modeB, psd, Mtotal = 20, deltaT = None, retall = Fal
     FF_list = []
     d_phase_list = []
     tc_list = []
+    Oxt_list = []
     for mtotal in Mtotal:
         dt = dtM / dim_t(mtotal)
         df = 1./NFFT/dt
@@ -335,6 +338,7 @@ def calculate_ModeFF(modeA, modeB, psd, Mtotal = 20, deltaT = None, retall = Fal
         Ox = Atilde * Btilde.conjugate() / power_vec
         Oxt = np.fft.ifft(Ox) * NFFT * df
         Oxt_abs = np.abs(Oxt) / np.sqrt(O11 * O22)
+        Oxt_list.append(Oxt_abs.tolist())
         idx = np.argmax(Oxt_abs)
         # should apply to ModeA by ModeA * np.exp(1.j*delta_phase)
         delta_phase = -np.angle(Oxt[idx])
@@ -346,6 +350,8 @@ def calculate_ModeFF(modeA, modeB, psd, Mtotal = 20, deltaT = None, retall = Fal
         else:
             tc = idx * dtM
         tc_list.append(tc)
+    if retfull:
+        return np.array(Oxt_list)
     if retall:
         return np.asarray(FF_list), np.asarray(d_phase_list), np.asarray(tc_list), modeA, modeB
     return np.asarray(FF_list), np.asarray(d_phase_list), np.asarray(tc_list)

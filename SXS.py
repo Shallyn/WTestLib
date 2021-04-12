@@ -239,7 +239,10 @@ class SXSObject(object):
         chiA = self.chiAVec[-1]
         chiX = chiS + chiA * self.dm / (1-eta*2)
         return calculate_NRPeakParams(self.eta, chiX)
-    
+
+    def CalculateAdjParamsV4(self):
+        return SEOBHyperCoefficients_v4(self.eta, self.chiKerr[2])
+
     def save_info(self, fname):
         with open(fname,'w') as f:
             f.write(f'#q {self.q}\n')
@@ -630,8 +633,6 @@ class SXSparameters(SXSObject):
     def f_ini_dimless(self):
         return self.f_ini / dim_t(self.m1 + self.m2)
 
-    def CalculateAdjParamsV4(self):
-        return SEOBHyperCoefficients_v4(self.eta, self.chiKerr[2])
 
 
 class SXSh22(SXSparameters, h22base):

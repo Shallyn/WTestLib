@@ -355,7 +355,7 @@ def getMCFlikelihood(argv):
 
         else:
             pms_init = pms0
-            # K, dSO, dSS
+            # K, dSO, dSS, dtPeak
             def get_lnprob(pms):
                 if pms[0] < min_k or pms[0] > max_k or \
                     pms[1] < min_dso or pms[1] > max_dso or \

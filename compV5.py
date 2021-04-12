@@ -1985,6 +1985,209 @@ def GridSearch_KK_dtpeak(argv = None):
 
     return 0
 
+def GridSearch_KK_dtpeak_HM(argv = None):
+    from .SXS import DEFAULT_TABLE
+    from .SXS import DEFAULT_SRCLOC
+    from .SXS import DEFAULT_SRCLOC_ALL
+    from .SXS import save_namecol, add_csv
+    from .generator import self_adaptivor
+
+    parser = OptionParser(description='Waveform Comparation With SXS')
+
+    parser.add_option('--executable', type = 'str', default = DEFAULT_EXEV5, help = 'Exe command')
+    parser.add_option('--approx', type = 'str', default = 'SEOBNREv5', help = 'Version of the code')
+    parser.add_option('--fini', type = 'float', default = 0, help = 'Initial orbital frequency')
+    parser.add_option('--SXS', type = 'str', default = '0071', help = 'SXS template for comparision')
+    parser.add_option('--mtotal-base', type = 'float', default = 40, help = 'Total mass')
+    parser.add_option('--srate', type = 'float', default = 16384, help = 'Sample rate')
+ 
+    parser.add_option('--prefix', type = 'str', default = '.', help = 'dir for results saving.')
+    parser.add_option('--jobtag', type = 'str', default = '_lnprob', help = 'jobtag.')
+
+    parser.add_option('--psd', type = 'str', help = 'Detector psd.')
+    parser.add_option('--flow', type = 'float', default = 0, help = 'Lower frequency cut off for psd.')
+    parser.add_option('--timeout', type = 'int', default = 60, help = 'Time limit for waveform generation')
+    parser.add_option('--ymode', type = 'int', default = 22, help = 'The mode.')
+
+    parser.add_option('--table', type = 'str', default = str(DEFAULT_TABLE), help = 'Path of SXS table.')
+    parser.add_option('--srcloc-all', type = 'str', default = str(DEFAULT_SRCLOC_ALL), help = 'Path of SXS waveform data all modes')
+
+    parser.add_option('--num-k', type = 'int', default = 50, help = 'numbers for grid search')
+    parser.add_option('--max-k', type = 'float', help = 'Upper bound of parameter')
+    parser.add_option('--min-k', type = 'float', help = 'Lower bound of parameter')
+    parser.add_option('--num-dtpeak', type = 'int', default = 50, help = 'numbers for grid search')
+    parser.add_option('--max-dtpeak', type = 'float', help = 'Upper bound of parameter')
+    parser.add_option('--min-dtpeak', type = 'float', help = 'Lower bound of parameter')
+
+    parser.add_option('--eps', type = 'float', default = 1e-6, help = 'Thresh of div')
+    parser.add_option('--mag', type = 'float', default = 10, help = 'Thresh of dx_init / dx (>1)')
+    parser.add_option('--filter-thresh', type = 'float', default = 0.4, help = 'Thresh of grid search (<1)')
+    parser.add_option('--max-step', type = 'int', default = 100, help = 'Max iter depth')
+    args, _ = parser.parse_args(argv)
+
+    exe = args.executable
+    approx = args.approx
+    SXSnum = args.SXS
+    # mtotal = args.mtotal
+    fini = args.fini
+    srate = args.srate
+    table = args.table
+    # srcloc = args.srcloc
+    jobtag = args.jobtag
+    srcloc_all = args.srcloc_all
+    psd = DetectorPSD(args.psd, flow = args.flow)
+    ymode = args.ymode
+    max_dtpeak = args.max_dtpeak if args.max_dtpeak is not None else 100
+    min_dtpeak = args.min_dtpeak if args.min_dtpeak is not None else -10
+    dtpeak_range = (min_dtpeak, max_dtpeak)
+    num_dtpeak = args.num_dtpeak
+
+    max_k = args.max_k if args.max_k is not None else 5
+    min_k = args.min_k if args.min_k is not None else 0
+    k_range = (min_k, max_k)
+    num_k = args.num_k
+
+    eps = args.eps
+    mag = args.mag
+    filter_thresh = args.filter_thresh
+    max_step = args.max_step
+    NR = SXSAllMode(SXSnum, table = table, srcloc = srcloc_all, cutpct = 1.5)
+    h22 = NR.get_mode(2,2)
+    h21 = NR.get_mode(2,1)
+    h33 = NR.get_mode(3,3)
+    h44 = NR.get_mode(4,4)
+    amp22 = np.max(h22.amp)
+    amp21 = np.max(h21.amp)
+    amp33 = np.max(h33.amp)
+    amp44 = np.max(h44.amp)
+    ampTOT = amp22 + amp21 + amp33 + amp44
+    max_freq = max(h22.frequency.max(), h21.frequency.max(), h33.frequency.max(), h44.frequency.max())
+    deltaT = np.pi / max_freq
+    NRModetime = np.arange(h22.time[0], h22.time[-1], deltaT)
+    NRModes = NR.mode_resample(NRModetime)
+
+    m1 = NR.mQ1 * args.mtotal_base
+    m2 = NR.mQ2 * args.mtotal_base
+    s1x = NR.s1x
+    s1y = NR.s1y
+    s1z = NR.s1z
+    s2x = NR.s2x
+    s2y = NR.s2y
+    s2z = NR.s2z
+    f0 = NR.Sf_ini
+    fini = fini if fini > 0 else f0 * dim_t(m1 + m2)
+    sys.stderr.write(f'q = {m1/m2}, chiA = {(s1z-s2z)/2}\n')
+    srate = dim_t(m1 + m2) / deltaT
+    ge = Generator(approx = approx, executable = exe, verbose = args.verbose)
+    pms0 = NR.CalculateAdjParamsV4()
+    dSO_default = pms0[1]
+    dSS_default = pms0[2]
+
+    def get_lnprob(k, dtpeak):
+        # ret = ge.get_lnprob(jobtag = args.jobtag, timeout = args.timeout, mode = ymode,
+        #             KK = k, dSO = dSO_default, dSS = dSS_default, dtPeak = dtpeak, ecc = 0.0)
+        ret = ge(m1 = m1, m2 = m2, s1x = s1x, s1y = s1y, s1z = s1z, 
+                s2x = s2x, s2y = s2y, s2z = s2z, D = 100, 
+                KK = k, dSO = dSO_default, dSS = dSS_default, dtPeak = dtpeak,
+                ecc = 0.0, srate = srate, f_ini = fini, L = 2, M = 2,
+                timeout = 3600, jobtag = jobtag, mode = -1)
+        if isinstance(ret, CEV):
+            return -np.inf
+        t, h22r, h22i, h21r, h21i, h33r, h33i, h44r, h44i = \
+            ret[:,0], ret[:,1], ret[:,2], ret[:,3], ret[:,4], ret[:,5], ret[:,6], ret[:,7], ret[:,8]   
+        hEOB22 = ModeBase(t, h22r, h22i)
+        hEOB21 = ModeBase(t, h21r, h21i)
+        hEOB33 = ModeBase(t, h33r, h33i)
+        hEOB44 = ModeBase(t, h44r, h44i)
+        MtotalList_ini = [40, 120]
+        Oxt22 = calculate_ModeFF(hEOB22, h22, Mtotal = MtotalList_ini, psd = psd, retfull = True)
+        Oxt21 = calculate_ModeFF(hEOB21, h21, Mtotal = MtotalList_ini, psd = psd, retfull = True)
+        Oxt33 = calculate_ModeFF(hEOB33, h33, Mtotal = MtotalList_ini, psd = psd, retfull = True)
+        Oxt44 = calculate_ModeFF(hEOB44, h44, Mtotal = MtotalList_ini, psd = psd, retfull = True)
+        ln22 = -np.power((1 - Oxt22)/0.01, 2) * amp22 / ampTOT
+        ln21 = -np.power((1 - Oxt21)/0.01, 2) * amp21 / ampTOT
+        ln33 = -np.power((1 - Oxt33)/0.01, 2) * amp33 / ampTOT
+        ln44 = -np.power((1 - Oxt44)/0.01, 2) * amp44 / ampTOT
+        lnplist = []
+        for i in range(MtotalList_ini):
+            dtM = deltaT / dim_t(MtotalList_ini[i])
+            lnp = ln22[i] + ln21[i] + ln33[i] + ln44[i]
+            idx = np.argmax(lnp)
+            lth = len(lnp)
+            if idx > lth / 2:
+                tc = (idx - lth) * dtM
+            else:
+                tc = idx * dtM
+            lnp = lnp - np.power(tc/5, 2)
+            lnplist.append(lnp)
+        ret = np.min(lnplist)
+        if np.isnan(ret):
+            sys.stderr.write(f'lnp is nan!')
+            return -np.inf
+        return ret
+    prefix = Path(args.prefix)
+    if not prefix.exists():
+        prefix.mkdir(parents=True)
+    
+    fsave = str(prefix / f'grid_{SXSnum}.txt')
+    if not prefix.exists():
+        prefix.mkdir(parents = True)
+    if not Path(fsave).exists():
+        MG = MultiGrid(get_lnprob, k_range, dtpeak_range, num_k, num_dtpeak)
+        MG.run(fsave, eps = eps, magnification = mag, filter_thresh = filter_thresh, maxiter = max_step)
+    # data = np.loadtxt(fsave)
+    # k_grid, dtpeak_grid, lnp_grid = data[:,0], data[:,1], data[:,2]
+    # k_fit = k_grid[np.argmax(lnp_grid)]
+    # dtpeak_fit = dtpeak_grid[np.argmax(lnp_grid)]
+    
+    # ret = ge(m1 = m1, m2 = m2, s1x = s1x, s1y = s1y, s1z = s1z, 
+    #         s2x = s2x, s2y = s2y, s2z = s2z, D = 100, 
+    #         KK = k_fit, dSO = dSO_default, dSS = dSS_default, dtPeak = dtpeak_fit,
+    #         ecc = 0.0, srate = srate, f_ini = fini, L = 2, M = 2,
+    #         timeout = 3600, jobtag = jobtag, mode = -1)
+    # if isinstance(ret, CEV):
+    #     return -np.inf
+    # t, h22r, h22i, h21r, h21i, h33r, h33i, h44r, h44i = \
+    #     ret[:,0], ret[:,1], ret[:,2], ret[:,3], ret[:,4], ret[:,5], ret[:,6], ret[:,7], ret[:,8]   
+    # hEOB22 = ModeBase(t, h22r, h22i)
+    # hEOB21 = ModeBase(t, h21r, h21i)
+    # hEOB33 = ModeBase(t, h33r, h33i)
+    # hEOB44 = ModeBase(t, h44r, h44i)
+    # wf_1, wf_2 = alignment(h22_wf, NR)
+    # plt.figure(figsize = (14, 7))
+    # plt.subplot(211)
+    # plt.title(f'lnp={lnp},FF={FF}')
+    # plt.plot(wf_1.time, wf_1.amp, label = f'EOB_{ymode}')
+    # plt.plot(wf_2.time, wf_2.amp, label = f'NR_{ymode}')
+    # plt.legend()
+    # plt.subplot(212)
+    # plt.title(f'lnp={lnp},FF={FF}')
+    # plt.plot(wf_1.time, wf_1.phaseFrom0, label = f'EOB_{ymode}')
+    # plt.plot(wf_2.time, wf_2.phaseFrom0, label = f'NR_{ymode}')
+    # plt.legend()
+    # plt.savefig(prefix / f'AmpPhase.png', dpi = 200)
+    # plt.close()
+
+    # Mtotal_list = np.linspace(10, 200, 500)
+    # # Setting saveing prefix
+    # fresults = prefix / f'results_{SXSnum}_{ymode}.csv'
+    # # Setting Results savimg filename.
+    # save_namecol(fresults, data = [['#q', '#chi1', '#chi2', '#Mtotal', '#FF', f'#ecc={0}']])
+    # ret = ge.get_overlap(jobtag = args.jobtag, minecc = 0, maxecc = 0, eccentricity = 0,
+    #                     timeout = args.timeout, verbose = True, Mtotal = Mtotal_list, 
+    #                     KK = k_fit, dSO = dSO_default, dSS = dSS_default, 
+    #                     dtPeak = dtpeak_fit, ecc = 0, mode = ymode)
+    # length = len(Mtotal_list)
+    # q_list = NR.q*np.ones(len(Mtotal_list)).reshape(1,length)
+    # s1z_list = NR.s1z*np.ones(len(Mtotal_list)).reshape(1,length)
+    # s2z_list = NR.s2z*np.ones(len(Mtotal_list)).reshape(1,length)
+    # FF_list = ret[2].reshape(1,length)
+    # Mtotal_list_out = Mtotal_list.reshape(1, length)
+    # data = np.concatenate((q_list, s1z_list, s2z_list, Mtotal_list_out, FF_list), axis = 0)
+    # add_csv(fresults, data.T.tolist())
+
+    return 0
+
 
 class V5Calibrator(object):
     def __init__(self, 

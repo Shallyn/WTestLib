@@ -2109,7 +2109,7 @@ def GridSearch_KK_dtpeak_HM(argv = None):
         ln33 = -np.power((1 - Oxt33)/0.01, 2) * amp33 / ampTOT
         ln44 = -np.power((1 - Oxt44)/0.01, 2) * amp44 / ampTOT
         lnplist = []
-        for i in range(MtotalList_ini):
+        for i in range(len(MtotalList_ini)):
             dtM = deltaT / dim_t(MtotalList_ini[i])
             lnp = ln22[i] + ln21[i] + ln33[i] + ln44[i]
             idx = np.argmax(lnp)

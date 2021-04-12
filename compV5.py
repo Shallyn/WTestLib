@@ -2096,10 +2096,10 @@ def GridSearch_KK_dtpeak_HM(argv = None):
             return -np.inf
         t, h22r, h22i, h21r, h21i, h33r, h33i, h44r, h44i = \
             ret[:,0], ret[:,1], ret[:,2], ret[:,3], ret[:,4], ret[:,5], ret[:,6], ret[:,7], ret[:,8]   
-        hEOB22 = ModeBase(t, h22r, h22i)
-        hEOB21 = ModeBase(t, h21r, h21i)
-        hEOB33 = ModeBase(t, h33r, h33i)
-        hEOB44 = ModeBase(t, h44r, h44i)
+        # hEOB22 = ModeBase(t, h22r, h22i)
+        # hEOB21 = ModeBase(t, h21r, h21i)
+        # hEOB33 = ModeBase(t, h33r, h33i)
+        # hEOB44 = ModeBase(t, h44r, h44i)
         EOBModes = waveform_mode_collector(0)
         EOBModes.append_mode(t, h22r, h22i, 2, 2)
         EOBModes.append_mode(t, h22r, -h22i, 2, -2)
@@ -2110,7 +2110,7 @@ def GridSearch_KK_dtpeak_HM(argv = None):
         EOBModes.append_mode(t, h44r, h44i, 4, 4)
         EOBModes.append_mode(t, h44r, -h44i, 4, -4)
         EOBModes_C, NRModes_C = ModeC_alignment(EOBModes, NRModes)
-        NFFT = len(EOBModes_C)
+        NFFT = len(EOBModes_C.time)
         MtotalList_ini = [40, 120]
         lnplist = []
         dtM = EOBModes_C.time[1] - EOBModes_C.time[0]

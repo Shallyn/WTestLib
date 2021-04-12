@@ -2078,7 +2078,7 @@ def GridSearch_KK_dtpeak_HM(argv = None):
     fini = fini if fini > 0 else f0 * dim_t(m1 + m2)
     sys.stderr.write(f'q = {m1/m2}, chiA = {(s1z-s2z)/2}\n')
     srate = dim_t(m1 + m2) / deltaT
-    ge = Generator(approx = approx, executable = exe, verbose = args.verbose)
+    ge = Generator(approx = approx, executable = exe, verbose = True)
     pms0 = NR.CalculateAdjParamsV4()
     dSO_default = pms0[1]
     dSS_default = pms0[2]

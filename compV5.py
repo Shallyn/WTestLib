@@ -1989,8 +1989,9 @@ def GridSearch_KK_dtpeak_HM(argv = None):
     from .SXS import DEFAULT_TABLE
     from .SXS import DEFAULT_SRCLOC
     from .SXS import DEFAULT_SRCLOC_ALL
-    from .SXS import save_namecol, add_csv
+    from .SXS import save_namecol, add_csv, ModeC_alignment
     from .generator import self_adaptivor
+    from .h22datatype import calculate_Overlap_tmp
 
     parser = OptionParser(description='Waveform Comparation With SXS')
 
@@ -2099,19 +2100,34 @@ def GridSearch_KK_dtpeak_HM(argv = None):
         hEOB21 = ModeBase(t, h21r, h21i)
         hEOB33 = ModeBase(t, h33r, h33i)
         hEOB44 = ModeBase(t, h44r, h44i)
+        EOBModes = waveform_mode_collector(0)
+        EOBModes.append_mode(t, h22r, h22i, 2, 2)
+        EOBModes.append_mode(t, h22r, -h22i, 2, -2)
+        EOBModes.append_mode(t, h21r, h21i, 2, 1)
+        EOBModes.append_mode(t, h21r, -h21i, 2, -1)
+        EOBModes.append_mode(t, h33r, h33i, 3, 3)
+        EOBModes.append_mode(t, -h33r, h33i, 3, -3)
+        EOBModes.append_mode(t, h44r, h44i, 4, 4)
+        EOBModes.append_mode(t, h44r, -h44i, 4, -4)
+        EOBModes_C, NRModes_C = ModeC_alignment(EOBModes, NRModes)
+        NFFT = len(EOBModes_C)
         MtotalList_ini = [40, 120]
-        Oxt22 = calculate_ModeFF(hEOB22, h22, Mtotal = MtotalList_ini, psd = psd, retfull = True)
-        Oxt21 = calculate_ModeFF(hEOB21, h21, Mtotal = MtotalList_ini, psd = psd, retfull = True)
-        Oxt33 = calculate_ModeFF(hEOB33, h33, Mtotal = MtotalList_ini, psd = psd, retfull = True)
-        Oxt44 = calculate_ModeFF(hEOB44, h44, Mtotal = MtotalList_ini, psd = psd, retfull = True)
-        ln22 = -np.power((1 - Oxt22)/0.01, 2) * amp22 / ampTOT
-        ln21 = -np.power((1 - Oxt21)/0.01, 2) * amp21 / ampTOT
-        ln33 = -np.power((1 - Oxt33)/0.01, 2) * amp33 / ampTOT
-        ln44 = -np.power((1 - Oxt44)/0.01, 2) * amp44 / ampTOT
         lnplist = []
-        for i in range(len(MtotalList_ini)):
-            dtM = deltaT / dim_t(MtotalList_ini[i])
-            lnp = ln22[i] + ln21[i] + ln33[i] + ln44[i]
+        dtM = EOBModes_C.time[1] - EOBModes_C.time[0]
+        for mt in MtotalList_ini:
+            dt = dtM / dim_t(mt)
+            df = 1./NFFT/dt
+            freqs = np.abs(np.fft.fftfreq(NFFT, dt))
+            power_vec = psd(freqs)
+            Oxt22 = calculate_Overlap_tmp(EOBModes_C.get_mode(2,2), NRModes.get_mode(2,2), power_vec, df, NFFT)
+            Oxt21 = calculate_Overlap_tmp(EOBModes_C.get_mode(2,1), NRModes.get_mode(2,1), power_vec, df, NFFT)
+            Oxt33 = calculate_Overlap_tmp(EOBModes_C.get_mode(3,3), NRModes.get_mode(3,3), power_vec, df, NFFT)
+            Oxt44 = calculate_Overlap_tmp(EOBModes_C.get_mode(4,4), NRModes.get_mode(4,4), power_vec, df, NFFT)
+            ln22 = -np.power((1 - Oxt22)/0.01, 2) * amp22 / ampTOT
+            ln21 = -np.power((1 - Oxt21)/0.01, 2) * amp21 / ampTOT
+            ln33 = -np.power((1 - Oxt33)/0.01, 2) * amp33 / ampTOT
+            ln44 = -np.power((1 - Oxt44)/0.01, 2) * amp44 / ampTOT
+            lnp = ln22 + ln21 + ln33 + ln44
             idx = np.argmax(lnp)
             lth = len(lnp)
             if idx > lth / 2:

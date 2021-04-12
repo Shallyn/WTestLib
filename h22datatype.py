@@ -295,6 +295,17 @@ def Mode_alignment(modeA, modeB, deltaT = None):
         wfA.pad((0,lpad), 'constant', dt_final)
     return wfA, wfB        
 
+def calculate_Overlap_tmp(modeA, modeB, power_vec, df, NFFT):
+    Atilde = np.fft.fft(modeA.value)
+    Btilde = np.fft.fft(modeB.value)
+    O11 = np.sum(Atilde * Atilde.conjugate() / power_vec).real * df
+    O22 = np.sum(Btilde * Btilde.conjugate() / power_vec).real * df
+    Ox = Atilde * Btilde.conjugate() / power_vec
+    Oxt = np.fft.ifft(Ox) * NFFT * df
+    Oxt_abs = np.abs(Oxt) / np.sqrt(O11 * O22)
+    return Oxt_abs
+
+
 def calculate_ModeFF(modeA, modeB, psd, Mtotal = 20, deltaT = None, retall = False, retfull = False):
     modeA, modeB = Mode_alignment(modeA, modeB, deltaT = deltaT)
     Atilde = np.fft.fft(modeA.value)

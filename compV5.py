@@ -2057,10 +2057,10 @@ def GridSearch_KK_dtpeak_HM(argv = None):
     h21 = NR.get_mode(2,1)
     h33 = NR.get_mode(3,3)
     h44 = NR.get_mode(4,4)
-    amp22 = np.max(h22.amp)
-    amp21 = np.max(h21.amp)
-    amp33 = np.max(h33.amp)
-    amp44 = np.max(h44.amp)
+    amp22 = np.power(np.max(h22.amp), 2)
+    amp21 = np.power(np.max(h21.amp), 2)
+    amp33 = np.power(np.max(h33.amp), 2)
+    amp44 = np.power(np.max(h44.amp), 2)
     ampTOT = amp22 + amp21 + amp33 + amp44
     max_freq = max(h22.frequency.max(), h21.frequency.max(), h33.frequency.max(), h44.frequency.max())
     deltaT = np.pi / max_freq
@@ -2156,33 +2156,39 @@ def GridSearch_KK_dtpeak_HM(argv = None):
     # k_fit = k_grid[np.argmax(lnp_grid)]
     # dtpeak_fit = dtpeak_grid[np.argmax(lnp_grid)]
     
-    # ret = ge(m1 = m1, m2 = m2, s1x = s1x, s1y = s1y, s1z = s1z, 
-    #         s2x = s2x, s2y = s2y, s2z = s2z, D = 100, 
-    #         KK = k_fit, dSO = dSO_default, dSS = dSS_default, dtPeak = dtpeak_fit,
-    #         ecc = 0.0, srate = srate, f_ini = fini, L = 2, M = 2,
-    #         timeout = 3600, jobtag = jobtag, mode = -1)
-    # if isinstance(ret, CEV):
-    #     return -np.inf
-    # t, h22r, h22i, h21r, h21i, h33r, h33i, h44r, h44i = \
-    #     ret[:,0], ret[:,1], ret[:,2], ret[:,3], ret[:,4], ret[:,5], ret[:,6], ret[:,7], ret[:,8]   
-    # hEOB22 = ModeBase(t, h22r, h22i)
-    # hEOB21 = ModeBase(t, h21r, h21i)
-    # hEOB33 = ModeBase(t, h33r, h33i)
-    # hEOB44 = ModeBase(t, h44r, h44i)
+    ret = ge(m1 = m1, m2 = m2, s1x = s1x, s1y = s1y, s1z = s1z, 
+            s2x = s2x, s2y = s2y, s2z = s2z, D = 100, 
+            KK = k_fit, dSO = dSO_default, dSS = dSS_default, dtPeak = dtpeak_fit,
+            ecc = 0.0, srate = srate, f_ini = fini, L = 2, M = 2,
+            timeout = 3600, jobtag = jobtag, mode = -1)
+    if isinstance(ret, CEV):
+        return -np.inf
+    t, h22r, h22i, h21r, h21i, h33r, h33i, h44r, h44i = \
+        ret[:,0], ret[:,1], ret[:,2], ret[:,3], ret[:,4], ret[:,5], ret[:,6], ret[:,7], ret[:,8]   
+    EOBModes = waveform_mode_collector(0)
+    EOBModes.append_mode(t, h22r, h22i, 2, 2)
+    EOBModes.append_mode(t, h22r, -h22i, 2, -2)
+    EOBModes.append_mode(t, h21r, h21i, 2, 1)
+    EOBModes.append_mode(t, h21r, -h21i, 2, -1)
+    EOBModes.append_mode(t, h33r, h33i, 3, 3)
+    EOBModes.append_mode(t, -h33r, h33i, 3, -3)
+    EOBModes.append_mode(t, h44r, h44i, 4, 4)
+    EOBModes.append_mode(t, h44r, -h44i, 4, -4)
+    EOBModes_C, NRModes_C = ModeC_alignment(EOBModes, NRModes)
+    wf_1 = EOBModes_C.get_mode(2,2)
+    wf_2 = NRModes_C.get_mode(2,2)
     # wf_1, wf_2 = alignment(h22_wf, NR)
-    # plt.figure(figsize = (14, 7))
-    # plt.subplot(211)
-    # plt.title(f'lnp={lnp},FF={FF}')
-    # plt.plot(wf_1.time, wf_1.amp, label = f'EOB_{ymode}')
-    # plt.plot(wf_2.time, wf_2.amp, label = f'NR_{ymode}')
-    # plt.legend()
-    # plt.subplot(212)
-    # plt.title(f'lnp={lnp},FF={FF}')
-    # plt.plot(wf_1.time, wf_1.phaseFrom0, label = f'EOB_{ymode}')
-    # plt.plot(wf_2.time, wf_2.phaseFrom0, label = f'NR_{ymode}')
-    # plt.legend()
-    # plt.savefig(prefix / f'AmpPhase.png', dpi = 200)
-    # plt.close()
+    plt.figure(figsize = (14, 7))
+    plt.subplot(211)
+    plt.plot(wf_1.time, wf_1.amp, label = f'EOB_{ymode}')
+    plt.plot(wf_2.time, wf_2.amp, label = f'NR_{ymode}')
+    plt.legend()
+    plt.subplot(212)
+    plt.plot(wf_1.time, wf_1.phaseFrom0, label = f'EOB_{ymode}')
+    plt.plot(wf_2.time, wf_2.phaseFrom0, label = f'NR_{ymode}')
+    plt.legend()
+    plt.savefig(prefix / f'AmpPhase.png', dpi = 200)
+    plt.close()
 
     # Mtotal_list = np.linspace(10, 200, 500)
     # # Setting saveing prefix

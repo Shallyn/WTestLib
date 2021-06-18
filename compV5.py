@@ -117,7 +117,7 @@ def get_ecc_from_SXSid_Nv1A2_dtV4(SXSid):
     else:
         return 0.0
 
-def get_ecc_range(SXSnum, min_ecc = None, max_ecc = None):
+def get_ecc_range(SXSnum, min_ecc = None, max_ecc = None, fini = None):
     if SXSnum not in DEFAULT_ECC_ORBIT_DICT:
         return None, -0.05, 0.05
     f0, e0 = DEFAULT_ECC_ORBIT_DICT[SXSnum]
@@ -129,6 +129,7 @@ def get_ecc_range(SXSnum, min_ecc = None, max_ecc = None):
         max_e = 0
     min_e = min_ecc if min_ecc is not None else min_e
     max_e = max_ecc if max_ecc is not None else max_e
+    f0 = fini if fini is not None else f0
     return f0, min_e, max_e
 
 DEFAULT_EXEV5 = '/Users/drizl/Documents/2020/EccentricEOBProject/EOBCoreTest/EOBNR/MAIN'
@@ -631,6 +632,71 @@ def GridSearch_dt_noecc(argv = None):
 
 #-----Recover EOB vs SXS-----#
 
+def GridSearch_eccV2(argv = None):
+    from .SXS import DEFAULT_TABLE
+    from .SXS import DEFAULT_SRCLOC
+    from .SXS import DEFAULT_SRCLOC_ALL
+    from .SXS import save_namecol, add_csv
+    from .generator import self_adaptivor
+
+    parser = OptionParser(description='Waveform Comparation With SXS')
+
+    parser.add_option('--executable', type = 'str', default = DEFAULT_EXEV5, help = 'Exe command')
+    parser.add_option('--approx', type = 'str', default = 'SEOBNREv5', help = 'Version of the code')
+    parser.add_option('--fini', type = 'float', help = 'Initial orbital frequency')
+    parser.add_option('--SXS', type = 'str', default = '1374', help = 'SXS template for comparision')
+    parser.add_option('--mtotal', type = 'float', default = 40, help = 'Total mass')
+    parser.add_option('--srate', type = 'float', default = 16384, help = 'Sample rate')
+ 
+    parser.add_option('--prefix', type = 'str', default = '.', help = 'dir for results saving.')
+    parser.add_option('--jobtag', type = 'str', default = '_lnprob', help = 'jobtag.')
+
+    parser.add_option('--psd', type = 'str', help = 'Detector psd.')
+    parser.add_option('--flow', type = 'float', default = 0, help = 'Lower frequency cut off for psd.')
+    parser.add_option('--timeout', type = 'int', default = 60, help = 'Time limit for waveform generation')
+    parser.add_option('--oldecc', type = 'str', help = 'use old ecc or not')
+
+    parser.add_option('--table', type = 'str', default = str(DEFAULT_TABLE), help = 'Path of SXS table.')
+    parser.add_option('--srcloc-all', type = 'str', default = str(DEFAULT_SRCLOC_ALL), help = 'Path of SXS waveform data all modes')
+
+    parser.add_option('--num-ecc', type = 'int', default = 50, help = 'numbers for grid search')
+    parser.add_option('--max-ecc', type = 'float', help = 'Upper bound of parameter')
+    parser.add_option('--min-ecc', type = 'float', help = 'Lower bound of parameter')
+    parser.add_option('--ecc', type = 'float', help = 'The specific ecc')
+    parser.add_option('--eps', type = 'float', default = 1e-6, help = 'Thresh of div')
+    parser.add_option('--mag', type = 'float', default = 10, help = 'Thresh of dx_init / dx (>1)')
+    parser.add_option('--filter-thresh', type = 'float', default = 0.4, help = 'Thresh of grid search (<1)')
+    parser.add_option('--max-step', type = 'int', default = 100, help = 'Max iter depth')
+    parser.add_option('--version', type = 'str', default = 'default', help = 'code version')
+    parser.add_option('--only22', action = 'store_true', help = 'only use 22 mode')
+    parser.add_option('--circ', action = 'store_true', help = 'force ecc = 0')
+    parser.add_option('--cutpct', type = 'float', default = 0, help = 'cut the NR waveform')
+    parser.add_option('--plot', action = 'store_true', help = 'code version')
+    parser.add_option('--plot-thresh', type = 'float', help = 'plot when FF < ..')
+    args, _ = parser.parse_args(argv)
+
+    exe = args.executable
+    approx = args.approx
+    SXSid = args.SXS
+    mtotal = args.mtotal
+    fini = args.fini
+    srate = args.srate
+    table = args.table
+
+    srcloc_all = args.srcloc_all
+    psd = DetectorPSD(args.psd, flow = args.flow)
+    eps = args.eps
+    mag = args.mag
+    filter_thresh = args.filter_thresh
+    max_step = args.max_step
+
+
+    prefix_all = Path(args.prefix)
+    if not prefix_all.exists():
+        prefix_all.mkdir(parents=True)
+
+    return 0
+
 def GridSearch_ecc(argv = None):
     from .SXS import DEFAULT_TABLE
     from .SXS import DEFAULT_SRCLOC
@@ -642,7 +708,7 @@ def GridSearch_ecc(argv = None):
 
     parser.add_option('--executable', type = 'str', default = DEFAULT_EXEV5, help = 'Exe command')
     parser.add_option('--approx', type = 'str', default = 'SEOBNREv5', help = 'Version of the code')
-    parser.add_option('--fini', type = 'float', default = 0, help = 'Initial orbital frequency')
+    parser.add_option('--fini', type = 'float', help = 'Initial orbital frequency')
     parser.add_option('--SXS', type = 'str', action = 'append', default = [], help = 'SXS template for comparision')
     parser.add_option('--mtotal', type = 'float', default = 40, help = 'Total mass')
     parser.add_option('--srate', type = 'float', default = 16384, help = 'Sample rate')
@@ -738,6 +804,8 @@ def GridSearch_ecc(argv = None):
                 max_ecc = max_e
                 min_ecc = min_e
                 ecc_range = (min_ecc, max_ecc)
+            if fini is None:
+                fini = 0
             num_ecc = args.num_ecc
             NR = SXSh22(SXSnum = SXSnum,
                         f_ini = fini,

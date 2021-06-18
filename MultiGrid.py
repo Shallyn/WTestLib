@@ -262,7 +262,7 @@ class MultiGrid1D(object):
             GPoints = GrdF.filter(thresh = filter_thresh)
             GPointsClusterList = GPoints.DBSCAN_cluster()
             GrdFuncListNew = []
-            for GPCobj in GrdFuncListNew:
+            for GPCobj in GPointsClusterList:
                 GrdNew = GPCobj.generate_grid()
                 GrdFNew = GrdNew(self._func, **self._kwargs)
                 if print_family:

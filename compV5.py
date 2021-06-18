@@ -797,7 +797,7 @@ def GridSearch_ecc(argv = None):
                 continue
             mDebug += f'mode: Y{ymode}:\n'
             srcloc, fname_collect, prefixM = ymodeDict[ymode]
-            f0, min_e, max_e = get_ecc_range(SXSnum, args.min_ecc, args.max_ecc)
+            f0, min_e, max_e = get_ecc_range(SXSnum, args.min_ecc, args.max_ecc, fini = fini)
             if f0 is not None:
                 fini = f0
                 max_ecc = max_e

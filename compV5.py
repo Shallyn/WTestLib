@@ -1694,7 +1694,7 @@ def Compare_ecc_HM(argv = None):
             def max_FF_over_phic(phic):
                 hpcEOB = EOBModes.construct_hpc(iota_input, phic, modelist = EOBModeList, phaseFrom0 = False)
                 FF, _1, _2 = calculate_ModeFF(hpcEOB, hpcNR, Mtotal = Mtotal_input, psd = psd)
-                if 0:
+                if args.verbose:
                     sys.stderr.write(f'{phic/np.pi} pi {FF}\n')
                 return FF
             if 0:

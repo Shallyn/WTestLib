@@ -1394,7 +1394,7 @@ def Compare_ecc_HM(argv = None):
     parser.add_option('--executable', type = 'str', default = DEFAULT_EXEV5, help = 'Exe command')
     parser.add_option('--approx', type = 'str', default = 'SEOBNREv5', help = 'Version of the code')
     parser.add_option('--SXS', type = 'str', action = 'append', default = [], help = 'SXS template for comparision')
- 
+    parser.add_option('--fini', type = 'float', help = 'Initial orbital frequency')
     parser.add_option('--prefix', type = 'str', default = '.', help = 'dir for results saving.')
     parser.add_option('--jobtag', type = 'str', default = '_lnprob', help = 'jobtag.')
 
@@ -1442,7 +1442,7 @@ def Compare_ecc_HM(argv = None):
         SXSnum_list.append('0001')
     table = args.table
     jobtag = args.jobtag
-
+    fini_input = args.fini
     srcloc_all = args.srcloc_all
     psd = DetectorPSD(args.psd, flow = args.flow)
     eps = args.eps
@@ -1495,7 +1495,7 @@ def Compare_ecc_HM(argv = None):
         srate = dim_t(m1 + m2) / deltaT
         ge = Generator(approx = approx, executable = exe, verbose = args.verbose)
         CIRC = args.circ
-        f0, min_e, max_e = get_ecc_range(SXSnum, args.min_ecc, args.max_ecc)
+        f0, min_e, max_e = get_ecc_range(SXSnum, args.min_ecc, args.max_ecc, fini = fini_input)
         if f0 is None:
             f0 = NR.Sf_ini
             # f0 = 0.002
@@ -1566,7 +1566,7 @@ def Compare_ecc_HM(argv = None):
         else:
             ecc_fit = args.ecc
         
-        sys.stderr.write(f'{LOG}: SXS_{SXSnum}, Estimate ecc_fit = {ecc_fit}\n')
+        sys.stderr.write(f'{LOG}: SXS_{SXSnum}, Estimate ecc_fit = {ecc_fit}, fini = {fini}\n')
         max_mtotal = args.max_mtotal
         min_mtotal = args.min_mtotal
         num_mtotal = args.num_mtotal
